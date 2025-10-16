@@ -1,0 +1,61 @@
+---
+- name: Prepare Kubernetes Node
+  hosts: all
+  become: yes
+  
+  tasks:
+    - name: Update and upgrade packages
+      apt:
+        update_cache: yes
+        upgrade: yes
+
+    - name: Install required packages for storage and networking
+      apt:
+        name:
+          - open-iscsi
+          - nfs-common
+          - cryptsetup
+          - dmsetup
+        state: present
+
+    - name: Load iscsi_tcp module
+      modprobe:
+        name: iscsi_tcp
+        state: present
+
+    - name: Ensure iscsi_tcp module is loaded at boot
+      lineinfile:
+        path: /etc/modules-load.d/iscsi.conf
+        line: iscsi_tcp
+        create: yes
+
+    - name: Enable and start iscsid service
+      systemd:
+        name: iscsid
+        enabled: yes
+        state: started
+
+    - name: Check NFSv4 kernel support
+      shell: cat /boot/config-`uname -r` | grep CONFIG_NFS_V4
+      register: nfs_v4_support
+      failed_when: false
+      changed_when: false
+
+    - name: Check NFSv4.1 kernel support
+      shell: cat /boot/config-`uname -r` | grep CONFIG_NFS_V4_1
+      register: nfs_v4_1_support
+      failed_when: false
+      changed_when: false
+
+    - name: Check NFSv4.2 kernel support
+      shell: cat /boot/config-`uname -r` | grep CONFIG_NFS_V4_2
+      register: nfs_v4_2_support
+      failed_when: false
+      changed_when: false
+
+    - name: Display NFS kernel support status
+      debug:
+        msg:
+          - "NFSv4 support: {{ nfs_v4_support.stdout | default('Not found') }}"
+          - "NFSv4.1 support: {{ nfs_v4_1_support.stdout | default('Not found') }}"
+          - "NFSv4.2 support: {{ nfs_v4_2_support.stdout | default('Not found') }}"

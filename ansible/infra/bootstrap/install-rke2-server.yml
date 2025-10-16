@@ -1,0 +1,115 @@
+---
+- name: Install RKE2 Kubernetes Single Node
+  hosts: hetzner
+  become: yes
+  vars:
+    rke2_version: "latest"
+    
+  tasks:
+    - name: Get Tailscale IP address for each node
+      shell: tailscale ip -4
+      register: tailscale_ip_result
+      changed_when: false
+      
+    - name: Set tailscale_ip fact
+      set_fact:
+        tailscale_ip: "{{ tailscale_ip_result.stdout.strip() }}"
+        
+    - name: Display node information
+      debug:
+        msg: "Node {{ inventory_hostname }} has Tailscale IP: {{ tailscale_ip }}"
+
+    - name: Create RKE2 config directory
+      file:
+        path: /etc/rancher/rke2
+        state: directory
+        mode: '0755'
+
+    - name: Download and install RKE2
+      shell: |
+        curl -sfL https://get.rke2.io | sh -
+      args:
+        creates: /usr/local/bin/rke2
+
+    # Configure the single server
+    - name: Create RKE2 config for single server
+      copy:
+        content: |
+          cluster-init: true
+          disable-cloud-controller: true
+          disable:
+            - rke2-ingress-nginx
+          tls-san:
+            - 100.64.0.1
+            - 100.64.0.2
+            - 100.64.0.3
+            - 100.64.0.4
+            - 100.64.0.5
+            - 100.64.0.6
+            - 100.64.0.7
+            - 100.64.0.8
+            - 100.64.0.9
+            - 100.64.0.10
+            - 100.64.0.116
+            - "{{ tailscale_ip }}"
+            - "{{ ansible_default_ipv4.address }}"
+          node-ip: "{{ tailscale_ip }}"
+          advertise-address: "{{ tailscale_ip }}"
+        dest: /etc/rancher/rke2/config.yaml
+        mode: '0640'
+
+    # Start RKE2 on the server
+    - name: Enable and start RKE2 server
+      systemd:
+        name: rke2-server.service
+        enabled: yes
+        state: started
+        daemon_reload: yes
+
+    - name: Wait for server to be ready
+      wait_for:
+        host: "{{ tailscale_ip }}"
+        port: 9345
+        timeout: 300
+      
+    # - name: Wait for node-token to be generated
+    #   wait_for:
+    #     path: /var/lib/rancher/rke2/server/node-token
+    #     timeout: 300
+
+    # - name: Wait for node to be ready in Kubernetes cluster
+    #   shell: /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml get nodes --no-headers | wc -l
+    #   register: node_count
+    #   until: node_count.stdout | int == 1
+    #   retries: 30
+    #   delay: 10
+
+    - name: Wait for node to be in Ready state
+      shell: /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml get nodes --no-headers | grep -c "Ready"
+      register: ready_nodes
+      until: ready_nodes.stdout | int == 1
+      retries: 30
+      delay: 10
+
+    - name: Display cluster status
+      shell: /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml get nodes
+      register: cluster_status
+      
+    - name: Show cluster information
+      debug:
+        var: cluster_status.stdout_lines
+
+    - name: Read original kubeconfig
+      slurp:
+        src: /etc/rancher/rke2/rke2.yaml
+      register: kubeconfig_content
+      
+    - name: Save kubeconfig locally with correct server address
+      delegate_to: localhost
+      become: true
+      copy:
+        content: "{{ (kubeconfig_content.content | b64decode).replace('https://127.0.0.1:6443', 'https://' + tailscale_ip + ':6443') }}"
+        dest: "/home/markuseisl/.kube/config"
+        owner: 1000
+        group: 1000
+        mode: '0600'

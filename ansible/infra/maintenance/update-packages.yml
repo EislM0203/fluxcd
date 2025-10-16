@@ -1,0 +1,10 @@
+---
+- name: Update and Upgrade Packages
+  hosts: all
+  become: yes
+  
+  tasks:
+    - name: Update and upgrade packages
+      apt:
+        update_cache: yes
+        upgrade: yes

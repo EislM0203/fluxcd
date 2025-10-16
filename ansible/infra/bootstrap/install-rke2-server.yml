@@ -6,18 +6,18 @@
     rke2_version: "latest"
     
   tasks:
-    - name: Get Tailscale IP address for each node
-      shell: tailscale ip -4
-      register: tailscale_ip_result
-      changed_when: false
+    # - name: Get Tailscale IP address for each node
+    #   shell: tailscale ip -4
+    #   register: tailscale_ip_result
+    #   changed_when: false
       
-    - name: Set tailscale_ip fact
-      set_fact:
-        tailscale_ip: "{{ tailscale_ip_result.stdout.strip() }}"
+    # - name: Set tailscale_ip fact
+    #   set_fact:
+    #     tailscale_ip: "{{ tailscale_ip_result.stdout.strip() }}"
         
-    - name: Display node information
-      debug:
-        msg: "Node {{ inventory_hostname }} has Tailscale IP: {{ tailscale_ip }}"
+    # - name: Display node information
+    #   debug:
+    #     msg: "Node {{ inventory_hostname }} has Tailscale IP: {{ tailscale_ip }}"
 
     - name: Create RKE2 config directory
       file:
@@ -40,21 +40,13 @@
           disable:
             - rke2-ingress-nginx
           tls-san:
-            - 100.64.0.1
-            - 100.64.0.2
-            - 100.64.0.3
-            - 100.64.0.4
-            - 100.64.0.5
-            - 100.64.0.6
-            - 100.64.0.7
-            - 100.64.0.8
-            - 100.64.0.9
-            - 100.64.0.10
-            - 100.64.0.116
-            - "{{ tailscale_ip }}"
+            - 10.0.0.59
+            - 10.0.0.211
+            - 10.0.0.67
+            - "{{ vxlan_ip }}"
             - "{{ ansible_default_ipv4.address }}"
-          node-ip: "{{ tailscale_ip }}"
-          advertise-address: "{{ tailscale_ip }}"
+          node-ip: "{{ vxlan_ip }}"
+          advertise-address: "{{ vxlan_ip }}"
         dest: /etc/rancher/rke2/config.yaml
         mode: '0640'
 
@@ -68,7 +60,7 @@
 
     - name: Wait for server to be ready
       wait_for:
-        host: "{{ tailscale_ip }}"
+        host: "{{ vxlan_ip }}"
         port: 9345
         timeout: 300
       

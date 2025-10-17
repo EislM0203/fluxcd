@@ -1,0 +1,90 @@
+---
+- name: Install and Configure Tailscale
+  hosts: all_vms
+  become: yes
+  gather_facts: yes
+  
+  vars:
+    tailscale_login_server: "https://headscale.lighthouse.traunseenet.com"
+    tailscale_preauth_key: "{{ tailscale_preauth_key }}"
+  
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+    
+    - name: Install required packages
+      apt:
+        name:
+          - curl
+          - gnupg
+        state: present
+    
+    - name: Create keyrings directory
+      file:
+        path: /usr/share/keyrings
+        state: directory
+        mode: '0755'
+    
+    - name: Download Tailscale GPG key
+      shell: |
+        curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
+      args:
+        creates: /usr/share/keyrings/tailscale-archive-keyring.gpg
+    
+    - name: Add Tailscale repository
+      shell: |
+        curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.tailscale-keyring.list | tee /etc/apt/sources.list.d/tailscale.list
+      args:
+        creates: /etc/apt/sources.list.d/tailscale.list
+    
+    - name: Update apt cache after adding Tailscale repo
+      apt:
+        update_cache: yes
+    
+    - name: Install Tailscale
+      apt:
+        name: tailscale
+        state: present
+    
+    - name: Connect to Tailscale network
+      command: >
+        tailscale up
+        --login-server={{ tailscale_login_server }}
+        --authkey={{ tailscale_preauth_key }}
+    - name: Get Tailscale IP address
+      command: tailscale ip -4
+      register: tailscale_ip
+      changed_when: false
+    
+    - name: Store Tailscale IP as fact
+      set_fact:
+        host_tailscale_ip: "{{ tailscale_ip.stdout | trim }}"
+    
+    - name: Display Tailscale IP
+      debug:
+        msg: "{{ inventory_hostname }} Tailscale IP: {{ host_tailscale_ip }}"
+
+- name: Update inventory file with Tailscale IPs
+  hosts: localhost
+  gather_facts: no
+  become: no
+  
+  tasks:
+    - name: Collect Tailscale IPs from all hosts
+      set_fact:
+        tailscale_ips: "{{ tailscale_ips | default({}) | combine({item: hostvars[item]['host_tailscale_ip']}) }}"
+      loop: "{{ groups['all_vms'] }}"
+      when: hostvars[item]['host_tailscale_ip'] is defined
+    
+    - name: Display collected Tailscale IPs
+      debug:
+        var: tailscale_ips
+    
+    - name: Update each host's ansible_host in inventory
+      replace:
+        path: "../../inventory.ini"
+        regexp: '^({{ item.key }}\s+ansible_host\s*=\s*)[^\s]+'
+        replace: '\g<1>{{ item.value }}'
+      loop: "{{ tailscale_ips | dict2items }}"
+      when: tailscale_ips is defined

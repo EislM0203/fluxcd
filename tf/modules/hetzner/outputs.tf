@@ -10,8 +10,6 @@ output "server_id" {
   description = "ID of the server"
 }
 
-# Storage Box will be mounted via SMB/CIFS - no volume outputs needed
-
 output "server" {
   value = hcloud_server.vm
   description = "Server object for inventory generation"

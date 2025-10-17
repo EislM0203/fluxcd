@@ -32,6 +32,8 @@ output "vms" {
       name = vm.name
       id   = vm.vmid
       ip   = "${local.network_base}.${local.start_ip + i}"
+      wireguard_ip   = "10.200.10.${i + 2}"   # example
+      vxlan_ip       = "10.200.11.${i + 2}"   # example
       ssh_user = "ansible"
       ssh_connection = "ssh -i ${var.ssh_private_key_path} ansible@${local.network_base}.${local.start_ip + i}"
     }

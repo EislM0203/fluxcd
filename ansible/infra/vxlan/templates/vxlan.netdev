@@ -1,0 +1,10 @@
+[NetDev]
+Name={{vxlan_interface}}
+Kind=vxlan
+Description=VXLAN Interface for overlay network
+
+[VXLAN]
+VNI=16
+Local={{hostvars[inventory_hostname].wireguard_ip}}
+DestinationPort=4789
+Independent=yes

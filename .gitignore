@@ -1,4 +1,6 @@
 tf/.terraform
 tf/.terraform.lock.hcl
 tf/terraform.tfstate
+tf/.terraform.tfstate.lock.info
 tf/terraform.tfstate.backup
+ansible/inventory.ini

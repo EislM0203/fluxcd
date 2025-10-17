@@ -1,0 +1,18 @@
+[Match]
+Name={{vxlan_interface}}
+
+[Link]
+MTUBytes=1370
+
+[Network]
+Address={{hostvars[inventory_hostname].vxlan_ip}}/{{vxlan_mask_bits}}
+
+
+{% for peer in groups['all'] %}
+{% if peer != inventory_hostname %}
+
+[BridgeFDB]
+MACAddress=00:00:00:00:00:00
+Destination={{ hostvars[peer].wireguard_ip }}
+{% endif %}
+{% endfor %}

@@ -1,0 +1,5 @@
+[Match]
+Name={{wireguard_interface}}
+
+[Network]
+Address={{ wireguard_ip }}/{{ wireguard_mask_bits }}

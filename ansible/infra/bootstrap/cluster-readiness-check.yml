@@ -1,0 +1,38 @@
+---
+- name: Verify all Kubernetes nodes are ready
+  hosts: localhost
+  gather_facts: false
+  vars:
+    max_retries: 30
+    retry_delay: 10
+
+  tasks:
+    - name: Wait until all Kubernetes nodes are Ready
+      kubernetes.core.k8s_info:
+        kind: Node
+      register: nodes_output
+      until: >
+        nodes_output.resources is defined and
+        (
+          nodes_output.resources
+          | map(attribute='status.conditions')
+          | map('selectattr', 'type', 'equalto', 'Ready')
+          | map('selectattr', 'status', 'equalto', 'True')
+          | map('list')
+          | map('length')
+          | select('equalto', 1)
+          | list
+          | length == (nodes_output.resources | length)
+        )
+      retries: "{{ max_retries }}"
+      delay: "{{ retry_delay }}"
+      changed_when: false
+
+    - name: Print node readiness summary
+      ansible.builtin.debug:
+        msg: >-
+          ✓ All {{
+            nodes_output.resources | length
+          }} Kubernetes nodes are ready: {{
+            nodes_output.resources | map(attribute='metadata.name') | join(', ')
+          }}

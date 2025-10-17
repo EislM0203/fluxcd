@@ -1,24 +1,15 @@
 ---
 - name: Install RKE2 Kubernetes Single Node
-  hosts: hetzner
+  hosts: rke2_server
   become: yes
   vars:
     rke2_version: "latest"
     
-  tasks:
-    # - name: Get Tailscale IP address for each node
-    #   shell: tailscale ip -4
-    #   register: tailscale_ip_result
-    #   changed_when: false
-      
-    # - name: Set tailscale_ip fact
-    #   set_fact:
-    #     tailscale_ip: "{{ tailscale_ip_result.stdout.strip() }}"
+  tasks: 
+    - name: Collect all ansible_host values from inventory
+      set_fact:
+        all_ansible_hosts: "{{ groups['all'] | map('extract', hostvars, 'ansible_host') | list | unique }}"
         
-    # - name: Display node information
-    #   debug:
-    #     msg: "Node {{ inventory_hostname }} has Tailscale IP: {{ tailscale_ip }}"
-
     - name: Create RKE2 config directory
       file:
         path: /etc/rancher/rke2
@@ -31,49 +22,31 @@
       args:
         creates: /usr/local/bin/rke2
 
-    # Configure the single server
     - name: Create RKE2 config for single server
-      copy:
-        content: |
-          cluster-init: true
-          disable-cloud-controller: true
-          disable:
-            - rke2-ingress-nginx
-          tls-san:
-            - 10.0.0.59
-            - 10.0.0.211
-            - 10.0.0.67
-            - 193.81.60.92
-            - 100.64.0.46
-            - 100.64.0.47
-            - 100.64.0.48
-            - 100.64.0.49
-            - "{{ vxlan_ip }}"
-            - "{{ ansible_default_ipv4.address }}"
-          node-ip: "{{ vxlan_ip }}"
-          advertise-address: "{{ vxlan_ip }}"
+      template:
+        src: rke2-config.yaml.j2
         dest: /etc/rancher/rke2/config.yaml
         mode: '0640'
-    - name: Create RKE2 manifests directory
-      file:
-        path: /var/lib/rancher/rke2/server/manifests
-        state: directory
-        mode: '0755'
+    # - name: Create RKE2 manifests directory
+    #   file:
+    #     path: /var/lib/rancher/rke2/server/manifests
+    #     state: directory
+    #     mode: '0755'
 
-    - name: Set network interface for RKE2
-      copy:
-        content: |
-          apiVersion: helm.cattle.io/v1
-          kind: HelmChartConfig
-          metadata:
-            name: rke2-canal
-            namespace: kube-system
-          spec:
-            valuesContent: |-
-              flannel:
-                iface: "vx0"
-        dest: /var/lib/rancher/rke2/server/manifests/rke2-canal-config.yaml
-        mode: '0755'
+    # - name: Set network interface for RKE2
+    #   copy:
+    #     content: |
+    #       apiVersion: helm.cattle.io/v1
+    #       kind: HelmChartConfig
+    #       metadata:
+    #         name: rke2-canal
+    #         namespace: kube-system
+    #       spec:
+    #         valuesContent: |-
+    #           flannel:
+    #             iface: "tailscale0"
+    #     dest: /var/lib/rancher/rke2/server/manifests/rke2-canal-config.yaml
+    #     mode: '0755'
 
     # Start RKE2 on the server
     - name: Enable and start RKE2 server
@@ -85,7 +58,7 @@
 
     - name: Wait for server to be ready
       wait_for:
-        host: "{{ vxlan_ip }}"
+        host: "{{ ansible_host }}"
         port: 9345
         timeout: 300
       
@@ -121,12 +94,12 @@
         src: /etc/rancher/rke2/rke2.yaml
       register: kubeconfig_content
       
-    # - name: Save kubeconfig locally with correct server address
-    #   delegate_to: localhost
-    #   become: true
-    #   copy:
-    #     content: "{{ (kubeconfig_content.content | b64decode).replace('https://127.0.0.1:6443', 'https://' + tailscale_ip + ':6443') }}"
-    #     dest: "/home/markuseisl/.kube/config"
-    #     owner: 1000
-    #     group: 1000
-    #     mode: '0600'
+    - name: Save kubeconfig locally with correct server address
+      delegate_to: localhost
+      become: true
+      copy:
+        content: "{{ (kubeconfig_content.content | b64decode).replace('https://127.0.0.1:6443', 'https://' + ansible_host + ':6443') }}"
+        dest: "/home/markuseisl/.kube/config"
+        owner: 1000
+        group: 1000
+        mode: '0600'

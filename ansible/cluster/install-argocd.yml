@@ -1,0 +1,41 @@
+---
+- name: Install Argo CD into Kubernetes cluster
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  collections:
+    - kubernetes.core
+
+  vars:
+    argocd_namespace: argocd
+    argocd_repo: https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+  tasks:
+    - name: Ensure Argo CD namespace exists
+      kubernetes.core.k8s:
+        api_version: v1
+        kind: Namespace
+        name: "{{ argocd_namespace }}"
+        state: present
+
+    - name: Deploy Argo CD using official manifests
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ argocd_namespace }}"
+        src: "{{ argocd_repo }}"
+        apply: true
+
+    - name: Wait for Argo CD server to be ready
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: "{{ argocd_namespace }}"
+        label_selectors:
+          - app.kubernetes.io/name=argocd-server
+      register: argocd_pods
+      until: >
+        argocd_pods.resources | length > 0 and
+        (argocd_pods.resources[0].status.phase == "Running")
+      retries: 20
+      delay: 15
+

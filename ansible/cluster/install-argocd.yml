@@ -39,3 +39,92 @@
       retries: 20
       delay: 15
 
+# AI generated, try it out first
+    - name: Read SOPS age key from disk
+      set_fact:
+        sops_age_key: "{{ lookup('file', '/path/to/age/key.txt') }}"
+
+    - name: Create Argo CD SOPS Age Secret
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: sops-age-key
+            namespace: argocd
+          type: Opaque
+          stringData:
+            key.txt: "{{ sops_age_key }}"
+# AI generated, try it out first
+
+    - name: Create or update Argo CD ConfigMap
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: argocd-cm
+            namespace: "{{ argocd_namespace }}"
+            labels:
+              app.kubernetes.io/name: argocd-cm
+              app.kubernetes.io/part-of: argocd
+          data:
+            kustomize.buildOptions: --enable-helm # --enable-alpha-plugins ????
+            accounts.admin: login, apiKey
+            resource.customizations.health.ingress.networking.k8s.io: |
+              health.lua: |
+                hs = {}
+                hs.status = "Healthy"
+                hs.message = "Custom health check: ingress marked as healthy"
+                return hs
+            # AI generated, try it out first
+            configManagementPlugins: |
+              - name: sops
+                generate:
+                  command: [ "sops", "-d" ]
+                  args: ["."]
+    - name: Create or update Argo CD AppProject
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: argoproj.io/v1alpha1
+          kind: AppProject
+          metadata:
+            name: proxmox-k8s-cluster
+            namespace: "{{ argocd_namespace }}"
+          spec:
+            description: Proxmox Kubernetes Cluster Applications
+            sourceRepos:
+              - '*'
+            destinations:
+              - namespace: '*'
+                server: '*'
+            clusterResourceWhitelist:
+              - group: '*'
+                kind: '*'
+    - name: Create or update root App of Apps
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: argoproj.io/v1alpha1
+          kind: Application
+          metadata:
+            name: root-app
+            namespace: "{{ argocd_namespace }}"
+          spec:
+            project: proxmox-k8s-cluster
+            source:
+              repoURL: https://github.com/EislM0203/fluxcd
+              targetRevision: main
+              path: kubernetes/
+            destination:
+              server: https://kubernetes.default.svc
+              namespace: argocd
+            syncPolicy:
+              automated:
+                prune: true
+                selfHeal: true
+
+

@@ -1,22 +1,4 @@
 # Output VM information
-output "vm_names" {
-  description = "Names of the created VMs"
-  value       = proxmox_vm_qemu.vm[*].name
-}
-
-output "vm_ids" {
-  description = "VM IDs in Proxmox"
-  value       = proxmox_vm_qemu.vm[*].vmid
-}
-
-output "vm_ips" {
-  description = "IP addresses of the VMs"
-  value = [
-    for i in range(var.vm_count) : 
-    "${local.network_base}.${local.start_ip + i}"
-  ]
-}
-
 output "vm_ssh_connection_strings" {
   description = "SSH connection strings for the VMs"
   value = [

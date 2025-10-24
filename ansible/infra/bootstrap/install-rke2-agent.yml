@@ -1,28 +1,16 @@
 - name: Install RKE2 Kubernetes Agent Nodes
-  hosts: proxmox
+  hosts: rke2_agents
   become: yes
   vars:
     rke2_version: "latest"
-    rke2_server_url: "https://{{ server_tailscale_ip }}:9345"
+    rke2_server_url: "https://{{ hostvars[groups['rke2_server'][0]]['ansible_host'] }}:9345"
     rke2_token: "{{ rke2_node_token }}"
     
   tasks:
-    - name: Get Tailscale IP from RKE2 server
-      shell: tailscale ip -4
-      register: server_tailscale_ip_result
-      delegate_to: "{{ groups['hetzner'][0] }}"
-      run_once: true
-      changed_when: false
-      
-    - name: Set server Tailscale IP fact
-      set_fact:
-        server_tailscale_ip: "{{ server_tailscale_ip_result.stdout.strip() }}"
-      run_once: true
-      
     - name: Get RKE2 node token from server
       shell: sudo cat /var/lib/rancher/rke2/server/node-token
       register: rke2_node_token_result
-      delegate_to: "{{ groups['hetzner'][0] }}"
+      delegate_to: "{{ groups['rke2_server'][0] }}"
       run_once: true
       changed_when: false
       
@@ -30,19 +18,6 @@
       set_fact:
         rke2_node_token: "{{ rke2_node_token_result.stdout.strip() }}"
       run_once: true
-
-    - name: Get Tailscale IP address for each node
-      shell: tailscale ip -4
-      register: tailscale_ip_result
-      changed_when: false
-      
-    - name: Set tailscale_ip fact
-      set_fact:
-        tailscale_ip: "{{ tailscale_ip_result.stdout.strip() }}"
-        
-    - name: Display node information
-      debug:
-        msg: "Agent node {{ inventory_hostname }} has Tailscale IP: {{ tailscale_ip }}"
 
     - name: Create RKE2 config directory
       file:
@@ -61,7 +36,7 @@
         content: |
           server: {{ rke2_server_url }}
           token: {{ rke2_token }}
-          node-ip: "{{ tailscale_ip }}"
+          node-ip: "{{ ansible_host }}"
         dest: /etc/rancher/rke2/config.yaml
         mode: '0640'
 
@@ -86,14 +61,3 @@
     - name: Show agent service status
       debug:
         msg: "RKE2 Agent Status: {{ agent_status.status.ActiveState }}"
-
-    - name: Display installation completion message
-      debug:
-        msg: |
-          RKE2 Agent installation completed on {{ inventory_hostname }}
-          - Agent is connecting to: {{ rke2_server_url }}
-          - Node IP: {{ tailscale_ip }}
-          - Service status: {{ agent_status.status.ActiveState }}
-          
-          To verify the node joined the cluster, run on the server:
-          sudo /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml get nodes

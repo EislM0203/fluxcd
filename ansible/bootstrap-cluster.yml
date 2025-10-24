@@ -1,5 +1,0 @@
-- import_playbook: infra/maintenance/update-packages.yml
-- import_playbook: infra/bootstrap/install-tailscale.yml
-- import_playbook: infra/bootstrap/install-longhorn-dependencies.yml
-- import_playbook: infra/bootstrap/install-rke2-server.yml
-- import_playbook: infra/bootstrap/install-rke2-agent.yml

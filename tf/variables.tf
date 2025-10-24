@@ -13,46 +13,6 @@ variable "ssh_private_key_path" {
 }
 
 # ==========================================
-# Hetzner Cloud Variables
-# ==========================================
-
-variable "hcloud_token" {
-  description = "Hetzner Cloud API token"
-  type        = string
-  sensitive   = true
-}
-
-variable "hetzner_vm_name" {
-  description = "Name for the Hetzner VM"
-  type        = string
-  default     = "rke2-hetzner"
-}
-
-variable "server_type" {
-  description = "Type of Hetzner server (e.g., cx11, cx22)"
-  type        = string
-  default     = "cx22"
-}
-
-variable "image" {
-  description = "OS image for Hetzner server (e.g., debian-13)"
-  type        = string
-  default     = "debian-13"
-}
-
-variable "location" {
-  description = "Hetzner location (e.g., fsn1, nbg1, hel1)"
-  type        = string
-  default     = "fsn1"
-}
-
-variable "tailscale_preauth_key" {
-  description = "Tailscale preauth key for connecting to Headscale server"
-  type        = string
-  sensitive   = true
-}
-
-# ==========================================
 # Proxmox Variables
 # ==========================================
 
@@ -77,7 +37,7 @@ variable "proxmox_vm_count" {
 variable "proxmox_vm_name_prefix" {
   description = "Name prefix for Proxmox VMs"
   type        = string
-  default     = "proxmox-vm"
+  default     = "rke2-node"
 }
 
 variable "proxmox_template" {

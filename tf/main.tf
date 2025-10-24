@@ -1,20 +1,11 @@
 # Configure Terraform and required providers
 terraform {
   required_providers {
-    hcloud = {
-      source  = "hetznercloud/hcloud"
-      version = "~> 1.45"
-    }
     proxmox = {
       source  = "telmate/proxmox"
       version = "3.0.2-rc03"
     }
   }
-}
-
-# Hetzner Cloud provider
-provider "hcloud" {
-  token = var.hcloud_token
 }
 
 # Proxmox provider
@@ -27,18 +18,6 @@ provider "proxmox" {
   pm_minimum_permission_check = false
   pm_log_enable = false
   pm_timeout = 600
-}
-
-# Hetzner Cloud Module
-module "hetzner" {
-  source = "./modules/hetzner"
-  
-  ssh_public_key_path   = var.ssh_public_key_path
-  vm_name               = var.hetzner_vm_name
-  server_type           = var.server_type
-  image                 = var.image
-  location              = var.location
-  tailscale_preauth_key = var.tailscale_preauth_key
 }
 
 # Proxmox Module
@@ -62,28 +41,11 @@ module "proxmox" {
 resource "local_file" "ansible_inventory" {
   filename = "../ansible/inventory.ini"
   content = templatefile("${path.module}/inventory.tpl", {
-    server = module.hetzner.server
     proxmox_vms = module.proxmox.vms
     ssh_private_key_path = var.ssh_private_key_path
   })
   
-  depends_on = [module.hetzner, module.proxmox]
-}
-
-#Outputs
-output "hetzner_server_ips" {
-  value       = module.hetzner.server_ips
-  description = "IP addresses of Hetzner servers"
-}
-
-output "proxmox_vm_ips" {
-  value       = module.proxmox.vm_ips
-  description = "IP addresses of Proxmox VMs"
-}
-
-output "proxmox_vm_names" {
-  value       = module.proxmox.vm_names
-  description = "Names of Proxmox VMs"
+  depends_on = [module.proxmox]
 }
 
 output "proxmox_ssh_connections" {

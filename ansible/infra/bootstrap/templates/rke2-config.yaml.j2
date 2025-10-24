@@ -1,0 +1,13 @@
+cluster-init: true
+disable-cloud-controller: true
+disable:
+  - rke2-ingress-nginx
+tls-san:
+  - 10.0.0.59
+  - 10.0.0.211
+  - 10.0.0.67
+{% for host in all_ansible_hosts %}
+  - "{{ host }}"
+{% endfor %}
+node-ip: "{{ ansible_host }}"
+advertise-address: "{{ ansible_host }}"

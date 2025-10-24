@@ -9,14 +9,13 @@ SOPS_AGE_KEY_FILE = $(HOME)/.config/sops/age/keys.txt
 
 
 bootstrap-infra: apply-tf \
-	sleep 10 \
 	update-packages \
 	install-longhorn-dependencies \
 	install-rke2-server \
-	install-rke2-agent
+	install-rke2-agent \
+	cluster-readiness-check
 
 bootstrap-workloads: \
-	cluster-readiness-check \
 	install-argocd
 
 plan-tf:

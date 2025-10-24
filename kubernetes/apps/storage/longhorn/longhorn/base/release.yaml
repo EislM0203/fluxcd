@@ -25,8 +25,8 @@ spec:
   uninstall:
     keepHistory: false
   values:
-    persistence:
-    defaultClass: false
+    persistence: 
+      defaultClass: false
     longhornUI:
       replicas: 1
     defaultSettings:

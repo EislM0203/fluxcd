@@ -29,7 +29,7 @@ spec:
       defaultClass: false
     longhornUI:
       replicas: 1
-    defaultSettings:
+    defaultBackupStore:
       backupTarget: "s3://flux-backup@us-east-1/"
       backupTargetCredentialSecret: s3-secret
-      backupstorePollInterval: 30
+      pollInterval: 30

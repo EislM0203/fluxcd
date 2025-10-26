@@ -1,0 +1,149 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: traefik
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: traefik
+      version: v1.19.1
+      sourceRef:
+        kind: HelmRepository
+        name: traefik
+        namespace: flux-system
+      interval: 15m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    #https://github.com/traefik/traefik-helm-chart/blob/master/traefik/VALUES.md
+    #apiVersion: traefik.containo.us/v1alpha1
+    globalArguments:
+      - '--global.sendanonymoususage=false'
+      - '--global.checknewversion=false'
+    additionalArguments:
+      - '--serversTransport.insecureSkipVerify=true'
+      - '--log.level=DEBUG'
+      - "--api.insecure=true"
+    deployment:
+      enabled: true
+      kind: Deployment
+    #  replicas: 1
+      annotations: {}
+      podAnnotations: {}
+      additionalContainers: []
+      initContainers: []
+    resources:
+      requests:
+        memory: '1Mi'
+        cpu: '1m'
+      limits:
+        memory: '2Gi'
+        cpu: '3000m'
+    ports:
+      web:
+        redirections:
+          entryPoint:
+            to: websecure
+            scheme: https
+            permanent: true
+      websecure:
+        #hostPort: 443
+        port: 8443
+        #containerPort: 8443
+        expose:
+          default: true
+        exposedPort: 443
+        tls:
+          enabled: true
+        transport:
+          respondingTimeouts:
+            readTimeout: 360
+    tracing:
+      otlp:
+        enabled: false
+        http:
+          enabled: true
+          endpoint: http://opentelemetry-collector.observability.svc.cluster.local:4318/v1/traces
+    env:
+      - name: OTEL_PROPAGATORS
+        value: tracecontext,baggage,b3,jaeger
+    extraObjects:
+      - apiVersion: v1
+        kind: Service
+        metadata:
+          name: traefik-api
+        spec:
+          type: ClusterIP
+          selector:
+            app.kubernetes.io/name: traefik
+            #app.kubernetes.io/instance: traefik-network
+          ports:
+            - port: 8080
+              name: traefik
+              targetPort: 8080
+              protocol: TCP
+      # Public ingress
+      - apiVersion: networking.k8s.io/v1
+        kind: Ingress
+        metadata:
+          name: traefik-dashboard
+          annotations:
+            traefik.ingress.kubernetes.io/router.entrypoints: websecure
+            traefik.io/cluster-issuer: "letsencrypt-prod"
+            #traefik.ingress.kubernetes.io/router.middlewares: traefik-ip-whitelist@kubernetescrd
+            #traefik.ingress.kubernetes.io/router.middlewares: traefik-forward-auth@kubernetescrd
+        spec:
+          tls:
+            - hosts:
+              - traefik-dashboard.local.traunseenet.com
+              secretName: letsencrypt-prod-local
+          ingressClassName: traefik
+          rules:
+            - host: traefik-dashboard.local.traunseenet.com
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: traefik-api
+                        port:
+                          number: 8080
+
+    ingressRoute:
+      dashboard:
+        enabled: false
+    providers:
+      kubernetesCRD:
+        enabled: true
+        ingressClass: traefik
+        allowExternalNameServices: true
+      kubernetesIngress:
+        enabled: true
+        allowExternalNameServices: true
+        publishedService:
+          enabled: true
+    rbac:
+      enabled: true
+    service:
+      enabled: true
+      type: LoadBalancer
+      annotations: 
+        argocd.argoproj.io/ignore-healthcheck: "true" 
+      labels: {}
+      spec:
+        externalTrafficPolicy: Local
+        #loadBalancerIP: 10.0.0.225 # beelink
+      loadBalancerSourceRanges: []
+      externalIPs:
+        - "10.0.0.200"

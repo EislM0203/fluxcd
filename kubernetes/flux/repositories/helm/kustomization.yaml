@@ -6,3 +6,4 @@ namespace: flux-system
 resources:
   - ./cert-manager.yaml
   - ./longhorn.yaml
+  - ./traefik.yaml

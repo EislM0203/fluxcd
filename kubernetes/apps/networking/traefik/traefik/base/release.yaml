@@ -99,14 +99,14 @@ spec:
           name: traefik-dashboard
           annotations:
             traefik.ingress.kubernetes.io/router.entrypoints: websecure
-            traefik.io/cluster-issuer: "letsencrypt-prod"
+            traefik.io/cluster-issuer: "treafik-cert"
             #traefik.ingress.kubernetes.io/router.middlewares: traefik-ip-whitelist@kubernetescrd
             #traefik.ingress.kubernetes.io/router.middlewares: traefik-forward-auth@kubernetescrd
         spec:
           tls:
             - hosts:
               - traefik-dashboard.local.traunseenet.com
-              secretName: letsencrypt-prod-local
+              secretName: traefik-cert
           ingressClassName: traefik
           rules:
             - host: traefik-dashboard.local.traunseenet.com

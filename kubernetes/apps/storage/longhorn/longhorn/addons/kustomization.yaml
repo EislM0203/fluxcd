@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - secret.yaml
   - storage-classes.yaml
+  - ingress.yaml

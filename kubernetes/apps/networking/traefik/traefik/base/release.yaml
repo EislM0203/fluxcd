@@ -36,7 +36,7 @@ spec:
       - "--api.insecure=true"
     deployment:
       enabled: true
-      kind: Deployment
+      kind: DaemonSet
     #  replicas: 1
       annotations: {}
       podAnnotations: {}
@@ -147,3 +147,5 @@ spec:
       loadBalancerSourceRanges: []
       externalIPs:
         - "10.0.0.200"
+        - "10.0.0.201"
+        - "10.0.0.202"

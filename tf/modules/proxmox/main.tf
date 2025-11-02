@@ -12,22 +12,26 @@ locals {
   network_parts = split(".", split("/", var.vm_network_cidr)[0])
   network_base  = "${local.network_parts[0]}.${local.network_parts[1]}.${local.network_parts[2]}"
   start_ip      = 200 # Start IPs from .200
+  
+  # Create ordered list of node names for sequential IP assignment
+  node_names = sort(keys(var.nodes))
+  node_ip_map = { for idx, name in local.node_names : name => idx }
 }
 
 # Create Proxmox VMs
 resource "proxmox_vm_qemu" "vm" {
-  count = var.vm_count
+  for_each = var.nodes
   
-  name        = "${var.vm_name_prefix}-${count.index + 1}"
-  target_node = var.target_node
-  clone       = var.template
+  name        = each.key
+  target_node = each.value.target_node
+  clone       = each.value.template
   full_clone  = true
   
   # VM Configuration
-  memory      = var.memory
+  memory      = each.value.memory
   cpu {
     sockets = 1
-    cores   = var.cores
+    cores   = each.value.cores
   }
 
 
@@ -45,8 +49,8 @@ resource "proxmox_vm_qemu" "vm" {
     scsi {
       scsi0 {
         disk {
-          size    = var.disk_size
-          storage = var.storage
+          size    = each.value.disk_size
+          storage = each.value.storage
           discard    = true    # Enable TRIM/discard
           iothread   = true    # Enable dedicated I/O thread
           #ssd        = true    # Mark as SSD
@@ -56,7 +60,7 @@ resource "proxmox_vm_qemu" "vm" {
     ide {
       ide2 {
         cloudinit {
-          storage = var.storage
+          storage = each.value.storage
         }
       }
     }
@@ -71,7 +75,7 @@ resource "proxmox_vm_qemu" "vm" {
   
   # Cloud-init configuration
   #ipconfig0 = "ip=dhcp"
-  ipconfig0 = "ip=${local.network_base}.${local.start_ip + count.index}/24,gw=${var.vm_gateway}"
+  ipconfig0 = "ip=${local.network_base}.${local.start_ip + local.node_ip_map[each.key]}/24,gw=${var.vm_gateway}"
   
   # Cloud-init settings
   ciuser  = "ansible"

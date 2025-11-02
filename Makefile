@@ -19,13 +19,13 @@ bootstrap-workloads: \
 	install-argocd
 
 plan-tf:
-	tofu -chdir="tf" plan
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="tf" plan
 
 apply-tf:
-	tofu -chdir="tf" apply -auto-approve 
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="tf" apply -auto-approve 
 
 destroy-tf:
-	tofu -chdir="tf" destroy -auto-approve 
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="tf" destroy -auto-approve 
 
 update-packages:
 	ansible-playbook -i "${INVENTORY}" "${MAINTENANCE_DIR}/update-packages.yml"

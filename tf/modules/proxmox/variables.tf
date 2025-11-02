@@ -1,51 +1,15 @@
 # Proxmox Module Variables
 
-variable "vm_count" {
-  description = "Number of VMs to create"
-  type        = number
-  default     = 1
-}
-
-variable "vm_name_prefix" {
-  description = "Name prefix for VMs"
-  type        = string
-  default     = "proxmox-vm"
-}
-
-variable "template" {
-  description = "Template name to use for VM creation"
-  type        = string
-  default     = "debian-13-cloudinit"
-}
-
-variable "target_node" {
-  description = "Proxmox node to deploy VMs on"
-  type        = string
-  default     = "pve"
-}
-
-variable "cores" {
-  description = "Number of CPU cores for each VM"
-  type        = number
-  default     = 2
-}
-
-variable "memory" {
-  description = "Amount of memory (MB) for each VM"
-  type        = number
-  default     = 2048
-}
-
-variable "disk_size" {
-  description = "Disk size for each VM (e.g., '50G')"
-  type        = string
-  default     = "50G"
-}
-
-variable "storage" {
-  description = "Storage pool for VM disks"
-  type        = string
-  default     = "local-lvm"
+variable "nodes" {
+  description = "Map of node configurations. Each node can have custom target_node, storage, cores, memory, disk_size, and template."
+  type = map(object({
+    target_node = string
+    storage     = string
+    cores       = number
+    memory      = number
+    disk_size   = string
+    template    = string
+  }))
 }
 
 variable "ssh_public_key_path" {
@@ -91,7 +55,7 @@ variable "vm_gateway" {
 variable "vm_dns_servers" {
   description = "List of DNS servers for the VMs"
   type        = list(string)
-  default     = ["10.0.0.103", "8.8.8.8", "1.1.1.1"]
+  default     = ["10.0.0.102", "8.8.8.8", "1.1.1.1"]
 }
 
 variable "start_vm_on_boot" {

@@ -24,14 +24,7 @@ provider "proxmox" {
 module "proxmox" {
   source = "./modules/proxmox"
   
-  vm_count               = var.proxmox_vm_count
-  vm_name_prefix         = var.proxmox_vm_name_prefix
-  template               = var.proxmox_template
-  target_node            = var.proxmox_target_node
-  cores                  = var.proxmox_vm_cores
-  memory                 = var.proxmox_vm_memory
-  disk_size              = var.proxmox_vm_disk_size
-  storage                = var.proxmox_vm_storage
+  nodes                  = var.proxmox_nodes
   ssh_public_key_path    = var.ssh_public_key_path
   ssh_private_key_path   = var.ssh_private_key_path
   environment            = "development"

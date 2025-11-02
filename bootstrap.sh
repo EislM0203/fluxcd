@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 make apply-tf
 
 sleep 10

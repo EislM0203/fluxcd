@@ -9,7 +9,7 @@ spec:
   dependsOn:
     - name: cert-manager-addons
     - name: longhorn-addons
-    - name: traefik-addons
+    - name: traefik-base
   path: ./kubernetes/apps/auth/pocketid/pocketid/base
   prune: true
   wait: true

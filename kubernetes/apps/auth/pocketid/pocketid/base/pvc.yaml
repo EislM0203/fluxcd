@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pocketid-data
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: longhorn-storage
+  volumeName: pocketid-data
+  resources:
+    requests:
+      storage: 5Gi
+

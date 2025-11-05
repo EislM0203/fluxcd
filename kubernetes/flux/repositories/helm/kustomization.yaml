@@ -8,3 +8,4 @@ resources:
   - ./longhorn.yaml
   - ./traefik.yaml
   - ./backube.yaml
+  - ./open-webui.yaml

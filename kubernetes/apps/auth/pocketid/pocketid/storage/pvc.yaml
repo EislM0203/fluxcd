@@ -36,7 +36,3 @@ spec:
     enableFileDeletion: false
     cleanupCachePVC: false
     cleanupTempPVC: false
-    moverSecurityContext:
-      runAsUser: 0
-      runAsGroup: 0
-      fsGroup: 0

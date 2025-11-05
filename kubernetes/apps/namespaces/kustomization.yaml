@@ -6,3 +6,4 @@ resources:
   - auth.yaml
   - storage.yaml
   - networking.yaml
+  - lonhorn-system.yaml

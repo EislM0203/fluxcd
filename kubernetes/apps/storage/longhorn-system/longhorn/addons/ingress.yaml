@@ -3,13 +3,10 @@ kind: Ingress
 metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    #traefik.ingress.kubernetes.io/router.middlewares: traefik-ip-whitelist@kubernetescrd
-    #argocd.argoproj.io/ignore-healthcheck: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
   labels:
     app.kubernetes.io/instance: longhorn
   name: longhorn-ingress
-  namespace: longhorn
 spec:
   tls:
     - hosts:

@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openwebui
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  labels:
+    app: open-webui
+spec:
+  tls:
+    - hosts:
+        - gpt.cloud.traunseenet.com
+      secretName: openwebui-cert
+  ingressClassName: traefik
+  rules:
+    - host: gpt.cloud.traunseenet.com
+      http:
+        paths:
+          - backend:
+              service:
+                name: open-webui
+                port:
+                  number: 80
+            path: /
+            pathType: Prefix
+

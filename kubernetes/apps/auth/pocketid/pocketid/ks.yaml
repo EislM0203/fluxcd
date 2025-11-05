@@ -3,14 +3,13 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: pocketid-base
+  name: pocketid-app
   namespace: flux-system
 spec:
   dependsOn:
     - name: cert-manager-addons
-    - name: longhorn-addons
-    - name: traefik-base
-  path: ./kubernetes/apps/auth/pocketid/pocketid/base
+    - name: pocketid-storage
+  path: ./kubernetes/apps/auth/pocketid/pocketid/app
   prune: true
   wait: true
   sourceRef:
@@ -31,12 +30,13 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: pocketid-addons
+  name: pocketid-storage
   namespace: flux-system
 spec:
   dependsOn:
-    - name: pocketid-base
-  path: ./kubernetes/apps/auth/pocketid/pocketid/addons
+    - name: longhorn-addons
+    - name: traefik-base
+  path: ./kubernetes/apps/auth/pocketid/pocketid/storage
   prune: true
   sourceRef:
     kind: GitRepository
@@ -46,4 +46,23 @@ spec:
   retryInterval: 15m
   timeout: 5m
   targetNamespace: auth
-
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: pocketid-backup
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: pocketid-app
+  path: ./kubernetes/apps/auth/pocketid/pocketid/backup
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  interval: 15m
+  retryInterval: 15m
+  timeout: 5m
+  targetNamespace: auth

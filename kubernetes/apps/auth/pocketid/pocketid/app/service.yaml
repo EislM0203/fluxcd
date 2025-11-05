@@ -3,11 +3,11 @@ kind: Service
 metadata:
   name: pocket-id
   labels:
-    app: pocket-id
+    app: pocketid
 spec:
   type: ClusterIP
   selector:
-    app: pocket-id
+    app: pocketid
   ports:
     - name: http
       protocol: TCP

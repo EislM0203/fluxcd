@@ -3,16 +3,16 @@ kind: Deployment
 metadata:
   name: pocket-id
   labels:
-    app: pocket-id
+    app: pocketid
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: pocket-id
+      app: pocketid
   template:
     metadata:
       labels:
-        app: pocket-id
+        app: pocketid
     spec:
       containers:
         - name: pocket-id

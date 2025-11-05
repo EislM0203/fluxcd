@@ -10,10 +10,10 @@ metadata:
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: longhorn-storage
-  # dataSourceRef:
-  #   kind: ReplicationDestination
-  #   apiGroup: volsync.backube
-  #   name: open-webui-restore  # Name of the ReplicationDestination
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: open-webui-restore  # Name of the ReplicationDestination
   resources:
     requests:
       storage: 5Gi

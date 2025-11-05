@@ -21,3 +21,7 @@ spec:
     copyMethod: Snapshot
     storageClassName: longhorn-backup
     unlock: "something"
+    moverSecurityContext:
+      runAsUser: 0
+      runAsGroup: 0
+      fsGroup: 0

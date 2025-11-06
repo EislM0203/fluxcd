@@ -10,10 +10,10 @@ metadata:
 spec:
   accessModes: ["ReadWriteMany"]
   storageClassName: longhorn-storage
-  # dataSourceRef:
-  #   kind: ReplicationDestination
-  #   apiGroup: volsync.backube
-  #   name: karakeep-restore  # Name of the ReplicationDestination
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: karakeep-restore  # Name of the ReplicationDestination
   resources:
     requests:
       storage: 10Gi

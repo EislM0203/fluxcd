@@ -9,3 +9,4 @@ resources:
   - ./traefik.yaml
   - ./backube.yaml
   - ./open-webui.yaml
+  - ./priaeus.yaml

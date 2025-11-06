@@ -3,40 +3,35 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: pocketid-app
+  name: linkwarden-app
   namespace: flux-system
 spec:
   dependsOn:
     - name: cert-manager-addons
     - name: traefik-base
-    - name: pocketid-storage
-  path: ./kubernetes/apps/auth/pocketid/pocketid/app
+    - name: linkwarden-storage
+  path: ./kubernetes/apps/apps/linkwarden/linkwarden/app
   prune: true
   wait: true
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes
     namespace: flux-system
-  healthChecks:
-    - apiVersion: v1
-      kind: Deployment
-      name: pocket-id
-      namespace: auth
   interval: 15m
   retryInterval: 15m
   timeout: 5m
-  targetNamespace: auth
+  targetNamespace: apps
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: pocketid-storage
+  name: linkwarden-storage
   namespace: flux-system
 spec:
   dependsOn:
     - name: longhorn-addons
-  path: ./kubernetes/apps/auth/pocketid/pocketid/storage
+  path: ./kubernetes/apps/apps/linkwarden/linkwarden/storage
   prune: true
   sourceRef:
     kind: GitRepository
@@ -45,23 +40,23 @@ spec:
   healthChecks:
     - apiVersion: v1
       kind: PersistentVolumeClaim
-      name: pocketid-data
-      namespace: auth
+      name: linkwarden-data
+      namespace: apps
   interval: 15m
   retryInterval: 15m
   timeout: 5m
-  targetNamespace: auth
+  targetNamespace: apps
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: pocketid-backup
+  name: linkwarden-backup
   namespace: flux-system
 spec:
   dependsOn:
-    - name: pocketid-app
-  path: ./kubernetes/apps/auth/pocketid/pocketid/backup
+    - name: linkwarden-app
+  path: ./kubernetes/apps/apps/linkwarden/linkwarden/backup
   prune: true
   sourceRef:
     kind: GitRepository
@@ -70,4 +65,4 @@ spec:
   interval: 15m
   retryInterval: 15m
   timeout: 5m
-  targetNamespace: auth
+  targetNamespace: apps

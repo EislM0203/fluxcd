@@ -1,0 +1,148 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linkwarden-postgres
+  labels:
+    app: linkwarden-postgres
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: linkwarden-postgres
+  template:
+    metadata:
+      labels:
+        app: linkwarden-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        ports:
+        - containerPort: 5432
+          name: postgres
+        envFrom:
+        - secretRef:
+            name: linkwarden-secrets
+        env:
+        - name: POSTGRES_DB
+          value: postgres
+        - name: POSTGRES_USER
+          value: postgres
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+          subPath: postgres
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: linkwarden-data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linkwarden-meilisearch
+  labels:
+    app: linkwarden-meilisearch
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: linkwarden-meilisearch
+  template:
+    metadata:
+      labels:
+        app: linkwarden-meilisearch
+    spec:
+      containers:
+      - name: meilisearch
+        image: getmeili/meilisearch:v1.12.8
+        ports:
+        - containerPort: 7700
+          name: http
+        envFrom:
+        - secretRef:
+            name: linkwarden-secrets
+        volumeMounts:
+        - name: data
+          mountPath: /meili_data
+          subPath: meilisearch
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: linkwarden-data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linkwarden
+  labels:
+    app: linkwarden
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: linkwarden
+  template:
+    metadata:
+      labels:
+        app: linkwarden
+    spec:
+      containers:
+      - name: linkwarden
+        image: ghcr.io/linkwarden/linkwarden:v2.13.1
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: linkwarden-secrets
+              key: POSTGRES_PASSWORD
+        - name: DATABASE_URL
+          value: postgresql://postgres:$(POSTGRES_PASSWORD)@linkwarden-postgres:5432/postgres
+        - name: NEXTAUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: linkwarden-secrets
+              key: NEXTAUTH_SECRET
+        - name: NEXTAUTH_URL
+          value: https://linkwarden.cloud.traunseenet.com/api/v1/auth
+        - name: NEXT_PUBLIC_KEYCLOAK_ENABLED
+          value: "true"
+        - name: KEYCLOAK_CUSTOM_NAME
+          value: "Pocket ID"
+        - name: KEYCLOAK_ISSUER
+          value: "https://pocketid.cloud.traunseenet.com"
+        - name: KEYCLOAK_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: linkwarden-secrets
+              key: KEYCLOAK_CLIENT_ID
+        - name: KEYCLOAK_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: linkwarden-secrets
+              key: KEYCLOAK_CLIENT_SECRET
+        - name: MEILI_MASTER_KEY
+          valueFrom:
+            secretKeyRef:
+              name: linkwarden-secrets
+              key: MEILI_MASTER_KEY
+        - name: MEILI_ADDR
+          value: http://linkwarden-meilisearch:7700
+        volumeMounts:
+        - name: data
+          mountPath: /data/data
+          subPath: linkwarden
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: linkwarden-data

@@ -8,6 +8,7 @@ metadata:
 spec:
   dependsOn:
     - name: cert-manager-addons
+    - name: traefik-base
     - name: open-webui-storage
   path: ./kubernetes/apps/apps/open-webui/open-webui/app
   prune: true
@@ -35,7 +36,6 @@ metadata:
 spec:
   dependsOn:
     - name: longhorn-addons
-    - name: traefik-base
   path: ./kubernetes/apps/apps/open-webui/open-webui/storage
   prune: true
   sourceRef:

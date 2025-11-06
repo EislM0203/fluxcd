@@ -1,0 +1,38 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: linkwarden
+  name: linkwarden-data
+  annotations:
+    numberOfReplicas: '2'
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: longhorn-storage
+  # dataSourceRef:
+  #   kind: ReplicationDestination
+  #   apiGroup: volsync.backube
+  #   name: linkwarden-restore  # Name of the ReplicationDestination
+  resources:
+    requests:
+      storage: 10Gi
+status: {}
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: linkwarden-restore
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: restic-linkwarden
+    storageClassName: longhorn-storage
+    accessModes: ["ReadWriteOnce"]
+    copyMethod: Snapshot
+    capacity: 10Gi
+    enableFileDeletion: false
+    cleanupCachePVC: false
+    cleanupTempPVC: false

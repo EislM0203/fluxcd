@@ -1,0 +1,27 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: linkwarden
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  labels:
+    app: linkwarden
+spec:
+  tls:
+    - hosts:
+        - linkwarden.cloud.traunseenet.com
+      secretName: linkwarden-cert
+  ingressClassName: traefik
+  rules:
+    - host: linkwarden.cloud.traunseenet.com
+      http:
+        paths:
+          - backend:
+              service:
+                name: linkwarden
+                port:
+                  number: 80
+            path: /
+            pathType: Prefix

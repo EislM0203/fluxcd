@@ -3,17 +3,17 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   labels:
-    app: linkwarden
-  name: linkwarden-data
+    app: karakeep
+  name: karakeep-data
   annotations:
     numberOfReplicas: '2'
 spec:
-  accessModes: ["ReadWriteOnce"]
+  accessModes: ["ReadWriteMany"]
   storageClassName: longhorn-storage
   # dataSourceRef:
   #   kind: ReplicationDestination
   #   apiGroup: volsync.backube
-  #   name: linkwarden-restore  # Name of the ReplicationDestination
+  #   name: karakeep-restore  # Name of the ReplicationDestination
   resources:
     requests:
       storage: 10Gi
@@ -23,12 +23,12 @@ status: {}
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationDestination
 metadata:
-  name: linkwarden-restore
+  name: karakeep-restore
 spec:
   trigger:
     manual: restore-once
   restic:
-    repository: restic-linkwarden
+    repository: restic-karakeep
     storageClassName: longhorn-storage
     accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot

@@ -3,14 +3,14 @@
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:
-  name: linkwarden-backup
+  name: karakeep-backup
 spec:
-  sourcePVC: linkwarden-data
+  sourcePVC: karakeep-data
   trigger:
     schedule: "*/600 * * * *"
   restic:
     pruneIntervalDays: 1
-    repository: restic-linkwarden
+    repository: restic-karakeep
     retain:
       hourly: 5
       daily: 4

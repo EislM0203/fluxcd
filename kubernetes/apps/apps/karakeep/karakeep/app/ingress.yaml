@@ -2,25 +2,25 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: linkwarden
+  name: karakeep
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
   labels:
-    app: linkwarden
+    app: karakeep
 spec:
   tls:
     - hosts:
-        - linkwarden.cloud.traunseenet.com
-      secretName: linkwarden-cert
+        - karakeep.cloud.traunseenet.com
+      secretName: karakeep-cert
   ingressClassName: traefik
   rules:
-    - host: linkwarden.cloud.traunseenet.com
+    - host: karakeep.cloud.traunseenet.com
       http:
         paths:
           - backend:
               service:
-                name: linkwarden
+                name: karakeep
                 port:
                   number: 80
             path: /

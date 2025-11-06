@@ -3,14 +3,14 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: linkwarden-app
+  name: karakeep-app
   namespace: flux-system
 spec:
   dependsOn:
     - name: cert-manager-addons
     - name: traefik-base
-    - name: linkwarden-storage
-  path: ./kubernetes/apps/apps/linkwarden/linkwarden/app
+    - name: karakeep-storage
+  path: ./kubernetes/apps/apps/karakeep/karakeep/app
   prune: true
   wait: true
   sourceRef:
@@ -26,12 +26,12 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: linkwarden-storage
+  name: karakeep-storage
   namespace: flux-system
 spec:
   dependsOn:
     - name: longhorn-addons
-  path: ./kubernetes/apps/apps/linkwarden/linkwarden/storage
+  path: ./kubernetes/apps/apps/karakeep/karakeep/storage
   prune: true
   sourceRef:
     kind: GitRepository
@@ -40,7 +40,7 @@ spec:
   healthChecks:
     - apiVersion: v1
       kind: PersistentVolumeClaim
-      name: linkwarden-data
+      name: karakeep-data
       namespace: apps
   interval: 15m
   retryInterval: 15m
@@ -51,12 +51,12 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: linkwarden-backup
+  name: karakeep-backup
   namespace: flux-system
 spec:
   dependsOn:
-    - name: linkwarden-app
-  path: ./kubernetes/apps/apps/linkwarden/linkwarden/backup
+    - name: karakeep-app
+  path: ./kubernetes/apps/apps/karakeep/karakeep/backup
   prune: true
   sourceRef:
     kind: GitRepository

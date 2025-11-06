@@ -2,25 +2,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: linkwarden-postgres
+  name: karakeep-meilisearch
   labels:
-    app: linkwarden-postgres
-spec:
-  type: ClusterIP
-  ports:
-  - port: 5432
-    targetPort: 5432
-    protocol: TCP
-    name: postgres
-  selector:
-    app: linkwarden-postgres
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: linkwarden-meilisearch
-  labels:
-    app: linkwarden-meilisearch
+    app: karakeep-meilisearch
 spec:
   type: ClusterIP
   ports:
@@ -29,14 +13,30 @@ spec:
     protocol: TCP
     name: http
   selector:
-    app: linkwarden-meilisearch
+    app: karakeep-meilisearch
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: linkwarden
+  name: karakeep-chrome
   labels:
-    app: linkwarden
+    app: karakeep-chrome
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9222
+    targetPort: 9222
+    protocol: TCP
+    name: http
+  selector:
+    app: karakeep-chrome
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: karakeep
+  labels:
+    app: karakeep
 spec:
   type: ClusterIP
   ports:
@@ -45,4 +45,4 @@ spec:
     protocol: TCP
     name: http
   selector:
-    app: linkwarden
+    app: karakeep

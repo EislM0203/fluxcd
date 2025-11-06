@@ -1,0 +1,53 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: renovate
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: renovate
+      version: 44.15.1
+      sourceRef:
+        kind: HelmRepository
+        name: renovate
+        namespace: flux-system
+      interval: 15m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    cronjob:
+      # -- Schedules the job to run using cron notation
+      schedule: '0 1 * * *'  # At 01:00 every day
+      timeZone: 'Europe/Vienna'
+    renovate:
+      config: |
+        {
+          "platform": "github",
+          "endpoint": "https://api.github.com",
+          "autodiscover": "false",
+          "dryRun": null,
+          "printConfig": true,
+          "dependencyDashboard": true,
+          "repositories": ["EislM0203/fluxcd"],
+          "regexManagers": [
+            {
+              "fileMatch": ["\\.yaml$"],
+              "matchStrings": ["image: (?<depName>.*?):(?<currentValue>\\S+)"],
+              "depNameTemplate": "{{depName}}",
+              "versioning": "docker"
+            }
+          ]
+        }
+    envFrom:
+      - secretRef:
+          name: github-token-secret

@@ -11,3 +11,4 @@ resources:
   - ./open-webui.yaml
   - ./priaeus.yaml
   - ./harbor.yaml
+  - ./renovate.yaml

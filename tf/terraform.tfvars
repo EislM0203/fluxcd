@@ -14,7 +14,7 @@ proxmox_nodes = {
     cores       = 6
     memory      = 8192
     disk_size   = "500G"
-    template    = "pve-01:ubuntu-2404-template"
+    template    = "ubuntu-2404-template"
   }
   "rke2-node-2" = {
     target_node = "pve-02"
@@ -22,7 +22,7 @@ proxmox_nodes = {
     cores       = 3
     memory      = 8192
     disk_size   = "500G"
-    template    = "pve-01:ubuntu-2404-template"
+    template    = "ubuntu-2404-template"
   }
   "rke2-node-3" = {
     target_node = "pve-03"
@@ -30,6 +30,6 @@ proxmox_nodes = {
     cores       = 20
     memory      = 8192
     disk_size   = "500G"
-    template    = "pve-01:ubuntu-2404-template"
+    template    = "ubuntu-2404-template"
   }
 }

@@ -39,14 +39,15 @@ spec:
           "printConfig": true,
           "dependencyDashboard": true,
           "repositories": ["EislM0203/fluxcd"],
-          "regexManagers": [
-            {
-              "fileMatch": ["\\.yaml$"],
-              "matchStrings": ["image: (?<depName>.*?):(?<currentValue>\\S+)"],
-              "depNameTemplate": "{{depName}}",
-              "versioning": "docker"
-            }
-          ]
+          "flux": {
+            "fileMatch": ["\\.yaml$"]
+          },
+          "kubernetes": {
+            "fileMatch": ["\\.yaml$"]
+          },
+          "helm-values": {
+            "fileMatch": ["\\.yaml$"]
+          }
         }
     envFrom:
       - secretRef:

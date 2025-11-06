@@ -10,7 +10,6 @@ spec:
     - name: cert-manager-addons
     - name: traefik-base
     - name: longhorn-addons
-    - name: harbor-storage
   path: ./kubernetes/apps/storage/harbor/harbor/app
   prune: true
   wait: true

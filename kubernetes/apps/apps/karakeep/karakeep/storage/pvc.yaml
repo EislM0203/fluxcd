@@ -30,7 +30,7 @@ spec:
   restic:
     repository: restic-karakeep
     storageClassName: longhorn-storage
-    accessModes: ["ReadWriteOnce"]
+    accessModes: ["ReadWriteMany"]
     copyMethod: Snapshot
     capacity: 10Gi
     enableFileDeletion: false

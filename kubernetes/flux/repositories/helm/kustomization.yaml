@@ -10,3 +10,4 @@ resources:
   - ./backube.yaml
   - ./open-webui.yaml
   - ./priaeus.yaml
+  - ./harbor.yaml

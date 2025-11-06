@@ -1,0 +1,139 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: harbor
+spec:
+  interval: 30m
+  timeout: 5m
+  chart:
+    spec:
+      chart: harbor
+      version: 1.18.0
+      sourceRef:
+        kind: HelmRepository
+        name: harbor
+        namespace: flux-system
+  maxHistory: 2
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    updateStrategy:
+      type: Recreate
+    existingSecretAdminPassword: harbor-secret
+    externalURL: https://harbor.cloud.traunseenet.com
+    expose:
+      tls:
+        enabled: true
+        certSource: secret
+        secret: 
+          secretName: "traunseenet-cert"
+      ingress:
+        ingressClassName: traefik
+        hosts: 
+          core: harbor.cloud.traunseenet.com
+        annotations:
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    persistence:
+      enabled: true
+      resourcePolicy: ""
+      persistentVolumeClaim:
+        registry:
+          existingClaim: "harbor-data"
+          subPath: "registry"
+        jobservice:
+          jobLog:
+            existingClaim: "harbor-data"
+            subPath: "jobservice"
+        database:
+          existingClaim: "harbor-data"
+          subPath: "database"
+          # accessMode: "ReadWriteOnce"
+          # storageClass: "longhorn-storage-im"
+        redis:
+          existingClaim: "harbor-data"
+          subPath: "redis"
+        trivy:
+          existingClaim: "harbor-data"
+          subPath: "trivy"
+      imageChartStorage:
+        disableredirect: false
+        type: filesystem
+        filesystem:
+          rootdirectory: /storage
+            
+    tolerations-and-nodelectors: &tolerations-and-nodelectors
+      # tolerations: 
+      #   - key: node-role.kubernetes.io/master
+      #     value: "true"
+      #     effect: NoSchedule
+      nodeSelector:
+        kubernetes.io/arch: amd64
+    portal:
+      <<: *tolerations-and-nodelectors
+    core:
+      <<: *tolerations-and-nodelectors
+    jobservice:
+      <<: *tolerations-and-nodelectors
+    registry:
+      <<: *tolerations-and-nodelectors
+    trivy:
+      enabled: false
+      <<: *tolerations-and-nodelectors
+    database:
+      type: internal
+      internal:
+        <<: *tolerations-and-nodelectors
+        extrInitContainers: 
+          - name: init-chmod-data
+            image: docker.io/bitnami/os-shell:12-debian-12-r26
+            imagePullPolicy: "IfNotPresent"
+            resources:
+              limits:
+                cpu: 150m
+                ephemeral-storage: 2Gi
+                memory: 192Mi
+              requests:
+                cpu: 100m
+                ephemeral-storage: 50Mi
+                memory: 128Mi
+            command:
+              - /bin/sh
+              - -ec
+              - |
+                chown 999:999 /temp
+                chmod 700 /temp
+                find /temp -mindepth 1 -maxdepth 1 -not -name "conf" -not -name ".snapshot" -not -name "lost+found" | \
+                  xargs -r chown -R 999:999
+              # - sleep 8400
+            securityContext:
+              runAsGroup: 0
+              runAsNonRoot: false
+              runAsUser: 0
+              seLinuxOptions: {}
+              seccompProfile:
+                type: RuntimeDefault
+            volumeMounts:
+              - name: database-data
+                mountPath: /temp
+                # subPath: database
+    redis:
+      internal:
+        <<: *tolerations-and-nodelectors
+    trace:
+      enabled: false
+      provider: otel
+      otel:
+        endpoint: opentelemetry-collector.observability.svc.cluster.local:4318
+        url_path: /v1/traces
+        compression: false
+        insecure: true
+        # timeout is in seconds
+        timeout: 10

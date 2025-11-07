@@ -90,7 +90,7 @@ spec:
     spec:
       containers:
       - name: karakeep
-        image: ghcr.io/karakeep-app/karakeep:release
+        image: harbor.cloud.traunseenet.com/ghcr.io/karakeep-app/karakeep:release
         ports:
         - containerPort: 3000
           name: http

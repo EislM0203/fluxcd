@@ -16,7 +16,7 @@ spec:
     name: harbor-restore  # Name of the ReplicationDestination
   resources:
     requests:
-      storage: 50Gi
+      storage: 5Gi
 status: {}
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
@@ -32,7 +32,7 @@ spec:
     storageClassName: longhorn-storage
     accessModes: ["ReadWriteMany"]
     copyMethod: Snapshot
-    capacity: 50Gi
+    capacity: 5Gi
     enableFileDeletion: false
     cleanupCachePVC: false
     cleanupTempPVC: false

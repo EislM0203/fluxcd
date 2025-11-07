@@ -20,5 +20,5 @@ spec:
       namespace: apps
   interval: 15m
   retryInterval: 15m
-  timeout: 5m
+  timeout: 15m
   targetNamespace: apps

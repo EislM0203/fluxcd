@@ -19,7 +19,7 @@ spec:
     namespace: flux-system
   interval: 15m
   retryInterval: 15m
-  timeout: 5m
+  timeout: 15m
   targetNamespace: storage
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
@@ -39,5 +39,5 @@ spec:
     namespace: flux-system
   interval: 15m
   retryInterval: 15m
-  timeout: 5m
+  timeout: 15m
   targetNamespace: storage

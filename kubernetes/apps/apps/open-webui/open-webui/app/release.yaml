@@ -38,7 +38,7 @@ spec:
     podAnnotations: {}
     replicaCount: 1
     image:
-      repository: ghcr.io/open-webui/open-webui
+      repository: harbor.cloud.traunseenet.com/ghcr.io/open-webui/open-webui
       tag: "0.6.34"
       pullPolicy: "IfNotPresent"
     resources: {}

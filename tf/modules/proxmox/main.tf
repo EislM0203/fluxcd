@@ -75,7 +75,8 @@ resource "proxmox_vm_qemu" "vm" {
   
   # Cloud-init configuration
   #ipconfig0 = "ip=dhcp"
-  ipconfig0 = "ip=${local.network_base}.${local.start_ip + local.node_ip_map[each.key]}/24,gw=${var.vm_gateway}"
+  # Include DNS servers in ipconfig0 for static IP configuration (required for Ubuntu)
+  ipconfig0 = "ip=${local.network_base}.${local.start_ip + local.node_ip_map[each.key]}/24,gw=${var.vm_gateway},dns=${join(" ", var.vm_dns_servers)}"
   
   # Cloud-init settings
   ciuser  = "ansible"
@@ -83,7 +84,7 @@ resource "proxmox_vm_qemu" "vm" {
   sshkeys = file(var.ssh_public_key_path)
 
   
-  # # Nameserver configuration
+  # Nameserver configuration (also set separately as fallback)
   nameserver = join(" ", var.vm_dns_servers)
   
   # Searchdomain (optional)

@@ -81,7 +81,7 @@ spec:
       #     value: "true"
       #     effect: NoSchedule
       nodeSelector:
-        kubernetes.io/hostname=rke2-node-1
+        kubernetes.io/hostname: rke2-node-1
     portal:
       <<: *tolerations-and-nodelectors
     core:

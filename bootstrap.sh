@@ -1,8 +1,6 @@
 #!/bin/bash
 
-make apply-tf
-
-sleep 10
+make provision-vms
 
 make update-packages \
 	install-longhorn-dependencies \

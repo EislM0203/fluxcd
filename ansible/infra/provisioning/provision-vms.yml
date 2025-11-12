@@ -1,0 +1,105 @@
+---
+- name: Provision Proxmox VMs for RKE2 Cluster
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - vars.sops.yml
+  
+  tasks:
+    - name: Ensure community.proxmox collection is available
+      ansible.builtin.debug:
+        msg: "Using community.proxmox collection to provision VMs"
+    
+    - name: Create Proxmox VMs from template
+      community.proxmox.proxmox_vm_qemu:
+        api_host: "{{ proxmox_api_host }}"
+        api_user: "{{ proxmox_api_user }}"
+        api_token_id: "{{ proxmox_api_token_id }}"
+        api_token_secret: "{{ proxmox_api_token_secret }}"
+        validate_certs: false
+        
+        # VM Identification
+        node: "{{ item.value.target_node }}"
+        name: "{{ item.key }}"
+        vmid: "{{ item.value.vmid | default(omit) }}"
+        
+        # Clone from template
+        clone: "{{ item.value.template }}"
+        full: true
+        
+        # VM Resources
+        cores: "{{ item.value.cores }}"
+        memory: "{{ item.value.memory }}"
+        sockets: 1
+        
+        # Boot and BIOS
+        boot: "order=ide2;scsi0;net0"
+        bios: seabios
+        ostype: l26
+        agent: true
+        onboot: true
+        
+        # SCSI Controller
+        scsihw: virtio-scsi-single
+        
+        # Disk Configuration
+        scsi:
+          scsi0: "{{ item.value.storage }}:{{ item.value.disk_size }},discard=on,iothread=1"
+        ide:
+          ide2: "{{ item.value.storage }}:cloudinit"
+        
+        # Network Configuration
+        net:
+          net0: "virtio,bridge={{ vm_network_bridge }}"
+        
+        # Cloud-init Configuration
+        ipconfig:
+          ipconfig0: "ip={{ vm_network_base }}.{{ vm_ip_start + (proxmox_nodes.keys() | list | sort).index(item.key) }}/24,gw={{ vm_gateway }}"
+        ciuser: "{{ vm_cloud_init_user }}"
+        cipassword: "{{ vm_cloud_init_password }}"
+        sshkeys: "{{ lookup('file', ssh_public_key_path) }}"
+        nameserver: "{{ vm_dns_servers | join(' ') }}"
+        searchdomain: "{{ vm_search_domain }}"
+        
+        # Tags for dynamic inventory
+        tags:
+          - "{{ environment }}"
+          - "rke2"
+          - "{{ 'rke2-server' if (proxmox_nodes.keys() | list | sort).index(item.key) == 0 else 'rke2-agent' }}"
+        
+        # State
+        state: present
+        
+      loop: "{{ proxmox_nodes | dict2items }}"
+      register: vm_creation
+      
+    - name: Wait for VMs to be created and running
+      community.proxmox.proxmox_vm_qemu:
+        api_host: "{{ proxmox_api_host }}"
+        api_user: "{{ proxmox_api_user }}"
+        api_token_id: "{{ proxmox_api_token_id }}"
+        api_token_secret: "{{ proxmox_api_token_secret }}"
+        validate_certs: false
+        name: "{{ item.key }}"
+        node: "{{ item.value.target_node }}"
+        state: started
+      loop: "{{ proxmox_nodes | dict2items }}"
+      
+    - name: Wait for VMs to be accessible via SSH
+      ansible.builtin.wait_for:
+        host: "{{ vm_network_base }}.{{ vm_ip_start + (proxmox_nodes.keys() | list | sort).index(item.key) }}"
+        port: 22
+        delay: 10
+        timeout: 300
+        state: started
+      loop: "{{ proxmox_nodes | dict2items }}"
+      
+    - name: Display VM information
+      ansible.builtin.debug:
+        msg: |
+          VM '{{ item.key }}' created:
+            - IP: {{ vm_network_base }}.{{ vm_ip_start + (proxmox_nodes.keys() | list | sort).index(item.key) }}
+            - Node: {{ item.value.target_node }}
+            - Role: {{ 'RKE2 Server' if (proxmox_nodes.keys() | list | sort).index(item.key) == 0 else 'RKE2 Agent' }}
+            - SSH: ssh {{ vm_cloud_init_user }}@{{ vm_network_base }}.{{ vm_ip_start + (proxmox_nodes.keys() | list | sort).index(item.key) }}
+      loop: "{{ proxmox_nodes | dict2items }}"

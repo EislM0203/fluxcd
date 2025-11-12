@@ -1,14 +1,13 @@
-INVENTORY = ansible/inventory.ini
 MAINTENANCE_DIR = ansible/infra/maintenance
 BOOTSTRAP_DIR = ansible/infra/bootstrap
+PROVISIONING_DIR = ansible/infra/provisioning
 CLUSTER_DIR = ansible/cluster
 
 SECRETS_FILE = secrets.yaml
-TFVARS_FILE = tf/terraform.tfvars
 SOPS_AGE_KEY_FILE = $(HOME)/.config/sops/age/keys.txt
 
 
-bootstrap-infra: apply-tf \
+bootstrap-infra: provision-vms \
 	update-packages \
 	install-longhorn-dependencies \
 	install-rke2-server \
@@ -18,29 +17,48 @@ bootstrap-infra: apply-tf \
 bootstrap-workloads: \
 	install-argocd
 
+# Ansible and Python Requirements
+install-requirements:
+	@echo "Installing Ansible collection requirements (including community.sops)..."
+	ansible-galaxy collection install -r ansible/requirements.yml
+
+# Proxmox VM Provisioning
+provision-vms:
+	@echo "Provisioning VMs on Proxmox..."
+	ansible-playbook "${PROVISIONING_DIR}/provision-vms.yml"
+
+# Test dynamic inventory
+test-inventory:
+	@echo "Testing dynamic inventory..."
+	ansible-inventory --list -i ansible/inventory_proxmox.yml
+
+# Legacy Terraform targets (deprecated)
 plan-tf:
-	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="tf" plan
+	@echo "Warning: Terraform is deprecated. Use 'make provision-vms' instead."
+	@echo "Skipping terraform plan..."
 
 apply-tf:
-	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="tf" apply -auto-approve 
+	@echo "Warning: Terraform is deprecated. Use 'make provision-vms' instead."
+	@echo "Skipping terraform apply..."
 
 destroy-tf:
-	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="tf" destroy -auto-approve 
+	@echo "Warning: Terraform is deprecated. Use 'make destroy-vms' instead."
+	@echo "Skipping terraform destroy..." 
 
 update-packages:
-	ansible-playbook -i "${INVENTORY}" "${MAINTENANCE_DIR}/update-packages.yml"
+	ansible-playbook "${MAINTENANCE_DIR}/update-packages.yml"
 
 install-longhorn-dependencies:
-	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/install-longhorn-dependencies.yml"
+	ansible-playbook "${BOOTSTRAP_DIR}/install-longhorn-dependencies.yml"
 
 install-rke2-server:
-	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/install-rke2-server.yml"
+	ansible-playbook "${BOOTSTRAP_DIR}/install-rke2-server.yml"
 
 install-rke2-agent:
-	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/install-rke2-agent.yml"
+	ansible-playbook "${BOOTSTRAP_DIR}/install-rke2-agent.yml"
 
 cluster-readiness-check:
-	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/cluster-readiness-check.yml"
+	ansible-playbook "${BOOTSTRAP_DIR}/cluster-readiness-check.yml"
 
 install-argocd:
-	ansible-playbook -i "${INVENTORY}" "${CLUSTER_DIR}/install-argocd.yml"
+	ansible-playbook "${CLUSTER_DIR}/install-argocd.yml"

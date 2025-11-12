@@ -1,0 +1,61 @@
+---
+# Proxmox API Configuration
+proxmox_api_host: "10.0.0.67"
+proxmox_api_user: "root@pam"
+# TODO: Replace with your actual Proxmox API token ID
+proxmox_api_token_id: "YOUR_TOKEN_ID_HERE"
+# TODO: Replace with your actual Proxmox API token secret (encrypt this file with ansible-vault or sops)
+proxmox_api_token_secret: "YOUR_TOKEN_SECRET_HERE"
+
+# SSH Configuration
+ssh_public_key_path: "~/.ssh/cluster-ssh.pub"
+ssh_private_key_path: "~/.ssh/cluster-ssh"
+
+# Environment
+environment: "development"
+
+# VM Network Configuration
+vm_network_bridge: "vmbr0"
+vm_network_base: "10.0.0"
+vm_ip_start: 200
+vm_gateway: "10.0.0.138"
+vm_dns_servers:
+  - "10.0.0.102"
+  - "8.8.8.8"
+  - "1.1.1.1"
+vm_search_domain: "local"
+
+# Cloud-init Configuration
+vm_cloud_init_user: "ansible"
+# TODO: Replace with a secure password for the VM user (this is for emergency console access, SSH uses key auth)
+vm_cloud_init_password: "changeme"
+
+# Proxmox Node Definitions
+# Migrated from terraform.tfvars
+proxmox_nodes:
+  rke2-node-1:
+    vmid: 201  # Optional: Specify VM ID, or omit to auto-assign
+    target_node: "pve-01"
+    storage: "local-zfs"
+    cores: 6
+    memory: 8192
+    disk_size: "500G"
+    template: "ubuntu-2404-template"
+  
+  rke2-node-2:
+    vmid: 202
+    target_node: "pve-02"
+    storage: "local-zfs"
+    cores: 3
+    memory: 8192
+    disk_size: "500G"
+    template: "ubuntu-2404-template"
+  
+  rke2-node-3:
+    vmid: 203
+    target_node: "pve-03"
+    storage: "local-zfs"
+    cores: 6
+    memory: 8192
+    disk_size: "500G"
+    template: "ubuntu-2404-template"

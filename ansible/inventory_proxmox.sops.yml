@@ -1,0 +1,39 @@
+# Proxmox Dynamic Inventory Configuration
+# This uses the community.proxmox.proxmox inventory plugin
+plugin: community.proxmox.proxmox
+
+# Proxmox connection details
+# TODO: Replace these with your actual Proxmox credentials (encrypt this file with ansible-vault or sops)
+url: "https://10.0.0.67:8006"
+user: "root@pam"
+token_id: "YOUR_TOKEN_ID_HERE"
+token_secret: "YOUR_TOKEN_SECRET_HERE"
+validate_certs: false
+
+# Only include running VMs
+want_facts: true
+filters:
+  - status = "running"
+
+# Group VMs by tags
+group_by_tags: true
+
+# Compose inventory variables
+compose:
+  ansible_host: ansible_default_ipv4.address | default(ipconfig0.ip.split('/')[0])
+  ansible_user: ansible
+  ansible_ssh_private_key_file: "~/.ssh/cluster-ssh"
+  ansible_ssh_port: 22
+  pipelining: true
+
+# Create groups based on patterns
+groups:
+  rke2_server: "'rke2-server' in (tags | default([]))"
+  rke2_agents: "'rke2-agent' in (tags | default([]))"
+  rke2: "'rke2' in (tags | default([]))"
+  proxmox: "'rke2' in (tags | default([]))"
+
+# Set variables for groups
+keyed_groups:
+  - key: tags
+    separator: ""

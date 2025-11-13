@@ -45,14 +45,10 @@ spec:
               value: "noreply@localhost"
             - name: DISABLE_SIGNUPS
               value: "true"
-            
-            # URLs - Update these with your actual domain/IP
             - name: PUBLIC_URL
               value: "http://reactive-resume.cloud.traunseenet.com"
             - name: STORAGE_URL
               value: "http://10.0.0.107:9000/reactive-resume-storage"
-            
-            # Chrome
             - name: CHROME_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -60,8 +56,6 @@ spec:
                   key: chrome-token
             - name: CHROME_URL
               value: "ws://chrome:3000"
-            
-            # Database
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -72,8 +66,6 @@ spec:
                 secretKeyRef:
                   name: reactive-resume-secrets
                   key: postgres-url
-            
-            # Auth Secrets
             - name: ACCESS_TOKEN_SECRET
               valueFrom:
                 secretKeyRef:
@@ -84,8 +76,6 @@ spec:
                 secretKeyRef:
                   name: reactive-resume-secrets
                   key: refresh-token-secret
-            
-            # Storage
             - name: STORAGE_ENDPOINT
               value: "10.0.0.107"
             - name: STORAGE_PORT

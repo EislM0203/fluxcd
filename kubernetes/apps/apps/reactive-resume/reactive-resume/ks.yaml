@@ -32,7 +32,6 @@ metadata:
 spec:
   dependsOn:
     - name: reactive-resume-app
-    - name: volsync-app
   path: ./kubernetes/apps/apps/reactive-resume/reactive-resume/backup
   prune: true
   wait: true

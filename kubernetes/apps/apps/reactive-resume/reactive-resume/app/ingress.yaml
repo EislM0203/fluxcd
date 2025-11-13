@@ -1,0 +1,27 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: reactive-resume
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  labels:
+    app: reactive-resume
+spec:
+  tls:
+    - hosts:
+        - resume.cloud.traunseenet.com
+      secretName: reactive-resume-cert
+  ingressClassName: traefik
+  rules:
+    - host: resume.cloud.traunseenet.com
+      http:
+        paths:
+          - backend:
+              service:
+                name: reactive-resume
+                port:
+                  number: 3000
+            path: /
+            pathType: Prefix

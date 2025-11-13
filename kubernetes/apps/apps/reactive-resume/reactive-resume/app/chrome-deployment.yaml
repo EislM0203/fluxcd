@@ -1,0 +1,54 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chrome
+spec:
+  selector:
+    app: chrome
+  ports:
+    - port: 3000
+      targetPort: 3000
+      name: ws
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chrome
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chrome
+  template:
+    metadata:
+      labels:
+        app: chrome
+    spec:
+      containers:
+        - name: chrome
+          image: harbor.cloud.traunseenet.com/ghcr.io/browserless/chromium:v2.18.0
+          env:
+            - name: TIMEOUT
+              value: "10000"
+            - name: CONCURRENT
+              value: "10"
+            - name: TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: reactive-resume-secrets
+                  key: chrome-token
+            - name: EXIT_ON_HEALTH_FAILURE
+              value: "true"
+            - name: PRE_REQUEST_HEALTH_CHECK
+              value: "true"
+          ports:
+            - containerPort: 3000
+              name: ws
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"

@@ -134,7 +134,7 @@ spec:
       internal:
         <<: *tolerations-and-nodelectors
     trace:
-      enabled: false
+      enabled: true
       provider: otel
       otel:
         endpoint: opentelemetry-collector.observability.svc.cluster.local:4318

@@ -70,7 +70,7 @@ spec:
             readTimeout: 360
     tracing:
       otlp:
-        enabled: false
+        enabled: true
         http:
           enabled: true
           endpoint: http://opentelemetry-collector.observability.svc.cluster.local:4318/v1/traces
@@ -100,8 +100,6 @@ spec:
           annotations:
             traefik.ingress.kubernetes.io/router.entrypoints: websecure
             cert-manager.io/cluster-issuer: "letsencrypt-prod"
-            #traefik.ingress.kubernetes.io/router.middlewares: traefik-ip-whitelist@kubernetescrd
-            #traefik.ingress.kubernetes.io/router.middlewares: traefik-forward-auth@kubernetescrd
         spec:
           tls:
             - hosts:

@@ -12,24 +12,24 @@ proxmox_nodes = {
     target_node = "pve-01"
     storage     = "local-zfs"
     cores       = 6
-    memory      = 8192
-    disk_size   = "500G"
+    memory      = 32768
+    disk_size   = "1000G"
     template    = "ubuntu-2404-template"
   }
   "rke2-node-2" = {
     target_node = "pve-02"
     storage     = "local-zfs"
     cores       = 3
-    memory      = 8192
-    disk_size   = "500G"
+    memory      = 12288
+    disk_size   = "1000G"
     template    = "ubuntu-2404-template"
   }
   "rke2-node-3" = {
     target_node = "pve-03"
     storage     = "local-zfs"
-    cores       = 6
+    cores       = 16
     memory      = 8192
-    disk_size   = "500G"
+    disk_size   = "1000G"
     template    = "ubuntu-2404-template"
   }
 }

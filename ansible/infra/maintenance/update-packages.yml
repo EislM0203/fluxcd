@@ -1,6 +1,6 @@
 ---
 - name: Update and Upgrade Packages
-  hosts: all
+  hosts: proxmox
   become: yes
   
   tasks:

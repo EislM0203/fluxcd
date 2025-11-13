@@ -15,9 +15,6 @@ bootstrap-infra: apply-tf \
 	install-rke2-agent \
 	cluster-readiness-check
 
-bootstrap-workloads: \
-	install-argocd
-
 plan-tf:
 	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="tf" plan
 
@@ -26,6 +23,9 @@ apply-tf:
 
 destroy-tf:
 	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="tf" destroy -auto-approve 
+
+wait-for-nodes:
+	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/wait-for-nodes.yml"
 
 update-packages:
 	ansible-playbook -i "${INVENTORY}" "${MAINTENANCE_DIR}/update-packages.yml"
@@ -41,6 +41,3 @@ install-rke2-agent:
 
 cluster-readiness-check:
 	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/cluster-readiness-check.yml"
-
-install-argocd:
-	ansible-playbook -i "${INVENTORY}" "${CLUSTER_DIR}/install-argocd.yml"

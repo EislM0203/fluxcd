@@ -12,3 +12,5 @@ resources:
   - ./priaeus.yaml
   - ./harbor.yaml
   - ./renovate.yaml
+  - ./opentelemetry.yaml
+  - ./jaeger.yaml

@@ -1,0 +1,106 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: opentelemetry-collector
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: opentelemetry-collector
+      version: 0.139.0
+      sourceRef:
+        kind: HelmRepository
+        name: open-telemetry
+        namespace: flux-system
+  maxHistory: 2
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    mode: deployment
+    image:
+      repository: "otel/opentelemetry-collector-k8s"
+    config:
+      exporters:
+        otlp/jaeger:
+          endpoint: jaegertracing-collector.observability.svc.cluster.local:4317
+          tls:
+            insecure: true
+        # NOTE: Prior to v0.86.0 use `logging` instead of `debug`.
+        debug: {}
+      extensions:
+        health_check: {}
+      processors:
+        batch: {}
+        memory_limiter:
+          check_interval: 5s
+          limit_percentage: 80
+          spike_limit_percentage: 25
+      receivers:
+        jaeger:
+          protocols:
+            grpc:
+              endpoint: ${env:MY_POD_IP}:14250
+            thrift_compact:
+              endpoint: ${env:MY_POD_IP}:6831
+            thrift_http:
+              endpoint: ${env:MY_POD_IP}:14268
+        otlp:
+          protocols:
+            grpc:
+              endpoint: ${env:MY_POD_IP}:4317
+            http:
+              endpoint: ${env:MY_POD_IP}:4318
+        prometheus:
+          config:
+            scrape_configs:
+              - job_name: opentelemetry-collector
+                scrape_interval: 10s
+                static_configs:
+                  - targets:
+                      - ${env:MY_POD_IP}:8888
+        zipkin:
+          endpoint: ${env:MY_POD_IP}:9411
+      service:
+        extensions:
+          - health_check
+        pipelines:
+          logs:
+            exporters:
+              - debug
+            processors:
+              - memory_limiter
+              - batch
+            receivers:
+              - otlp
+          metrics:
+            exporters:
+              - debug
+            processors:
+              - memory_limiter
+              - batch
+            receivers:
+              - otlp
+              - prometheus
+          traces:
+            exporters:
+              - debug
+              - otlp/jaeger
+            processors:
+              - memory_limiter
+              - batch
+            receivers:
+              - otlp
+              - jaeger
+              - zipkin
+        telemetry:
+          metrics:
+            address: ${env:MY_POD_IP}:8888

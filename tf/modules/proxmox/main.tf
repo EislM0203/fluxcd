@@ -11,7 +11,7 @@ terraform {
 locals {
   network_parts = split(".", split("/", var.vm_network_cidr)[0])
   network_base  = "${local.network_parts[0]}.${local.network_parts[1]}.${local.network_parts[2]}"
-  start_ip      = 200 # Start IPs from .200
+  start_ip      = 201 # Start IPs from .201
   
   # Create ordered list of node names for sequential IP assignment
   node_names = sort(keys(var.nodes))
@@ -22,6 +22,7 @@ locals {
 resource "proxmox_vm_qemu" "vm" {
   for_each = var.nodes
   
+  vmid        = local.start_ip + local.node_ip_map[each.key]
   name        = each.key
   target_node = each.value.target_node
   clone       = each.value.template

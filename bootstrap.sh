@@ -2,9 +2,8 @@
 
 make apply-tf
 
-sleep 10
-
-make update-packages \
+make wait-for-nodes \
+	update-packages \
 	install-longhorn-dependencies \
 	install-rke2-server \
 	install-rke2-agent \

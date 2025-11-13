@@ -1,6 +1,6 @@
 ---
 - name: Prepare Kubernetes Node
-  hosts: all
+  hosts: proxmox
   become: yes
   
   tasks:

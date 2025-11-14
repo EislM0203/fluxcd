@@ -14,3 +14,4 @@ resources:
   - ./renovate.yaml
   - ./opentelemetry.yaml
   - ./jaeger.yaml
+  - ./grafana.yaml

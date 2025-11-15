@@ -10,13 +10,13 @@ metadata:
 spec:
   accessModes: ["ReadWriteMany"]
   storageClassName: longhorn-storage
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: karakeep-restore  # Name of the ReplicationDestination
+  # dataSourceRef:
+  #   kind: ReplicationDestination
+  #   apiGroup: volsync.backube
+  #   name: karakeep-restore  # Name of the ReplicationDestination
   resources:
     requests:
-      storage: 10Gi
+      storage: 5Gi
 status: {}
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
@@ -32,7 +32,7 @@ spec:
     storageClassName: longhorn-storage
     accessModes: ["ReadWriteMany"]
     copyMethod: Snapshot
-    capacity: 10Gi
+    capacity: 5i
     enableFileDeletion: false
     cleanupCachePVC: false
     cleanupTempPVC: false

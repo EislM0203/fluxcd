@@ -43,6 +43,11 @@ spec:
             "harbor.cloud.traunseenet.com/docker.io": "docker.io",
             "harbor.cloud.traunseenet.com/ghcr.io": "ghcr.io"
           },
+          "hostRules": [
+            {
+              "timeout": 60000
+            }
+          ],
           "flux": {
             "fileMatch": ["\\.yaml$"]
           },

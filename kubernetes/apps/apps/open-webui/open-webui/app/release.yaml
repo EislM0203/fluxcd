@@ -39,7 +39,7 @@ spec:
     replicaCount: 1
     image:
       repository: harbor.cloud.traunseenet.com/ghcr.io/open-webui/open-webui
-      tag: "0.6.34"
+      tag: "v0.6.36"
       pullPolicy: "IfNotPresent"
     resources: {}
     ingress:

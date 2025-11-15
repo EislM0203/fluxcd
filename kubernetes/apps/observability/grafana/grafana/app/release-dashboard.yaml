@@ -31,6 +31,7 @@ spec:
       GF_EXPLORE_ENABLED: true
       GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: natel-discrete-panel,pr0ps-trackmap-panel,panodata-map-panel
       GF_SECURITY_ANGULAR_SUPPORT_ENABLED: true
+      GF_SECURITY_ADMIN_EMAIL: $__env{admin_email}
     grafana.ini:
       analytics:
         check_for_updates: false
@@ -49,9 +50,6 @@ spec:
         allow_sign_up: false
         client_id: 020fabe9-1600-4fd8-9690-882871176c6c
         client_secret: $__env{client_secret}
-        admin_email: $__env{admin_email}
-        admin_user: $__env{admin_user}
-        admin_password: $__env{admin_password}
         scopes: openid email profile
         email_attribute_path: email:primary
         skip_org_role_sync: true

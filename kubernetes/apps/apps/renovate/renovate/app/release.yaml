@@ -40,11 +40,18 @@ spec:
           "dependencyDashboard": true,
           "repositories": ["EislM0203/fluxcd"],
           "registryAliases": {
-            "harbor.cloud.traunseenet.com/docker.io": "docker.io",
-            "harbor.cloud.traunseenet.com/ghcr.io": "ghcr.io"
+            "docker.io": ["harbor.cloud.traunseenet.com/docker.io"],
+            "ghcr.io": ["harbor.cloud.traunseenet.com/ghcr.io"]
           },
           "hostRules": [
             {
+              "matchHost": "index.docker.io",
+              "hostType": "docker",
+              "timeout": 60000
+            },
+            {
+              "matchHost": "ghcr.io",
+              "hostType": "docker",
               "timeout": 60000
             }
           ],

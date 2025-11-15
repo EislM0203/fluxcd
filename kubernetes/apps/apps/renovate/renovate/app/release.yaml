@@ -39,6 +39,10 @@ spec:
           "printConfig": true,
           "dependencyDashboard": true,
           "repositories": ["EislM0203/fluxcd"],
+          "registryAliases": {
+            "harbor.cloud.traunseenet.com/docker.io": "docker.io",
+            "harbor.cloud.traunseenet.com/ghcr.io": "ghcr.io"
+          },
           "flux": {
             "fileMatch": ["\\.yaml$"]
           },

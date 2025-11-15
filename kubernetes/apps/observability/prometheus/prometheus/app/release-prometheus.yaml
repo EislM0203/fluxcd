@@ -130,17 +130,11 @@ spec:
           - new-service-discovery-manager
         retention: 3d
         retentionSize: 1GB
-        securityContext:
-          runAsUser: 65534
-          runAsNonRoot: true
-          runAsGroup: 65534
-          fsGroup: 65534
-          fsGroupChangePolicy: "OnRootMismatch"
         storageSpec:
           volumeClaimTemplate:
             spec:
               storageClassName: longhorn-storage
-              accessModes: ["ReadWriteMany"]
+              accessModes: ["ReadWriteOnce"]
               resources:
                 requests:
                   storage: 4Gi

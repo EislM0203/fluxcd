@@ -1,0 +1,28 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: uptimekuma
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  labels:
+    app: uptimekuma
+spec:
+  tls:
+    - hosts:
+        - uptime.cloud.traunseenet.com
+      secretName: uptimekuma-cert
+  ingressClassName: traefik
+  rules:
+    - host: uptime.cloud.traunseenet.com
+      http:
+        paths:
+          - backend:
+              service:
+                name: uptimekuma
+                port:
+                  number: 80
+            path: /
+            pathType: Prefix
+

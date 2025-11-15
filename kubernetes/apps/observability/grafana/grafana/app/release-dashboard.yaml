@@ -58,7 +58,7 @@ spec:
         token_url: https://pocketid.cloud.traunseenet.com/api/oidc/token
         role_attribute_path: contains(realm_access.roles[*], 'grafanaadmin') && 'GrafanaAdmin' || contains(realm_access.roles[*], 'admin') && 'Admin' || contains(realm_access.roles[*], 'editor') && 'Editor' || 'Viewer'
         allow_assign_grafana_admin: true
-        auto_login: true
+        auto_login: false
       server:
         # The full public facing url you use in browser, used for redirects and emails
         root_url: https://grafana.cloud.traunseenet.com

@@ -9,6 +9,7 @@ spec:
   path: ./kubernetes/apps/apps/renovate/renovate/app
   prune: true
   wait: true
+  suspend: true
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes

@@ -51,14 +51,10 @@ spec:
         client_secret: $__env{client_secret}
         scopes: openid email profile
         email_attribute_path: email:primary
-        login_attribute_path: username
-        name_attribute_path: full_name
         skip_org_role_sync: true
         auth_style: "Auto Detect"
         auth_url: https://pocketid.cloud.traunseenet.com/authorize
         token_url: https://pocketid.cloud.traunseenet.com/api/oidc/token
-        role_attribute_path: contains(realm_access.roles[*], 'grafanaadmin') && 'GrafanaAdmin' || contains(realm_access.roles[*], 'admin') && 'Admin' || contains(realm_access.roles[*], 'editor') && 'Editor' || 'Viewer'
-        allow_assign_grafana_admin: true
         auto_login: false
         oauth_allow_insecure_email_lookup: true
       server:

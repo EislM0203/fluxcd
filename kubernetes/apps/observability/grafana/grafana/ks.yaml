@@ -6,6 +6,10 @@ metadata:
   name: grafana-app
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: cert-manager-addons
+    - name: traefik-base
+    - name: longhorn-addons
   path: ./kubernetes/apps/observability/grafana/grafana/app
   prune: true
   wait: true

@@ -6,6 +6,10 @@ metadata:
   name: prometheus-app
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: cert-manager-addons
+    - name: traefik-base
+    - name: longhorn-addons
   path: ./kubernetes/apps/observability/prometheus/prometheus/app
   prune: true
   wait: true

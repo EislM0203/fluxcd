@@ -124,12 +124,14 @@ spec:
         enableAdminAPI: true
         walCompression: true
         enableFeatures:
-          - auto-gomemlimit
           - memory-snapshot-on-shutdown
-          - new-service-discovery-manager
           - exemplar-storage
         retention: 3d
         retentionSize: 1GB
+        securityContext:
+          runAsUser: 1000
+          runAsNonRoot: true
+          fsGroup: 2000
         storageSpec:
           volumeClaimTemplate:
             spec:

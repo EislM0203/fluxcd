@@ -45,6 +45,10 @@ spec:
           },
           "hostRules": [
             {
+              "matchHost": "harbor.cloud.traunseenet.com",
+              "enabled": false
+            },
+            {
               "timeout": 60000
             }
           ],

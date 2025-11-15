@@ -39,10 +39,6 @@ spec:
           "printConfig": true,
           "dependencyDashboard": true,
           "repositories": ["EislM0203/fluxcd"],
-          "registryAliases": {
-            "docker.io": ["harbor.cloud.traunseenet.com/docker.io"],
-            "ghcr.io": ["harbor.cloud.traunseenet.com/ghcr.io"]
-          },
           "hostRules": [
             {
               "matchHost": "index.docker.io",
@@ -53,6 +49,18 @@ spec:
               "matchHost": "ghcr.io",
               "hostType": "docker",
               "timeout": 60000
+            }
+          ],
+          "packageRules": [
+            {
+              "matchDatasources": ["docker"],
+              "matchPackagePatterns": ["^harbor\\.cloud\\.traunseenet\\.com/docker\\.io/"],
+              "registryUrls": ["https://index.docker.io"]
+            },
+            {
+              "matchDatasources": ["docker"],
+              "matchPackagePatterns": ["^harbor\\.cloud\\.traunseenet\\.com/ghcr\\.io/"],
+              "registryUrls": ["https://ghcr.io"]
             }
           ],
           "flux": {

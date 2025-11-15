@@ -1,0 +1,51 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: it-tools
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: it-tools
+      version: 2.2.0
+      sourceRef:
+        kind: HelmRepository
+        name: plcnk
+        namespace: flux-system
+  maxHistory: 2
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    controllers:
+      main:
+        resources: 
+          requests:
+            cpu: 10m
+            memory: 32Mi
+    ingress:
+      main:
+        enabled: true
+        className: traefik
+        annotations:
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          cert-manager.io/cluster-issuer: "letsencrypt-prod"
+        hosts:
+          - host: &host-main "it-tools.cloud.traunseenet.com"
+            paths:
+              - path: /
+                pathType: Prefix
+                service:
+                  identifier: main
+                  port: http
+        tls:
+          - secretName: it-tools-cert
+            hosts:
+              - *host-main

@@ -3,14 +3,14 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: prometheus-app
+  name: it-tools-app
   namespace: flux-system
 spec:
   dependsOn:
     - name: cert-manager-addons
     - name: traefik-base
-    - name: longhorn-addons
-  path: ./kubernetes/apps/observability/prometheus/prometheus/app
+    - name: harbor-app
+  path: ./kubernetes/apps/apps/it-tools/it-tools/app
   prune: true
   wait: true
   sourceRef:
@@ -18,11 +18,11 @@ spec:
     name: fluxcd-kubernetes
     namespace: flux-system
   healthChecks:
-    - apiVersion: helm.toolkit.fluxcd.io/v2
-      kind: HelmRelease
-      name: prometheus-stack
-      namespace: observability
+    - apiVersion: v1
+      kind: Deployment
+      name: it-tools
+      namespace: apps
   interval: 15m
   retryInterval: 15m
   timeout: 15m
-  targetNamespace: observability
+  targetNamespace: apps

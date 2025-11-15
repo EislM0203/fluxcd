@@ -16,3 +16,4 @@ resources:
   - ./jaeger.yaml
   - ./grafana.yaml
   - ./prometheus.yaml
+  - ./it-tools.yaml

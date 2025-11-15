@@ -17,6 +17,23 @@ spec:
     kind: GitRepository
     name: fluxcd-kubernetes
     namespace: flux-system
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: grafana
+      namespace: observability
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: grafana-loki
+      namespace: observability
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: grafana-tempo
+      namespace: observability
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: grafana-beyla
+      namespace: observability
   interval: 15m
   retryInterval: 15m
   timeout: 15m

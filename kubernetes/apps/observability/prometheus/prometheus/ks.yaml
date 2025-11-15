@@ -3,10 +3,10 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: beyla-app
+  name: prometheus-app
   namespace: flux-system
 spec:
-  path: ./kubernetes/apps/observability/grafana/beyla/app
+  path: ./kubernetes/apps/observability/prometheus/prometheus/app
   prune: true
   wait: true
   sourceRef:

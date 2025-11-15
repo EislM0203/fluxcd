@@ -1,0 +1,115 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: grafana-tempo
+  namespace: observability
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: tempo
+      version: 1.24.0
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: flux-system
+  maxHistory: 2
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    replicas: 1
+    config: | 
+      memberlist:
+        cluster_label: "{{ .Release.Name }}.{{ .Release.Namespace }}"
+      multitenancy_enabled: {{ .Values.tempo.multitenancyEnabled }}
+      usage_report:
+        reporting_enabled: {{ .Values.tempo.reportingEnabled }}
+      compactor:
+        compaction:
+          block_retention: {{ .Values.tempo.retention }}
+      distributor:
+        receivers:
+          {{- toYaml .Values.tempo.receivers | nindent 8 }}
+      ingester:
+        {{- toYaml .Values.tempo.ingester | nindent 6 }}
+      server:
+        {{- toYaml .Values.tempo.server | nindent 6 }}
+      storage:
+        {{- toYaml .Values.tempo.storage | nindent 6 }}
+      querier:
+        {{- toYaml .Values.tempo.querier | nindent 6 }}
+      query_frontend:
+        {{- toYaml .Values.tempo.queryFrontend | nindent 6 }}
+      overrides:
+        {{- toYaml .Values.tempo.overrides | nindent 6 }}
+        {{- if .Values.tempo.metricsGenerator.enabled }}
+      metrics_generator:
+            storage:
+              path: "/tmp/tempo"
+              remote_write:
+                - url: {{ .Values.tempo.metricsGenerator.remoteWriteUrl }}
+            traces_storage:
+              path: "/tmp/traces"
+        {{- end }}
+      stream_over_http_enabled: true
+    tempo:
+      reportingEnabled: false
+      retention: 12h
+      metricsGenerator:
+        # -- If true, enables Tempo's metrics generator (https://grafana.com/docs/tempo/next/metrics-generator/)
+        enabled: true
+        remoteWriteUrl: "http://prometheus-operated.observability.svc.cluster.local:9090/api/v1/write"
+    # # this is jaeger
+    # # tempoQuery:
+    # #   enabled: true
+    # #   ingress:
+    # #     enabled: true
+    # #     className: traefik
+    # #     hosts:
+    # #       - tempo-query.cloud.traunseenet.com
+    # #     annotations:
+    # #       traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    # #       cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # #     labels:
+    # #       app: signoz
+    # #     tls:
+    # #       - secretName: tempo-cert
+    # #         hosts:
+    # #           - tempo-query.cloud.traunseenet.com
+      # extraVolumeMounts:
+      #   - name: tempo-pvc
+      #     mountPath: /mnt/volume
+      #     existingClaim: tempo-pvc
+    service:
+      type: ClusterIP
+    # persistence:
+    #   enabled: true
+    #   storageClassName: longhorn-storage
+    #   accessModes:
+    #     - ReadWriteOnce
+    #   size: 2Gi
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   labels:
+#     app: tempo-pvc
+#   name: tempo-pvc
+#   annotations:
+#     numberOfReplicas: '2'
+# spec:
+#   accessModes: ["ReadWriteOnce"]
+#   storageClassName: longhorn-storage
+#   resources:
+#     requests:
+#       storage: 3Gi
+# status: {}

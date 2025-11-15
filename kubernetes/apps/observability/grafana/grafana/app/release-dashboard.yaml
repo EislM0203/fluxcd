@@ -1,0 +1,319 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: grafana
+  namespace: observability
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: grafana
+      version: 10.1.4
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: flux-system
+  maxHistory: 2
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    env:
+      GF_DATE_FORMATS_USE_BROWSER_LOCALE: true
+      GF_EXPLORE_ENABLED: true
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: natel-discrete-panel,pr0ps-trackmap-panel,panodata-map-panel
+      GF_SECURITY_ANGULAR_SUPPORT_ENABLED: true
+    grafana.ini:
+      analytics:
+        check_for_updates: false
+        check_for_plugin_updates: false
+        reporting_enabled: false
+      news:
+        news_feed_enabled: false
+      auth.anonymous:
+        enabled: false
+      #   # org_id: 1
+      #   # org_name: Main Org.
+      #   # org_role: Viewer
+      auth.generic_oauth:
+        enabled: true
+        name: Pocket-ID
+        allow_sign_up: true
+        client_id: 020fabe9-1600-4fd8-9690-882871176c6c
+        scopes: openid email profile
+        email_attribute_path: email
+        login_attribute_path: username
+        name_attribute_path: full_name
+        auth_style: "Auto Detect"
+        auth_url: https://pocketid.cloud.traunseenet.com/authorize
+        token_url: https://pocketid.cloud.traunseenet.com/api/oidc/token
+        role_attribute_path: contains(realm_access.roles[*], 'grafanaadmin') && 'GrafanaAdmin' || contains(realm_access.roles[*], 'admin') && 'Admin' || contains(realm_access.roles[*], 'editor') && 'Editor' || 'Viewer'
+        allow_assign_grafana_admin: true
+        auto_login: true
+      server:
+        # The full public facing url you use in browser, used for redirects and emails
+        root_url: https://grafana.cloud.traunseenet.com
+    envFromSecret: "grafana-secrets"  # adding oauth secret using this
+    # assertNoLeakedSecrets: false
+    ingress:
+      enabled: true
+      className: traefik
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      labels:
+        app: grafana
+      hosts:
+        - &host grafana.cloud.traunseenet.com
+      tls:
+        - secretName: grafana-cert
+          hosts:
+            - *host
+    persistence:
+      enabled: false
+    admin:
+      ## Name of the secret. Can be templated.
+      existingSecret: "grafana-secrets"
+      userKey: admin_user
+      passwordKey: admin_password
+    datasources:
+      datasources.yaml:
+        apiVersion: 1
+        deleteDatasources:
+          - { name: Alertmanager, orgId: 1 }
+          - { name: Loki, orgId: 1 }
+          - { name: Prometheus, orgId: 1 }
+          - { name: Tempo, orgId: 1 }
+          - { name: pyroscope, orgId: 1 }
+        datasources:
+          - name: Prometheus
+            type: prometheus
+            uid: prometheus
+            access: proxy
+            url: http://prometheus-operated.observability.svc.cluster.local:9090
+            jsonData:
+              timeInterval: 1m
+            isDefault: true
+            readOnly: false
+          - name: Loki
+            type: loki
+            uid: loki
+            access: proxy
+            url: http://grafana-loki.observability.svc.cluster.local:3100
+            jsonData:
+              maxLines: 250
+            readOnly: false
+          - name: Alertmanager
+            type: alertmanager
+            uid: alertmanager
+            access: proxy
+            url: http://alertmanager-operated.observability.svc.cluster.local:9093
+            jsonData:
+              implementation: prometheus
+              handleGrafanaManagedAlerts: "true"
+            readOnly: "false"
+          - name: Tempo
+            type: tempo
+            uid: tempo
+            access: proxy
+            url: http://grafana-tempo.observability.svc.cluster.local:3200
+            jsonData:
+              tracesToMetrics:
+                spanEndTimeShift: 1h
+                spanStartTimeShift: "-1h"
+                datasourceUid: prometheus
+              # search:
+              #   filters:
+              #   - id: service-name
+              #     tag: service.name
+              #     operator: "="
+              #     scope: resource
+              #   - id: span-name
+              #     tag: name
+              #     operator: "="
+              #     scope: span
+              serviceMap:
+                datasourceUid: prometheus
+              nodeGraph:
+                enabled: true
+              tracesToLogsV2:
+                customQuery: false
+                spanStartTimeShift: "-1h"
+                datasourceUid: loki
+                spanEndTimeShift: 1h
+              streamingEnabled:
+                metrics: true
+                search: true
+              traceQuery:
+                timeShiftEnabled: false
+                spanStartTimeShift: ''
+            readOnly: false
+          - name: pyroscope
+            type: grafana-pyroscope-datasource
+            uid: pyroscope
+            access: proxy
+            url: http://grafana-pyroscope.observability.svc.cluster.local:4040
+            # user: ''
+            # database: ''
+            # basicAuth: false
+            # basicAuthUser: ''
+            # withCredentials: false
+            isDefault: false
+            jsonData: {}
+            secureJsonFields: {}
+            readOnly: false
+          - name: jaeger
+            type: jaeger
+            uid: jaeger
+            access: proxy
+            url: http://jaegertracing-query.observability.svc.cluster.local:16686/
+            # typeLogoUrl: public/app/plugins/datasource/jaeger/img/jaeger_logo.svg
+            user: ''
+            database: ''
+            basicAuth: false
+            basicAuthUser: ''
+            withCredentials: false
+            isDefault: false
+            jsonData:
+              nodeGraph:
+                enabled: true
+              spanBar:
+                type: None
+              timeout: 15
+              traceIdTimeParams:
+                enabled: true
+              tracesToLogsV2:
+                customQuery: false
+                datasourceUid: loki
+                spanStartTimeShift: '1h'
+                spanEndTimeShift: '-1h'
+                tags: ['job', 'instance', 'pod', 'namespace']
+                filterByTraceID: false
+                filterBySpanID: false
+                query: 'method="$${__span.tags.method}"'
+              tracesToMetrics:
+                datasourceUid: prometheus
+                spanStartTimeShift: '1h'
+                spanEndTimeShift: '-1h'
+                tags: [{ key: 'service.name', value: 'service' }, { key: 'job' }]
+                queries:
+                  - name: 'Sample query'
+                    query: 'sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[5m]))'
+              traceQuery:
+                timeShiftEnabled: true
+                spanStartTimeShift: '1h'
+                spanEndTimeShift: '-1h'
+            readOnly: false
+
+          # - name: OpenSearch
+          #   type: grafana-opensearch-datasource
+          #   uid: grafana-opensearch-datasource
+          #   access: proxy
+          #   url: http://localhost:9200
+          #   jsonData:
+          #     database: '[metrics-]YYYY.MM.DD'
+          #     interval: Daily
+          #     timeField: '@timestamp'
+          #     version: '1.0.0'
+          #     flavor: 'opensearch'
+    dashboardProviders:
+      dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+          - name: default
+            orgId: 1
+            folder: ""
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/default
+    dashboards:
+      default:
+        node-exporter:
+          gnetId: 1860
+          revision: 19
+        cert-manager:
+          url: https://raw.githubusercontent.com/pennlabs/infrastructure/master/grafana-dashboards/cert-manager.json
+        traefik:
+          gnetId: 17346
+          revision: 9
+          datasource: Prometheus
+        pod-dashboard:
+          url: https://raw.githubusercontent.com/pennlabs/infrastructure/master/grafana-dashboards/pod-dashboard.json
+
+        volsync:
+          # renovate: depName="VolSync Dashboard"
+          gnetId: 21356
+          revision: 3
+          datasource:
+            - { name: DS_PROMETHEUS, value: Prometheus }
+            - { name: VAR_REPLICATIONDESTNAME, value: .*-dst }
+        prometheus:
+          # renovate: depName="Prometheus"
+          gnetId: 19105
+          revision: 7
+          datasource: Prometheus
+        kubernetes-api-server:
+          # renovate: depName="Kubernetes / System / API Server"
+          gnetId: 15761
+          revision: 19
+          datasource: Prometheus
+        kubernetes-coredns:
+          # renovate: depName="Kubernetes / System / CoreDNS"
+          gnetId: 15762
+          revision: 20
+          datasource: Prometheus
+        kubernetes-global:
+          # renovate: depName="Kubernetes / Views / Global"
+          gnetId: 15757
+          revision: 43
+          datasource: Prometheus
+        kubernetes-namespaces:
+          # renovate: depName="Kubernetes / Views / Namespaces"
+          gnetId: 15758
+          revision: 42
+          datasource: Prometheus
+        kubernetes-nodes:
+          # renovate: depName="Kubernetes / Views / Nodes"
+          gnetId: 15759
+          revision: 35
+          datasource: Prometheus
+        kubernetes-pods:
+          # renovate: depName="Kubernetes / Views / Pods"
+          gnetId: 15760
+          revision: 36
+          datasource: Prometheus
+        kubernetes-volumes:
+          # renovate: depName="K8s / Storage / Volumes / Cluster"
+          gnetId: 11454
+          revision: 14
+          datasource: Prometheus
+    sidecar:
+      dashboards:
+        enabled: true
+        searchNamespace: ALL
+        label: grafana_dashboard
+        folderAnnotation: grafana_folder
+        provider:
+          disableDelete: true
+          foldersFromFilesStructure: true
+      datasources:
+        enabled: true
+        searchNamespace: ALL
+        labelValue: ""
+
+    plugins:
+      - grafana-exploretraces-app  #seems there are issues with it
+      - grafana-lokiexplore-app    #seems there are issues with it
+      - natel-discrete-panel
+    serviceMonitor:
+      enabled: true

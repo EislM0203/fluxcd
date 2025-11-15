@@ -41,13 +41,13 @@ spec:
         enabled: true
         ingressClassName: traefik
         hosts:
-          - jaeger.local.traunseenet.com
+          - jaeger.cloud.traunseenet.com
         annotations:
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
           cert-manager.io/cluster-issuer: "letsencrypt-prod"
         labels:
           app: jaeger
         tls:
-          - secretName: jaegertracing-cert
+          - secretName: jaeger-cert
             hosts:
-              - jaeger.local.traunseenet.com
+              - jaeger.cloud.traunseenet.com

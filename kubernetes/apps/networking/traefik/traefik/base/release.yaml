@@ -103,11 +103,11 @@ spec:
         spec:
           tls:
             - hosts:
-              - traefik-dashboard.local.traunseenet.com
+              - traefik.cloud.traunseenet.com
               secretName: traefik-cert
           ingressClassName: traefik
           rules:
-            - host: traefik-dashboard.local.traunseenet.com
+            - host: traefik.cloud.traunseenet.com
               http:
                 paths:
                   - path: /

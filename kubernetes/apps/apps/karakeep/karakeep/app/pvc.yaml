@@ -32,7 +32,7 @@ spec:
     storageClassName: longhorn-storage
     accessModes: ["ReadWriteMany"]
     copyMethod: Snapshot
-    capacity: 5i
+    capacity: 5Gi
     enableFileDeletion: false
     cleanupCachePVC: false
     cleanupTempPVC: false

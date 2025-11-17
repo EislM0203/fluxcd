@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: minio-service
+spec:
+  selector:
+    app: minio
+  ports:
+    - name: api
+      port: 9000
+    - name: ui
+      port: 9001

@@ -20,9 +20,9 @@ spec:
     - apiVersion: apps/v1
       kind: Deployment
       name: jellyfin
-      namespace: media
+      namespace: apps
   interval: 15m
   retryInterval: 15m
   timeout: 15m
-  targetNamespace: media
+  targetNamespace: apps
 

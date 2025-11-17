@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: chrome
-          image: harbor.cloud.traunseenet.com/ghcr.io/browserless/chromium:v2.38.2
+          image: ghcr.io/browserless/chromium:v2.38.2
           env:
             - name: TIMEOUT
               value: "10000"

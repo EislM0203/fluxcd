@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: reactive-resume
-          image: harbor.cloud.traunseenet.com/docker.io/amruthpillai/reactive-resume:v4.5.5
+          image: amruthpillai/reactive-resume:v4.5.5
           env:
             - name: PORT
               value: "3000"

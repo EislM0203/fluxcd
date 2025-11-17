@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: meilisearch
-        image: harbor.cloud.traunseenet.com/docker.io/getmeili/meilisearch:v1.25.0
+        image: getmeili/meilisearch:v1.25.0
         ports:
         - containerPort: 7700
           name: http
@@ -90,7 +90,7 @@ spec:
     spec:
       containers:
       - name: karakeep
-        image: harbor.cloud.traunseenet.com/ghcr.io/karakeep-app/karakeep:release
+        image: ghcr.io/karakeep-app/karakeep:release
         ports:
         - containerPort: 3000
           name: http

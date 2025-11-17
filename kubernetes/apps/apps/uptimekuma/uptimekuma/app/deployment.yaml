@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: uptimekuma
-          image: harbor.cloud.traunseenet.com/docker.io/louislam/uptime-kuma:2.0.2
+          image: louislam/uptime-kuma:2.0.2
           ports:
             - name: http
               containerPort: 3001

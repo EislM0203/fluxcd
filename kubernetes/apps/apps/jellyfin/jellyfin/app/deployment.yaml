@@ -23,8 +23,8 @@ spec:
       volumes:
         - name: jellyfin-media
           nfs:
-            server: 10.0.0.67
-            path: /usbpool/k8s/media/jellyfin
+            server: 10.0.0.154
+            path: /usbpool/kubernetes/media/jellyfin
       containers:
         - env:
             - name: PGID

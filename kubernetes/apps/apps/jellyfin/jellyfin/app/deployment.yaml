@@ -24,11 +24,11 @@ spec:
         - name: media-data
           nfs:
             server: 10.0.0.154
-            path: /usbpool/kubernetes/media/data
+            path: /mnt/usbpool/kubernetes/media/data
         - name: media-config
           nfs:
             server: 10.0.0.154
-            path: /usbpool/kubernetes/media/media-config
+            path: /mnt/usbpool/kubernetes/media/media-config
       containers:
         - env:
             - name: PGID
@@ -59,7 +59,7 @@ spec:
           volumeMounts:
             - mountPath: /config
               name: media-config
-              subPath: config
+              subPath: jellyfin-config
             - mountPath: /data
               name: media-data
       dnsPolicy: ClusterFirst

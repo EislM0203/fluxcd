@@ -21,10 +21,14 @@ spec:
         app: jellyfin
     spec:
       volumes:
-        - name: jellyfin-media
+        - name: media-data
           nfs:
             server: 10.0.0.154
-            path: /usbpool/kubernetes/media/jellyfin
+            path: /usbpool/kubernetes/media/data
+        - name: media-config
+          nfs:
+            server: 10.0.0.154
+            path: /usbpool/kubernetes/media/media-config
       containers:
         - env:
             - name: PGID
@@ -54,10 +58,9 @@ spec:
           tty: true
           volumeMounts:
             - mountPath: /config
-              name: jellyfin-media
+              name: media-config
               subPath: config
             - mountPath: /data
-              name: jellyfin-media
-              subPath: data
+              name: media-data
       dnsPolicy: ClusterFirst
       restartPolicy: Always

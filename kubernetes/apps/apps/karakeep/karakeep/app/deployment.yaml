@@ -30,13 +30,14 @@ spec:
         - name: MEILI_NO_ANALYTICS
           value: "true"
         volumeMounts:
-        - name: data
+        - name: meillisearch-data
           mountPath: /meili_data
           subPath: meilisearch
       volumes:
-      - name: data
-        persistentVolumeClaim:
-          claimName: karakeep-data
+      - name: meillisearch-data
+        nfs:
+          path: /mnt/usbpool/kubernetes/karakeep
+          server: 10.0.0.154
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -107,10 +108,11 @@ spec:
         - name: NEXTAUTH_URL
           value: https://karakeep.cloud.traunseenet.com
         volumeMounts:
-        - name: data
-          mountPath: /data
+        - mountPath: /data
+          name: karakeep-data
           subPath: karakeep
       volumes:
-      - name: data
-        persistentVolumeClaim:
-          claimName: karakeep-data
+      - name: karakeep-data
+        nfs:
+          path: /mnt/usbpool/kubernetes/karakeep
+          server: 10.0.0.154

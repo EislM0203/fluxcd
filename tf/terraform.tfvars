@@ -17,17 +17,17 @@ proxmox_nodes = {
     template    = "ubuntu-2404-template"
   }
   "rke2-node-2" = {
-    target_node = "pve-03"
+    target_node = "pve-02"
     storage     = "local-zfs"
-    cores       = 4
+    cores       = 3
     memory      = 12288
     disk_size   = "500G"
     template    = "ubuntu-2404-template"
   }
   "rke2-node-3" = {
-    target_node = "pve-02"
+    target_node = "pve-03"
     storage     = "local-zfs"
-    cores       = 3
+    cores       = 4
     memory      = 12288
     disk_size   = "500G"
     template    = "ubuntu-2404-template"

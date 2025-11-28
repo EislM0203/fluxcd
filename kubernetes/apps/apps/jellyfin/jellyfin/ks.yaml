@@ -12,7 +12,7 @@ spec:
   path: ./kubernetes/apps/apps/jellyfin/jellyfin/app
   prune: true
   wait: true
-  suspend: true
+  suspend: false
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes

@@ -35,14 +35,15 @@ spec:
         - containerPort: 9000
         - containerPort: 9001
         volumeMounts:
-        - name: storage
+        - name: minio-data
           mountPath: /data
         resources:
           limits:
             memory: "512Mi"
             cpu: "500m"
       volumes:
-      - name: storage
-        persistentVolumeClaim:
-            claimName: minio-data
+      - name: minio-data
+        nfs:
+          path: /mnt/usbpool/kubernetes/minio
+          server: 10.0.0.154
       restartPolicy: Always

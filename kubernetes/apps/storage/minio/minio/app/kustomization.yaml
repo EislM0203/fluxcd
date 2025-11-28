@@ -6,4 +6,3 @@ resources:
 - ingress-public.yaml
 - ingress-api.yaml
 - service.yaml
-- pvc.yaml

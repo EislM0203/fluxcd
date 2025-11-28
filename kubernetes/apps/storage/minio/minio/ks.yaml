@@ -9,7 +9,6 @@ spec:
   dependsOn:
     - name: cert-manager-addons
     - name: traefik-base
-    - name: longhorn-addons
   path: ./kubernetes/apps/storage/minio/minio/app
   prune: true
   wait: true

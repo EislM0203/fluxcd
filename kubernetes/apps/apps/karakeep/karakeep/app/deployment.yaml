@@ -36,7 +36,7 @@ spec:
       volumes:
       - name: meillisearch-data
         nfs:
-          path: /mnt/usbpool/kubernetes/karakeep
+          path: /mnt/nvmepool/kubernetes/karakeep
           server: 10.0.0.154
 ---
 apiVersion: apps/v1
@@ -114,5 +114,5 @@ spec:
       volumes:
       - name: karakeep-data
         nfs:
-          path: /mnt/usbpool/kubernetes/karakeep
+          path: /mnt/nvmepool/kubernetes/karakeep
           server: 10.0.0.154

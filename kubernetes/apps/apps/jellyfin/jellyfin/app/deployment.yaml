@@ -57,10 +57,10 @@ spec:
         - name: config
           nfs:
             server: 10.0.0.154
-            path: /mnt/usbpool/kubernetes/media/config
+            path: /mnt/nvmepool/kubernetes/media/config
         - name: data
           nfs:
             server: 10.0.0.154
-            path: /mnt/usbpool/kubernetes/media/data
+            path: /mnt/nvmepool/kubernetes/media/data
       dnsPolicy: ClusterFirst
       restartPolicy: Always

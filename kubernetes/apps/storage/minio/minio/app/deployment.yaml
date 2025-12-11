@@ -44,6 +44,6 @@ spec:
       volumes:
       - name: minio-data
         nfs:
-          path: /mnt/usbpool/kubernetes/minio
+          path: /mnt/nvmepool/kubernetes/minio
           server: 10.0.0.154
       restartPolicy: Always

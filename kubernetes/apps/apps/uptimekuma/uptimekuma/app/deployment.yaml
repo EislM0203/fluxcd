@@ -51,6 +51,6 @@ spec:
       volumes:
         - name: uptimekuma-data
           nfs:
-            path: /mnt/usbpool/kubernetes/uptimekuma
+            path: /mnt/nvmepool/kubernetes/uptimekuma
             server: 10.0.0.154
 

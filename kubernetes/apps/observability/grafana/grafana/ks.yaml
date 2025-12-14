@@ -13,6 +13,7 @@ spec:
   path: ./kubernetes/apps/observability/grafana/grafana/app
   prune: true
   wait: true
+  suspend: true
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes

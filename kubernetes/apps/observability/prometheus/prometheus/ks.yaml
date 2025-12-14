@@ -13,6 +13,7 @@ spec:
   path: ./kubernetes/apps/observability/prometheus/prometheus/app
   prune: true
   wait: true
+  suspend: true
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes

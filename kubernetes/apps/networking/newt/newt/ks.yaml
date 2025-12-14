@@ -3,21 +3,22 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: jaeger-app
+  name: newt
   namespace: flux-system
 spec:
-  dependsOn:
-    - name: cert-manager-addons
-    - name: traefik-base
-  path: ./kubernetes/apps/observability/jaeger/jaeger/app
+  path: ./kubernetes/apps/networking/newt/newt/base
   prune: true
   wait: true
-  suspend: true
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes
     namespace: flux-system
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2beta1
+      kind: HelmRelease
+      name: newt
+      namespace: networking
   interval: 15m
   retryInterval: 15m
   timeout: 15m
-  targetNamespace: observability
+  targetNamespace: networking

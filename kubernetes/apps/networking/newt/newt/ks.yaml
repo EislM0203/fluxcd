@@ -6,7 +6,7 @@ metadata:
   name: newt
   namespace: flux-system
 spec:
-  path: ./kubernetes/apps/networking/newt/newt/base
+  path: ./kubernetes/apps/networking/newt/newt/app
   prune: true
   wait: true
   sourceRef:

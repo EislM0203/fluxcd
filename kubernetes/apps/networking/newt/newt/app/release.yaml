@@ -26,10 +26,11 @@ spec:
     keepHistory: false
   values:
     newtInstances:
-    - name: main-tunnel
-      auth:
-        existingSecretName: newt-auth
-        keys:
-          endpointKey: PANGOLIN_ENDPOINT
-          idKey: NEWT_ID
-          secretKey: NEWT_SECRET
+      - name: main-tunnel
+    enabled: true
+    auth:
+      existingSecretName: newt-auth
+      keys:
+        endpointKey: PANGOLIN_ENDPOINT
+        idKey: NEWT_ID
+        secretKey: NEWT_SECRET

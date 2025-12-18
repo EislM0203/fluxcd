@@ -17,6 +17,16 @@ spec:
         - protocol: TCP
           port: 80
     - to:
+        - ipBlock:
+            cidr: 116.203.125.9/32
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: UDP
+          port: 51820
+        - protocol: UDP
+          port: 21820
+    - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: kube-system

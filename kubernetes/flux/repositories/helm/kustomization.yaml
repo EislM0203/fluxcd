@@ -17,4 +17,3 @@ resources:
   - ./grafana.yaml
   - ./prometheus.yaml
   - ./it-tools.yaml
-  - ./fossorial.yaml

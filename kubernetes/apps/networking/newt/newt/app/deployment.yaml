@@ -21,17 +21,17 @@ spec:
             - name: PANGOLIN_ENDPOINT
               valueFrom:
                 secretKeyRef:
-                  name: newt-secret
+                  name: newt-auth
                   key: PANGOLIN_ENDPOINT
             - name: NEWT_ID
               valueFrom:
                 secretKeyRef:
-                  name: newt-secret
+                  name: newt-auth
                   key: NEWT_ID
             - name: NEWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: newt-secret
+                  name: newt-auth
                   key: NEWT_SECRET
           resources:
             limits:

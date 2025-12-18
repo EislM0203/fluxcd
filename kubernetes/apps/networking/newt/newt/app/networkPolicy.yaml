@@ -14,9 +14,34 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: apps
+          podSelector:
+            matchLabels:
+              app: karakeep
       ports:
         - protocol: TCP
           port: 3000
+    # Allow access to open-webui
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: open-webui
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow access to harbor
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: storage
+          podSelector:
+            matchLabels:
+              app: harbor
+      ports:
+        - protocol: TCP
+          port: 8080
     - to:
         - ipBlock:
             cidr: 116.203.125.9/32

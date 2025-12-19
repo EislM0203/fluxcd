@@ -1,37 +1,81 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: newt
+  name: k8s-newt
   labels:
-    app: newt
+    app: k8s-newt
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: newt
+      app: k8s-newt
   template:
     metadata:
       labels:
-        app: newt
+        app: k8s-newt
     spec:
       containers:
-        - name: newt
+        - name: k8s-newt
           image: fosrl/newt
           env:
             - name: PANGOLIN_ENDPOINT
               valueFrom:
                 secretKeyRef:
-                  name: newt-auth
+                  name: k8s-newt-auth
                   key: PANGOLIN_ENDPOINT
             - name: NEWT_ID
               valueFrom:
                 secretKeyRef:
-                  name: newt-auth
+                  name: k8s-newt-auth
                   key: NEWT_ID
             - name: NEWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: newt-auth
+                  name: k8s-newt-auth
+                  key: NEWT_SECRET
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+          imagePullPolicy: IfNotPresent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homelab-newt
+  labels:
+    app: homelab-newt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: homelab-newt
+  template:
+    metadata:
+      labels:
+        app: homelab-newt
+    spec:
+      containers:
+        - name: homelab-newt
+          image: fosrl/newt
+          env:
+            - name: PANGOLIN_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: homelab-newt-auth
+                  key: PANGOLIN_ENDPOINT
+            - name: NEWT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: homelab-newt-auth
+                  key: NEWT_ID
+            - name: NEWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: homelab-newt-auth
                   key: NEWT_SECRET
           resources:
             limits:

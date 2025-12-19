@@ -9,13 +9,10 @@ spec:
   policyTypes:
     - Egress
   egress:
-    # Allow access to apps namespace
+    # Allow access to Portainer VM
     - to:
         - ipBlock:
-            cidr: 10.0.0.211/32
-      ports:
-        - protocol: TCP
-          port: 22
+            cidr: 10.0.0.151/32
     # Allow access to pangolin https & udp ports
     - to:
         - ipBlock:

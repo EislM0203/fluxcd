@@ -14,11 +14,6 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: apps
-    # Allow access to secured namespace
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: secured
     # Allow access to harbor
     - to:
         - namespaceSelector:

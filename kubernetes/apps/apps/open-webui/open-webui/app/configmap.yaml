@@ -7,7 +7,8 @@ data:
   ENABLE_SIGNUP: "false"
   ENABLE_OPENAI_API: "true"
   ENABLE_LOGIN_FORM: "false"
-  OPENAI_API_BASE_URL: "10.0.0.120:8888/v1"
+  OAUTH_MERGE_ACCOUNTS_BY_EMAIL: "true"
+  OPENAI_API_BASE_URL: "http://10.0.0.120:8888/v1"
   OAUTH_PROVIDER_NAME: PocketID
   OAUTH_SCOPES: openid email profile
   OPENID_PROVIDER_URL: https://pocketid.traunseenet.com/.well-known/openid-configuration

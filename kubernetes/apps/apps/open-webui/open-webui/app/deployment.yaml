@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: openwebui
+  name: openwebui
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: openwebui
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: openwebui
+    spec:
+      containers:
+        - image: ghcr.io/open-webui/open-webui:v0.6.43
+          imagePullPolicy: IfNotPresent
+          name: open-webui
+          ports:
+            - containerPort: 8080
+              name: webui
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: open-webui-env
+            - secretRef:
+                name: open-webui-secret
+          volumeMounts:
+            - mountPath: /app/backend/data
+              name: open-webui-vol
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: open-webui-vol
+          nfs:
+            path: /mnt/nvmepool/kubernetes/open-webui
+            server: 10.0.0.151

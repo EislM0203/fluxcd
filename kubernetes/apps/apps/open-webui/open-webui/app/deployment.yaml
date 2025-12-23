@@ -41,4 +41,4 @@ spec:
         - name: open-webui-vol
           nfs:
             path: /mnt/nvmepool/kubernetes/open-webui
-            server: 10.0.0.151
+            server: 10.0.0.154

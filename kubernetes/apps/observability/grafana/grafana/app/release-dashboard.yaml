@@ -54,8 +54,8 @@ spec:
         email_attribute_path: email:primary
         skip_org_role_sync: true
         auth_style: "Auto Detect"
-        auth_url: https://pocketid.cloud.traunseenet.com/authorize
-        token_url: https://pocketid.cloud.traunseenet.com/api/oidc/token
+        auth_url: https://pocketid.traunseenet.com/authorize
+        token_url: https://pocketid.traunseenet.com/api/oidc/token
         auto_login: false
         oauth_allow_insecure_email_lookup: true
       server:

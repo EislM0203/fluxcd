@@ -38,36 +38,30 @@
     # https 443
     ''
       frontend https-in
-          bind *:443
+          bind *:443 ssl crt /var/lib/acme/traunseenet.com/combined.pem strict-sni
           mode tcp
           option tcplog
           tcp-request inspect-delay 5s
           tcp-request content accept if { req_ssl_hello_type 1 }
+          ${lib.optionalString config.services.pocket-id.enable
+        ''
+          use_backend pocketid_backend if { hdr(host) -i id.traunseenet.com }
+        ''}
           ${lib.optionalString config.services.headscale.enable
         ''
-          use_backend headscale_backend if { req_ssl_sni -i headscale.icylair.com }
+          use_backend headscale_backend if { req_ssl_sni -i headscale.traunseenet.com }
         ''}
           ${lib.optionalString config.services.netbird.server.enable
         ''
-          use_backend netbird_backend if { req_ssl_sni -i netbird.icylair.com }
+          use_backend netbird_backend if { hdr(host) -i netbird.traunseenet.com }
         ''}
 
           # Load balancing between two backend servers
           default_backend 443-forward
 
       backend 443-forward
-          mode tcp
-          balance leastconn
-          option ssl-hello-chk
+          mode http
 
-          server vxlan-lb 10.129.16.100:443 send-proxy-v2 check
-
-            # Back-up nodes - activated only if *all* non-backup servers are down
-          server oracle-km1-1 10.99.10.11:443 send-proxy-v2 check backup
-          server oracle-bv1-1 10.99.10.12:443 send-proxy-v2 check backup
-          server contabo-1 10.99.10.13:443 send-proxy-v2 check backup
-
-          # Optional: once server1 recovers, instantly shift traffic back to it
           option  allbackups        # let backups share traffic only while primary is dead
     ''
     # # http 80
@@ -86,6 +80,11 @@
     # ''
     # headscale 8080
     ''
+      ${lib.optionalString config.services.pocket-id.enable ''
+        backend pocketid_backend
+            mode http
+            server pocketid1 127.0.0.1:1411 check
+      ''}
       ${lib.optionalString config.services.headscale.enable ''
         frontend headscale
             bind *:8080
@@ -101,7 +100,7 @@
           backend netbird_backend
               mode tcp
               # balance roundrobin
-              server netbird_server 127.0.0.202:8443 check
+              server netbird_server 127.0.0.202:8443 check # ssl verify none
 
         ''
       }
@@ -113,6 +112,6 @@
 
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [80 443 6443 8080 9345 10022 30033];
+    allowedTCPPorts = [80 443 6443 9345 10022 30033];
   };
 }

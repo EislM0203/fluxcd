@@ -20,8 +20,10 @@
     #./vxlan.nix
     # ./traefik.nix
     ./haproxy.nix
+    ./acme.nix
+    ./pocketid.nix
     # ./headscale.nix
-    # ./netbird.nix
+    ./netbird.nix
     {_module.args.disks = ["/dev/sda"];}
   ];
   boot.kernelPackages = pkgs.linuxPackages_latest;

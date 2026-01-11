@@ -19,7 +19,7 @@ spec:
         app: openwebui
     spec:
       containers:
-        - image: ghcr.io/open-webui/open-webui:v0.6.43
+        - image: ghcr.io/open-webui/open-webui:0.7.2
           imagePullPolicy: IfNotPresent
           name: open-webui
           ports:

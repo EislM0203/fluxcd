@@ -53,11 +53,11 @@
         ''}
           ${lib.optionalString config.services.netbird.server.enable
         ''
-          use_backend netbird_backend if { hdr(host) -i netbird.traunseenet.com }
+          use_backend netbird_backend if { req_ssl_sni -i netbird.traunseenet.com }
         ''}
 
           # Load balancing between two backend servers
-          default_backend 443-forward
+          default_backend netbird_backend
 
       backend 443-forward
           mode http
@@ -100,7 +100,7 @@
           backend netbird_backend
               mode tcp
               # balance roundrobin
-              server netbird_server 127.0.0.202:8443 check # ssl verify none
+              server netbird_server 127.0.0.202:8443 check ssl verify none sni str(netbird.traunseenet.com)
 
         ''
       }

@@ -45,15 +45,15 @@ in {
   #   '';
   # };
 
-  # systemd.services.nginx-wait-for-cert = {
-  #   serviceConfig.Type = "oneshot";
-  #   requiredBy = [ "nginx.service" ];
-  #   before = [ "nginx.service" ];
-  #   script = ''
-  #     until [ -f ${cert_path}/tls.crt ] && [ -f ${cert_path}/tls.key ]; do sleep 1; done
-  #   '';
-  # };
-
+#  systemd.services.nginx-wait-for-cert = {
+ #   serviceConfig.Type = "oneshot";
+  #  requiredBy = [ "nginx.service" ];
+   # before = [ "nginx.service" ];
+#    script = ''
+ #     usermod -aG haproxy nginx
+   # '';
+  #};
+  users.users.nginx.extraGroups = [ "haproxy" ];
   services.nginx.virtualHosts."netbird.traunseenet.com" = lib.mkMerge [
     {
       forceSSL = true;
@@ -117,9 +117,13 @@ in {
           ClientConfig = {
             Issuer = cfg.ssoURL;
             ClientID = cfg.backendID;
-            ManagementEndpoint = "https://${cfg.ssoDomain}";  # Base URL of PocketID for API:contentReference[oaicite:32]{index=32}
-            ExtraAPIToken._secret = cfg.apiTokenFile;     # Load the PocketID API token (NetBird Management Token):contentReference[oaicite:33]{index=33}
             GrantType = "client_credentials";
+          };
+          ExtraConfig = {
+            ManagementEndpoint = "https://${cfg.ssoDomain}";
+            ApiToken = {
+              _secret = cfg.apiTokenFile;
+            };
           };
         };
 

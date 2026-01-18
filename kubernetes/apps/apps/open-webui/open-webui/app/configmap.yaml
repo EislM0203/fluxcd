@@ -17,7 +17,7 @@ data:
   WEB_SEARCH_CONCURRENT_REQUESTS: "10"
   WEB_SEARCH_ENGINE: searxng
   WEB_SEARCH_RESULT_COUNT: "3"
-  SEARXNG_QUERY_URL: http://10.0.0.115:8080/search?q=<query>
+  SEARXNG_QUERY_URL: http://10.0.0.115:8888/search?q=<query>
 kind: ConfigMap
 metadata:
   name: open-webui-env

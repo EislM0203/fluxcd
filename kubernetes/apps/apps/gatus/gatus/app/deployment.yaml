@@ -30,7 +30,13 @@ spec:
         - name: gatus-config-volume
           mountPath: /config/config.yaml
           subPath: config.yaml
+        - name: data
+          mountPath: "/etc/gatus"
       volumes:
       - name: gatus-config-volume
         configMap:
           name: gatus-config
+      - name: data
+        nfs:
+          server: 10.0.0.154
+          path: /mnt/nvmepool/kubernetes/gatus

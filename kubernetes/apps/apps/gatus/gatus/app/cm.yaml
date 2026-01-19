@@ -11,11 +11,48 @@ data:
         conditions:
           - "[STATUS] == 200"
           - "[BODY] == Healthy"
-          - "[RESPONSE_TIME] < 1000"
+          - "[RESPONSE_TIME] < 300"
         alerts:
           - type: "ntfy"
-    alerts:
+      - name: Karakeep
+        url: "http://karakeep.apps.svc.cluster.local/signin"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 300"
+        alerts:
+          - type: "ntfy"
+      - name: Navidrome
+        url: "http://navidrome.apps.svc.cluster.local:4533/rest/ping"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 300"
+        alerts:
+          - type: "ntfy"
+      - name: Ntfy
+        url: "http://ntfy.apps.svc.cluster.local/v1/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].healthy == true"
+          - "[RESPONSE_TIME] < 300"
+        alerts:
+          - type: "ntfy"
+      - name: Open-Webui
+        url: "http://open-webui.apps.svc.cluster.local:8080/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].status == true"
+          - "[RESPONSE_TIME] < 300"
+        alerts:
+          - type: "ntfy"
+    alerting:
       ntfy:
         topic: "gatus"
         url: "http://ntfy.apps.svc.cluster.local"
-        priority: 2
+        priority: 4
+    storage:
+      type: sqlite
+      path: /etc/gatus/data.db

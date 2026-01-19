@@ -15,6 +15,9 @@ spec:
       - name: ntfy
         image: binwiederhier/ntfy:v2.15.0
         args: ["serve"]
+        envFrom:
+        - configMapRef:
+            name: ntfy
         resources:
           limits:
             memory: "128Mi"
@@ -23,15 +26,10 @@ spec:
         - containerPort: 80
           name: http
         volumeMounts:
-        - name: config
+        - name: data
           mountPath: "/etc/ntfy"
-          readOnly: true
-        - name: persistant-cache
       volumes:
-        - name: config
-          configMap:
-            name: ntfy
-        - name: persistant-cache
+        - name: data
           nfs:
             server: 10.0.0.154
             path: /mnt/nvmepool/kubernetes/ntfy

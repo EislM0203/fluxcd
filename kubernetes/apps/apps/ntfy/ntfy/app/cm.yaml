@@ -3,19 +3,16 @@ kind: ConfigMap
 metadata:
   name: ntfy
 data:
-  server.yml: |
-    # Template: https://github.com/binwiederhier/ntfy/blob/main/server/server.yml
-    base-url: https://ntfy.cloud.traunseenet.com
-    behind-proxy: false
-    proxy-forwarded-header: "X-Forwarded-For"
-    cache-file: /etc/ntfy/cache/cache.db
-    cache-duration: "12h"
-    auth-file: /etc/ntfy/auth/auth.db
-    # auth-users:
-    #   - ${NTFY_USER}
-    attachment-cache-dir: /etc/ntfy/cache/attachments
-    template-dir: /etc/ntfy/templates
-    upstream-base-url: "https://ntfy.sh"
-    # upstream-access-token: # if ratelimits occur, set your ntfy.sh access token here
-    log-level: info
+  NTFY_BASE_URL: "https://ntfy.cloud.traunseenet.com"
+  NTFY_BEHIND_PROXY: "true"
+  NTFY_PROXY_FORWARDED_HEADER: "X-Forwarded-For"
+  NTFY_CACHE_FILE: "/etc/ntfy/cache/cache.db"
+  NTFY_CACHE_DURATION: "12h"
+  NTFY_AUTH_FILE: "/etc/ntfy/auth/auth.db"
+  # NTFY_DEFAULT_ACCESS: deny-all
+  NTFY_ATTACHMENT_CACHE_DIR: "/etc/ntfy/cache/attachments"
+  NTFY_TEMPLATE_DIR: "/etc/ntfy/templates"
+  NTFY_UPSTREAM_BASE_URL: "https://ntfy.sh"
+  NTFY_ENABLE_LOGIN: "true"
+  NTFY_LOG_LEVEL: "info"
 

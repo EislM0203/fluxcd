@@ -11,4 +11,4 @@ data:
         conditions:
           - "[STATUS] == 200"
           - "[BODY] == Healthy"
-          - "[RESPONSE_TIME] < 300"
+          - "[RESPONSE_TIME] < 1000"

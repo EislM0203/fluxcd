@@ -3,28 +3,26 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: uptimekuma-app
+  name: gatus-app
   namespace: flux-system
 spec:
   dependsOn:
     - name: cert-manager-addons
     - name: traefik-base
-    - name: harbor-app
-  path: ./kubernetes/apps/apps/uptimekuma/uptimekuma/app
+  path: ./kubernetes/apps/apps/gatus/gatus/app
   prune: true
   wait: true
-  suspend: true
+  suspend: false
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes
     namespace: flux-system
   healthChecks:
-    - apiVersion: apps/v1
+    - apiVersion: v1
       kind: Deployment
-      name: uptimekuma
+      name: gatus
       namespace: apps
   interval: 15m
   retryInterval: 15m
   timeout: 15m
   targetNamespace: apps
-

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ntfy
+spec:
+  selector:
+    matchLabels:
+      app: ntfy
+  template:
+    metadata:
+      labels:
+        app: ntfy
+    spec:
+      containers:
+      - name: ntfy
+        image: binwiederhier/ntfy:v2.15.0
+        args: ["serve"]
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 80
+          name: http
+        volumeMounts:
+        - name: config
+          mountPath: "/etc/ntfy"
+          readOnly: true
+        - name: persistant-cache
+      volumes:
+        - name: config
+          configMap:
+            name: ntfy
+        - name: persistant-cache
+          nfs:
+            server: 10.0.0.154
+            path: /mnt/nvmepool/kubernetes/ntfy

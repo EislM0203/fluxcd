@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gatus-config
+data:
+  config.yaml: |
+    endpoints:
+      - name: Jellyfin
+        url: "http://jellyfin.apps.svc.cluster.local:8096/health"
+        interval: 5m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY] == Healthy"
+          - "[RESPONSE_TIME] < 300"

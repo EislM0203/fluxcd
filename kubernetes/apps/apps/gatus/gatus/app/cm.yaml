@@ -12,6 +12,8 @@ data:
           - "[STATUS] == 200"
           - "[BODY] == Healthy"
           - "[RESPONSE_TIME] < 1000"
+        alerts:
+          - type: "ntfy"
     alerts:
       ntfy:
         topic: "gatus"

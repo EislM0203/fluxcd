@@ -9,7 +9,7 @@ data:
   NTFY_CACHE_FILE: "/etc/ntfy/cache/cache.db"
   NTFY_CACHE_DURATION: "12h"
   NTFY_AUTH_FILE: "/etc/ntfy/auth/auth.db"
-  # NTFY_DEFAULT_ACCESS: deny-all
+  NTFY_DEFAULT_ACCESS: deny-all
   NTFY_ATTACHMENT_CACHE_DIR: "/etc/ntfy/cache/attachments"
   NTFY_TEMPLATE_DIR: "/etc/ntfy/templates"
   NTFY_UPSTREAM_BASE_URL: "https://ntfy.sh"

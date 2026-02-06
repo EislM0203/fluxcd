@@ -22,4 +22,4 @@ spec:
               service:
                 name: cerebro-server
                 port:
-                  name: http-tcp
+                  name: http

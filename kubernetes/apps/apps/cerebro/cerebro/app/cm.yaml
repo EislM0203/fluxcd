@@ -8,3 +8,17 @@ data:
   SERVER_PORT: "8080"
   SERVER_ADMIN_USER: "admin"
   CEREBRO_CONFIG_DIR: "/config"
+  OPENAI_BASE_URL: "http://10.0.0.59:11434/v1"
+  LLM_MODEL_NAME: "ministral-3:14b"
+  EMBEDDING_MODEL_NAME: "nomic-embed-text:latest"
+  EMBEDDING_DIM: 768
+  DEFAULT_LANGUAGE: "english"
+  SECURE_COOKIES: true
+  MCP_TRANSPORT: "sse"
+  MCP_PORT: 8000
+  CEREBRO_WORKSPACE: "default"
+  OTEL_ENABLED: true
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://opentelemetry-collector.observability.svc.cluster.local:4317
+  SSO_REDIRECT_URI: https://cerebro.cloud.traunseenet.com/api/auth/sso/callback
+  SSO_AUTO_LINK_USERS: true
+  

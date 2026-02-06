@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cerebro-config
+data:
+  LOG_LEVEL: "INFO"
+  SERVER_HOST: "0.0.0.0"
+  SERVER_PORT: "8080"
+  SERVER_ADMIN_USER: "admin"
+  CEREBRO_CONFIG_DIR: "/config"

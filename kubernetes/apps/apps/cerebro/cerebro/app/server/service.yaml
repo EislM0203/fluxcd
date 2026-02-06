@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cerebro-server
+  labels:
+    app.kubernetes.io/name: cerebro-server
+    app.kubernetes.io/component: server
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: cerebro-server
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

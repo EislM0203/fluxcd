@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: cerebro
-          image: harbor.cloud.traunseenet.com/public/cerebro:v0.0.4-dev
+          image: harbor.cloud.traunseenet.com/public/cerebro:v0.0.6-dev
           ports:
             - name: http
               containerPort: 8080

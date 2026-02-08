@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: cerebro
-          image: markuseisl00/cerebro:v0.0.9-dev
+          image: markuseisl00/cerebro:v0.0.10-dev
           ports:
             - name: http
               containerPort: 8080

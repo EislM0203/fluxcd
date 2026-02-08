@@ -19,5 +19,7 @@ data:
   CEREBRO_WORKSPACE: "default"
   OTEL_ENABLED: "true"
   OTEL_EXPORTER_OTLP_ENDPOINT: http://opentelemetry-collector.observability.svc.cluster.local:4317
+  SSO_ENABLED: "true"
+  SSO_DISCOVERY_URL: https://pocketid.traunseenet.com/.well-known/openid-configuration
   SSO_REDIRECT_URI: https://cerebro.cloud.traunseenet.com/api/auth/sso/callback
   SSO_AUTO_LINK_USERS: "true"

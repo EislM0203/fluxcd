@@ -4,3 +4,4 @@ kind: Kustomization
 namespace: storage
 resources:
   - release.yaml
+  - secret.yaml

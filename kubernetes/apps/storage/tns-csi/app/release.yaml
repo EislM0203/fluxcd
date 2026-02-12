@@ -25,9 +25,8 @@ spec:
     # tag: "0.8.1"
     truenas:
     # Your TrueNAS server configuration
-      url: "wss://10.0.0.154:443/api/current"
+      existingSecret: "tns-csi-secret"
       port: 443
-      apiKey: "1-ywcQehHnciGO6dqEql139Cb35Qh1jMifPYlSoRP4EGBSwgo5WN3EVrcf3GEJrui9"
       skipTLSVerify: true
     # Storage class configuration - NVMe-oF
     storageClasses:

@@ -1,0 +1,50 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tns-csi
+spec:
+  interval: 45m
+  chartRef:
+    kind: OCIRepository
+    name: tns-csi
+    namespace: storage
+  maxHistory: 2
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    namespace: storage
+    # image:
+    # tag: "0.8.1"
+    truenas:
+    # Your TrueNAS server configuration
+      url: "wss://10.0.0.154:443/api/current"
+      port: 443
+      apiKey: "1-ywcQehHnciGO6dqEql139Cb35Qh1jMifPYlSoRP4EGBSwgo5WN3EVrcf3GEJrui9"
+      skipTLSVerify: true
+    # Storage class configuration - NVMe-oF
+    storageClasses:
+      nfs:
+        enabled: false
+        # name: tns-csi-nfs
+        # pool: "vega"
+        # parentDataset: "vega/csi/tns-csi/nfs/volumes" # use different path
+        # server: "10.0.0.154"
+        # transport: "tcp"
+        # port: "4420"
+      nvmeof:
+        enabled: true
+        name: tns-csi-nvmeof
+        pool: "nvmepool"
+        parentDataset: "nvmepool/tns-csi/pod-volume"
+        server: "10.0.0.154"
+        transport: "tcp"
+        port: "4420"
+        # reclaimPolicy: Retain

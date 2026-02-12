@@ -1,13 +1,7 @@
 #!/bin/bash
+set -euo pipefail
 
-make apply-tf
-
-make wait-for-nodes \
-	update-packages \
-	install-longhorn-dependencies \
-	install-rke2-server \
-	install-rke2-agent \
-	cluster-readiness-check
+make bootstrap-infra
 
 kubectl apply --server-side --kustomize ./kubernetes/bootstrap/flux
 sops --decrypt kubernetes/bootstrap/flux/age-key.sops.yaml | kubectl apply -f -

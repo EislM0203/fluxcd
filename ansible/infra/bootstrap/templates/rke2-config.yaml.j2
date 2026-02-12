@@ -3,9 +3,9 @@ disable-cloud-controller: true
 disable:
   - rke2-ingress-nginx
 tls-san:
-  - 10.0.0.59
-  - 10.0.0.211
-  - 10.0.0.67
+{% for ip in rke2_extra_tls_san | default([]) %}
+  - "{{ ip }}"
+{% endfor %}
 {% for host in all_ansible_hosts %}
   - "{{ host }}"
 {% endfor %}

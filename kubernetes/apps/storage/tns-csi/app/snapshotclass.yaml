@@ -1,0 +1,12 @@
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: tns-csi-snapshot-vsc
+  # annotations:
+  #   snapshot.storage.kubernetes.io/is-default-class: "true"
+driver: tns.csi.io
+deletionPolicy: Delete
+parameters:
+  detachedSnapshots: "true"
+  detachedSnapshotsParentDataset: "nvmepool/tns-csi/snapshots"

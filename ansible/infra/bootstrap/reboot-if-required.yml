@@ -1,24 +1,18 @@
 ---
-- name: Update and Upgrade Packages
+- name: Reboot Nodes if Required
   hosts: proxmox
   become: yes
 
   tasks:
-    - name: Update and upgrade packages
-      ansible.builtin.apt:
-        update_cache: yes
-        upgrade: yes
-      tags: [maintenance, packages]
-
     - name: Check if reboot is required
       ansible.builtin.stat:
         path: /var/run/reboot-required
       register: reboot_required
-      tags: [maintenance, packages]
+      tags: [bootstrap, reboot]
 
     - name: Reboot if required
       ansible.builtin.reboot:
-        msg: "Rebooting to apply kernel updates"
+        msg: "Rebooting to apply pending updates"
         reboot_timeout: 300
       when: reboot_required.stat.exists
-      tags: [maintenance, packages]
+      tags: [bootstrap, reboot]

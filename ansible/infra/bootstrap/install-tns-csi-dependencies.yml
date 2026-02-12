@@ -1,0 +1,41 @@
+---
+- name: Install TrueNAS CSI Dependencies
+  hosts: proxmox
+  become: yes
+
+  tasks:
+    - name: Install required packages
+      ansible.builtin.apt:
+        name:
+          - nvme-cli
+          - nfs-common
+          - open-iscsi
+          - "linux-modules-extra-{{ ansible_facts['kernel'] }}"
+        state: present
+      tags: [bootstrap, tns-csi, packages]
+
+    - name: Enable and start iscsid service
+      ansible.builtin.systemd:
+        name: iscsid
+        enabled: yes
+        state: started
+      tags: [bootstrap, tns-csi, iscsi]
+
+    - name: Load NVMe kernel modules
+      community.general.modprobe:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - nvme-tcp
+        - nvme-fabrics
+      tags: [bootstrap, tns-csi, nvme]
+
+    - name: Ensure NVMe kernel modules are loaded at boot
+      ansible.builtin.lineinfile:
+        path: /etc/modules-load.d/nvme.conf
+        line: "{{ item }}"
+        create: yes
+      loop:
+        - nvme-tcp
+        - nvme-fabrics
+      tags: [bootstrap, tns-csi, nvme]

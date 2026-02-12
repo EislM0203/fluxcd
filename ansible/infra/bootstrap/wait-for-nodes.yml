@@ -2,7 +2,7 @@
 - name: Wait for nodes to be ready
   hosts: localhost
   gather_facts: false
-  
+
   tasks:
     - name: Wait for SSH to be available on all hosts
       ansible.builtin.wait_for:
@@ -13,3 +13,4 @@
         state: started
       loop: "{{ groups['all'] }}"
       when: hostvars[item].ansible_host is defined
+      tags: [bootstrap, connectivity]

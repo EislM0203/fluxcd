@@ -2,60 +2,69 @@
 - name: Prepare Kubernetes Node
   hosts: proxmox
   become: yes
-  
+
   tasks:
     - name: Update and upgrade packages
-      apt:
+      ansible.builtin.apt:
         update_cache: yes
         upgrade: yes
+      tags: [bootstrap, longhorn, packages]
 
     - name: Install required packages for storage and networking
-      apt:
+      ansible.builtin.apt:
         name:
           - open-iscsi
           - nfs-common
           - cryptsetup
           - dmsetup
         state: present
+      tags: [bootstrap, longhorn, packages]
 
     - name: Load iscsi_tcp module
-      modprobe:
+      community.general.modprobe:
         name: iscsi_tcp
         state: present
+      tags: [bootstrap, longhorn, iscsi]
 
     - name: Ensure iscsi_tcp module is loaded at boot
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/modules-load.d/iscsi.conf
         line: iscsi_tcp
         create: yes
+      tags: [bootstrap, longhorn, iscsi]
 
     - name: Enable and start iscsid service
-      systemd:
+      ansible.builtin.systemd:
         name: iscsid
         enabled: yes
         state: started
+      tags: [bootstrap, longhorn, iscsi]
 
-    - name: Check NFSv4 kernel support
-      shell: cat /boot/config-`uname -r` | grep CONFIG_NFS_V4
+    - name: Check NFS kernel support
+      ansible.builtin.command: grep CONFIG_NFS_V4 /boot/config-{{ ansible_facts["kernel"] }}
       register: nfs_v4_support
       failed_when: false
       changed_when: false
+      tags: [bootstrap, longhorn, nfs]
 
     - name: Check NFSv4.1 kernel support
-      shell: cat /boot/config-`uname -r` | grep CONFIG_NFS_V4_1
+      ansible.builtin.command: grep CONFIG_NFS_V4_1 /boot/config-{{ ansible_facts["kernel"] }}
       register: nfs_v4_1_support
       failed_when: false
       changed_when: false
+      tags: [bootstrap, longhorn, nfs]
 
     - name: Check NFSv4.2 kernel support
-      shell: cat /boot/config-`uname -r` | grep CONFIG_NFS_V4_2
+      ansible.builtin.command: grep CONFIG_NFS_V4_2 /boot/config-{{ ansible_facts["kernel"] }}
       register: nfs_v4_2_support
       failed_when: false
       changed_when: false
+      tags: [bootstrap, longhorn, nfs]
 
     - name: Display NFS kernel support status
-      debug:
+      ansible.builtin.debug:
         msg:
           - "NFSv4 support: {{ nfs_v4_support.stdout | default('Not found') }}"
           - "NFSv4.1 support: {{ nfs_v4_1_support.stdout | default('Not found') }}"
           - "NFSv4.2 support: {{ nfs_v4_2_support.stdout | default('Not found') }}"
+      tags: [bootstrap, longhorn, nfs]

@@ -2,104 +2,108 @@
 - name: Install RKE2 Kubernetes Single Node
   hosts: rke2_server
   become: yes
-  vars:
-    rke2_version: "latest"
-    
-  tasks: 
+
+  tasks:
     - name: Collect all ansible_host values from inventory
-      set_fact:
+      ansible.builtin.set_fact:
         all_ansible_hosts: "{{ groups['all'] | map('extract', hostvars, 'ansible_host') | list | unique }}"
-        
+      tags: [bootstrap, rke2, server]
+
     - name: Create RKE2 config directory
-      file:
+      ansible.builtin.file:
         path: /etc/rancher/rke2
         state: directory
         mode: '0755'
-
-    - name: Download and install RKE2
-      shell: |
-        curl -sfL https://get.rke2.io | sh -
-      args:
-        creates: /usr/local/bin/rke2
+      tags: [bootstrap, rke2, server]
 
     - name: Create RKE2 config for single server
-      template:
+      ansible.builtin.template:
         src: rke2-config.yaml.j2
         dest: /etc/rancher/rke2/config.yaml
         mode: '0640'
-    # - name: Create RKE2 manifests directory
-    #   file:
-    #     path: /var/lib/rancher/rke2/server/manifests
-    #     state: directory
-    #     mode: '0755'
+      tags: [bootstrap, rke2, server, config]
 
-    # - name: Set network interface for RKE2
-    #   copy:
-    #     content: |
-    #       apiVersion: helm.cattle.io/v1
-    #       kind: HelmChartConfig
-    #       metadata:
-    #         name: rke2-canal
-    #         namespace: kube-system
-    #       spec:
-    #         valuesContent: |-
-    #           flannel:
-    #             iface: "tailscale0"
-    #     dest: /var/lib/rancher/rke2/server/manifests/rke2-canal-config.yaml
-    #     mode: '0755'
+    - name: Install and start RKE2 server
+      tags: [bootstrap, rke2, server]
+      block:
+        - name: Download RKE2 installer
+          ansible.builtin.get_url:
+            url: https://get.rke2.io
+            dest: /tmp/rke2-installer.sh
+            mode: '0755'
 
-    # Start RKE2 on the server
-    - name: Enable and start RKE2 server
-      systemd:
-        name: rke2-server.service
-        enabled: yes
-        state: started
-        daemon_reload: yes
+        - name: Run RKE2 installer
+          ansible.builtin.command: /tmp/rke2-installer.sh
+          args:
+            creates: /usr/local/bin/rke2
+          environment:
+            INSTALL_RKE2_VERSION: "{{ rke2_version }}"
 
-    - name: Wait for server to be ready
-      wait_for:
-        host: "{{ ansible_host }}"
-        port: 9345
-        timeout: 300
-      
-    # - name: Wait for node-token to be generated
-    #   wait_for:
-    #     path: /var/lib/rancher/rke2/server/node-token
-    #     timeout: 300
+        - name: Enable and start RKE2 server
+          ansible.builtin.systemd:
+            name: rke2-server.service
+            enabled: yes
+            state: started
+            daemon_reload: yes
 
-    # - name: Wait for node to be ready in Kubernetes cluster
-    #   shell: /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml get nodes --no-headers | wc -l
-    #   register: node_count
-    #   until: node_count.stdout | int == 1
-    #   retries: 30
-    #   delay: 10
+        - name: Wait for server to be ready
+          ansible.builtin.wait_for:
+            host: "{{ ansible_host }}"
+            port: 9345
+            timeout: 300
 
-    - name: Wait for node to be in Ready state
-      shell: /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml get nodes --no-headers | grep -c "Ready"
-      register: ready_nodes
-      until: ready_nodes.stdout | int == 1
-      retries: 30
-      delay: 10
+        - name: Wait for node to be in Ready state
+          ansible.builtin.command: >
+            /var/lib/rancher/rke2/bin/kubectl
+            --kubeconfig /etc/rancher/rke2/rke2.yaml
+            get nodes --no-headers
+          register: ready_nodes
+          until: "'Ready' in ready_nodes.stdout"
+          retries: 30
+          delay: 10
+          changed_when: false
+
+      rescue:
+        - name: Collect RKE2 server logs on failure
+          ansible.builtin.command: journalctl -u rke2-server --no-pager -n 100
+          register: rke2_logs
+          changed_when: false
+
+        - name: Show failure logs
+          ansible.builtin.debug:
+            var: rke2_logs.stdout_lines
+
+        - name: Fail with context
+          ansible.builtin.fail:
+            msg: "RKE2 server installation failed. See logs above."
 
     - name: Display cluster status
-      shell: /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml get nodes
+      ansible.builtin.command: >
+        /var/lib/rancher/rke2/bin/kubectl
+        --kubeconfig /etc/rancher/rke2/rke2.yaml
+        get nodes
       register: cluster_status
-      
+      changed_when: false
+      tags: [bootstrap, rke2, server, status]
+
     - name: Show cluster information
-      debug:
+      ansible.builtin.debug:
         var: cluster_status.stdout_lines
+      tags: [bootstrap, rke2, server, status]
 
     - name: Read original kubeconfig
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/rancher/rke2/rke2.yaml
       register: kubeconfig_content
-      
+      tags: [bootstrap, rke2, server, kubeconfig]
+
     - name: Save kubeconfig locally with correct server address
       delegate_to: localhost
-      become: true
-      copy:
+      become: false
+      ansible.builtin.copy:
         content: "{{ (kubeconfig_content.content | b64decode).replace('https://127.0.0.1:6443', 'https://' + ansible_host + ':6443') }}"
-        dest: "/home/markuseisl/.kube/config"
-        owner: 1000
-        group: 1000
+        dest: "{{ lookup('env', 'HOME') }}/.kube/config"
+        owner: "{{ lookup('env', 'USER') }}"
+        group: "{{ lookup('env', 'USER') }}"
         mode: '0600'
+      tags: [bootstrap, rke2, server, kubeconfig]

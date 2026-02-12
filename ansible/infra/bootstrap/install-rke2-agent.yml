@@ -1,63 +1,90 @@
+---
 - name: Install RKE2 Kubernetes Agent Nodes
   hosts: rke2_agents
   become: yes
   vars:
-    rke2_version: "latest"
     rke2_server_url: "https://{{ hostvars[groups['rke2_server'][0]]['ansible_host'] }}:9345"
-    rke2_token: "{{ rke2_node_token }}"
-    
+
   tasks:
     - name: Get RKE2 node token from server
-      shell: sudo cat /var/lib/rancher/rke2/server/node-token
+      ansible.builtin.slurp:
+        src: /var/lib/rancher/rke2/server/node-token
       register: rke2_node_token_result
       delegate_to: "{{ groups['rke2_server'][0] }}"
       run_once: true
-      changed_when: false
-      
+      tags: [bootstrap, rke2, agent]
+
     - name: Set RKE2 node token fact
-      set_fact:
-        rke2_node_token: "{{ rke2_node_token_result.stdout.strip() }}"
+      ansible.builtin.set_fact:
+        rke2_node_token: "{{ (rke2_node_token_result.content | b64decode).strip() }}"
       run_once: true
+      tags: [bootstrap, rke2, agent]
 
     - name: Create RKE2 config directory
-      file:
+      ansible.builtin.file:
         path: /etc/rancher/rke2
         state: directory
         mode: '0755'
+      tags: [bootstrap, rke2, agent]
 
-    - name: Download and install RKE2 agent
-      shell: |
-        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="agent" sh -
-      args:
-        creates: /usr/local/bin/rke2
-
-    - name: Create RKE2 config for agent
-      copy:
-        content: |
-          server: {{ rke2_server_url }}
-          token: {{ rke2_token }}
-          node-ip: "{{ ansible_host }}"
+    - name: Create RKE2 agent config
+      ansible.builtin.template:
+        src: rke2-agent-config.yaml.j2
         dest: /etc/rancher/rke2/config.yaml
         mode: '0640'
+      tags: [bootstrap, rke2, agent, config]
 
-    - name: Enable and start RKE2 agent
-      systemd:
-        name: rke2-agent.service
-        enabled: yes
-        state: started
-        daemon_reload: yes
+    - name: Install and start RKE2 agent
+      tags: [bootstrap, rke2, agent]
+      block:
+        - name: Download RKE2 installer
+          ansible.builtin.get_url:
+            url: https://get.rke2.io
+            dest: /tmp/rke2-installer.sh
+            mode: '0755'
 
-    - name: Wait for agent to connect to server
-      wait_for:
-        host: "{{ rke2_server_url.split('://')[1].split(':')[0] }}"
-        port: 9345
-        timeout: 300
+        - name: Run RKE2 agent installer
+          ansible.builtin.command: /tmp/rke2-installer.sh
+          args:
+            creates: /usr/local/bin/rke2
+          environment:
+            INSTALL_RKE2_TYPE: "agent"
+            INSTALL_RKE2_VERSION: "{{ rke2_version }}"
+
+        - name: Enable and start RKE2 agent
+          ansible.builtin.systemd:
+            name: rke2-agent.service
+            enabled: yes
+            state: started
+            daemon_reload: yes
+
+        - name: Wait for agent to connect to server
+          ansible.builtin.wait_for:
+            host: "{{ rke2_server_url.split('://')[1].split(':')[0] }}"
+            port: 9345
+            timeout: 300
+
+      rescue:
+        - name: Collect RKE2 agent logs on failure
+          ansible.builtin.command: journalctl -u rke2-agent --no-pager -n 100
+          register: rke2_logs
+          changed_when: false
+
+        - name: Show failure logs
+          ansible.builtin.debug:
+            var: rke2_logs.stdout_lines
+
+        - name: Fail with context
+          ansible.builtin.fail:
+            msg: "RKE2 agent installation failed. See logs above."
 
     - name: Display agent status
-      systemd:
+      ansible.builtin.systemd:
         name: rke2-agent.service
       register: agent_status
-      
+      tags: [bootstrap, rke2, agent, status]
+
     - name: Show agent service status
-      debug:
+      ansible.builtin.debug:
         msg: "RKE2 Agent Status: {{ agent_status.status.ActiveState }}"
+      tags: [bootstrap, rke2, agent, status]

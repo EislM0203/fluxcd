@@ -52,4 +52,5 @@ spec:
             periodSeconds: 10
       volumes:
         - name: config
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: cerebro-config

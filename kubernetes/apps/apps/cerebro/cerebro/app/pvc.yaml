@@ -1,0 +1,38 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: cerebro
+  name: cerebro-config
+  annotations:
+    numberOfReplicas: '1'
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: tns-csi-nvmeof
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: cerebro-restore
+  resources:
+    requests:
+      storage: 1Gi
+---
+#yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: cerebro-restore
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: restic-cerebro
+    storageClassName: tns-csi-nvmeof
+    accessModes: ["ReadWriteOnce"]
+    copyMethod: Snapshot
+    volumeSnapshotClassName: tns-csi-nvmeof-snapshot-detached
+    capacity: 1Gi
+    enableFileDeletion: true
+    cleanupCachePVC: true
+    cleanupTempPVC: true

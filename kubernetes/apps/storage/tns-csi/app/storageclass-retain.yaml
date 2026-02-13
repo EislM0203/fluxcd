@@ -14,7 +14,6 @@ parameters:
   deleteStrategy: "retain"
   markAdoptable: "true"
   adoptExisting: "true"
-  nameTemplate: "{{ .PVCNamespace }}-{{ .PVCName }}"
 allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate

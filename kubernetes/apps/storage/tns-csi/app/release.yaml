@@ -55,5 +55,3 @@ spec:
         server: "10.0.0.154"
         transport: "tcp"
         port: "4420"
-        parameters:
-          nameTemplate: "{{ .PVCNamespace }}-{{ .PVCName }}"

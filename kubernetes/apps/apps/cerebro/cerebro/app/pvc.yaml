@@ -9,7 +9,7 @@ metadata:
     numberOfReplicas: '1'
 spec:
   accessModes: ["ReadWriteMany"]
-  storageClassName: tns-csi-nvmeof-retain
+  storageClassName: tns-csi-nvmeof
   dataSourceRef:
     kind: ReplicationDestination
     apiGroup: volsync.backube

@@ -1,0 +1,19 @@
+---
+#yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: cerebro-restore
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: restic-cerebro
+    storageClassName: tns-csi-nvmeof
+    accessModes: ["ReadWriteMany"]
+    copyMethod: Snapshot
+    volumeSnapshotClassName: tns-csi-nvmeof-snapshot-detached
+    capacity: 1Gi
+    enableFileDeletion: true
+    cleanupCachePVC: true
+    cleanupTempPVC: true

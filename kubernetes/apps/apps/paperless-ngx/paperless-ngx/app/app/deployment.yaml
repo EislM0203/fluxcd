@@ -1,0 +1,66 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: paperless
+  name: paperless
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paperless
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: paperless
+    spec:
+      containers:
+        - image: ghcr.io/paperless-ngx/paperless-ngx:latest
+          name: paperless
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: paperless-secrets
+          env:
+            - name: PAPERLESS_REDIS
+              value: redis://paperless-redis:6379
+            - name: PAPERLESS_DBHOST
+              value: paperless-pg-rw
+            - name: PAPERLESS_DBPORT
+              value: "5432"
+            - name: PAPERLESS_DBNAME
+              value: paperless
+            - name: PAPERLESS_DBUSER
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-pg-app
+                  key: username
+            - name: PAPERLESS_DBPASS
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-pg-app
+                  key: password
+            - name: PAPERLESS_URL
+              value: https://paperless.cloud.traunseenet.com
+          volumeMounts:
+            - mountPath: /usr/src/paperless/data
+              name: paperless-data
+              subPath: data
+            - mountPath: /usr/src/paperless/media
+              name: paperless-data
+              subPath: media
+            - mountPath: /usr/src/paperless/export
+              name: paperless-data
+              subPath: export
+            - mountPath: /usr/src/paperless/consume
+              name: paperless-data
+              subPath: consume
+      volumes:
+        - name: paperless-data
+          persistentVolumeClaim:
+            claimName: paperless-data

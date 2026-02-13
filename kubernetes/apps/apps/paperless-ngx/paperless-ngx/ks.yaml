@@ -1,0 +1,38 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: paperless-app
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: cert-manager-addons
+    - name: traefik-base
+    - name: tns-csi
+    - name: cnpg
+  path: ./kubernetes/apps/apps/paperless-ngx/paperless-ngx/app
+  prune: true
+  wait: true
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: paperless
+      namespace: apps
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: paperless-redis
+      namespace: apps
+    - apiVersion: postgresql.cnpg.io/v1
+      kind: Cluster
+      name: paperless-pg
+      namespace: apps
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: apps

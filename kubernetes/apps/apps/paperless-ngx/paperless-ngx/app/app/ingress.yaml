@@ -1,0 +1,27 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: paperless
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  labels:
+    app: paperless
+spec:
+  tls:
+    - hosts:
+        - paperless.cloud.traunseenet.com
+      secretName: paperless-cert
+  ingressClassName: traefik
+  rules:
+    - host: paperless.cloud.traunseenet.com
+      http:
+        paths:
+          - backend:
+              service:
+                name: paperless
+                port:
+                  number: 80
+            path: /
+            pathType: Prefix

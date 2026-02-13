@@ -7,16 +7,19 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: cert-manager-addons
-    - name: traefik-base
+    - name: tns-csi
   path: ./kubernetes/apps/storage/cnpg/cnpg/app
   prune: true
   wait: true
-  # healthChecks:
-  # - apiVersion: apps/v1
-  #   kind: Deployment
-  #   name: minio-deployment
-  #   namespace: storage
+  healthChecks:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: barman-cloud
+    namespace: storage
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: cloudnative-pg-operator
+    namespace: storage
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes

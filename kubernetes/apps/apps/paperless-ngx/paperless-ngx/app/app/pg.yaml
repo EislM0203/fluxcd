@@ -10,22 +10,6 @@ spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:17.6-system-trixie
   enableSuperuserAccess: true
   primaryUpdateStrategy: unsupervised
-  bootstrap:
-    initdb:
-      database: paperless
-      owner: paperless
-  storage:
-    pvcTemplate:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 10Gi
-      storageClassName: tns-csi-nvmeof
-      volumeMode: Filesystem
-  managed:
-    services:
-      disabledDefaultServices: ["ro", "r"]
   externalClusters:
     - name: &name paperless-pg
       plugin:
@@ -39,6 +23,24 @@ spec:
       parameters:
         barmanObjectName: *name
         serverName: *name
+  bootstrap:
+    # initdb:
+    #   database: paperless
+    #   owner: paperless
+    recovery:
+      source: *name
+  storage:
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: tns-csi-nvmeof
+      volumeMode: Filesystem
+  managed:
+    services:
+      disabledDefaultServices: ["ro", "r"]
 ---
 apiVersion: barmancloud.cnpg.io/v1
 kind: ObjectStore

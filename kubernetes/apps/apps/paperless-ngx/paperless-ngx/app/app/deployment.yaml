@@ -45,6 +45,8 @@ spec:
                 secretKeyRef:
                   name: paperless-pg-app
                   key: password
+            - name: PAPERLESS_PORT
+              value: "8000"
             - name: PAPERLESS_URL
               value: https://paperless.cloud.traunseenet.com
           volumeMounts:

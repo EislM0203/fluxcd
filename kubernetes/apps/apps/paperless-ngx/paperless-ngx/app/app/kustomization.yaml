@@ -4,7 +4,6 @@ resources:
 - secret.yaml
 - ingress.yaml
 - pg.yaml
-- pg-secret.yaml
 - service.yaml
 - deployment.yaml
 - redis.yaml

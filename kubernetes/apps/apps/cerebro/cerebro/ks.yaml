@@ -9,6 +9,7 @@ spec:
   dependsOn:
     - name: cert-manager-addons
     - name: traefik-base
+    - name: tns-csi
   path: ./kubernetes/apps/apps/cerebro/cerebro/app
   prune: true
   wait: true

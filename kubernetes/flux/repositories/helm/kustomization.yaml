@@ -5,6 +5,7 @@ kind: Kustomization
 namespace: flux-system
 resources:
   - ./cert-manager.yaml
+  - ./cloudnative-pg.yaml
   - ./longhorn.yaml
   - ./traefik.yaml
   - ./backube.yaml

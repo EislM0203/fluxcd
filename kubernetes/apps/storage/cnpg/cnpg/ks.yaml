@@ -1,0 +1,27 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cnpg
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: cert-manager-addons
+    - name: traefik-base
+  path: ./kubernetes/apps/storage/cnpg/cnpg/app
+  prune: true
+  wait: true
+  # healthChecks:
+  # - apiVersion: apps/v1
+  #   kind: Deployment
+  #   name: minio-deployment
+  #   namespace: storage
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: storage

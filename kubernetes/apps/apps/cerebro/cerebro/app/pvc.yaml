@@ -9,7 +9,7 @@ metadata:
     numberOfReplicas: '1'
 spec:
   accessModes: ["ReadWriteMany"]
-  storageClassName: tns-csi-nvmeof
+  storageClassName: tns-csi-nvmeof-retain
   dataSourceRef:
     kind: ReplicationDestination
     apiGroup: volsync.backube
@@ -28,8 +28,8 @@ spec:
     manual: restore-once
   restic:
     repository: restic-cerebro
-    storageClassName: tns-csi-nvmeof
-    accessModes: ["ReadWriteOnce"]
+    storageClassName: tns-csi-nvmeof-retain
+    accessModes: ["ReadWriteMany"]
     copyMethod: Snapshot
     volumeSnapshotClassName: tns-csi-nvmeof-snapshot-detached
     capacity: 1Gi

@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
 - cm.yaml
 - secret.yaml
+- pvc.yaml
 - db
 - server
 - backup

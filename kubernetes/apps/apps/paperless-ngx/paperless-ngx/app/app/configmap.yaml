@@ -15,3 +15,4 @@ data:
   PAPERLESS_TIKA_ENDPOINT: http://paperless-tika:9998
   PAPERLESS_OCR_LANGUAGES: "deu+eng"
   TZ: "Europe/Vienna"
+  PAPERLESS_APPS: allauth.socialaccount.providers.openid_connect

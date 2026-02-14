@@ -27,3 +27,24 @@ spec:
   retryInterval: 15m
   timeout: 15m
   targetNamespace: apps
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cerebro-backup
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: cerebro-app
+  path: ./kubernetes/apps/apps/cerebro/cerebro/app/backup
+  prune: true
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: apps

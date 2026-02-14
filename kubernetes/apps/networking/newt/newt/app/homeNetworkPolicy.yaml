@@ -9,6 +9,13 @@ spec:
   policyTypes:
     - Egress
   egress:
+    # Allow access to internal NPM
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.103/32
+      ports:
+        - protocol: TCP
+          port: 443
     # Allow access to Portainer VM
     - to:
         - ipBlock:

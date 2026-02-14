@@ -6,4 +6,3 @@ resources:
 - pvc.yaml
 - db
 - server
-- backup

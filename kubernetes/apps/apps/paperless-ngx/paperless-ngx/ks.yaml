@@ -28,6 +28,14 @@ spec:
       kind: Deployment
       name: paperless-redis
       namespace: apps
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: paperless-gotenberg
+      namespace: apps
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: paperless-tika
+      namespace: apps
     - apiVersion: postgresql.cnpg.io/v1
       kind: Cluster
       name: paperless-pg

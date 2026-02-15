@@ -16,7 +16,7 @@ spec:
         app: paperless-gotenberg
     spec:
       containers:
-        - image: docker.io/gotenberg/gotenberg:8.25
+        - image: docker.io/gotenberg/gotenberg:8.26
           name: gotenberg
           command:
             - "gotenberg"

@@ -16,7 +16,7 @@ spec:
   #   name: dozzle-restore
   resources:
     requests:
-      storage: 15Gi
+      storage: 5Gi
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
 apiVersion: volsync.backube/v1alpha1
@@ -32,7 +32,7 @@ spec:
     accessModes: ["ReadWriteMany"]
     copyMethod: Snapshot
     volumeSnapshotClassName: tns-csi-nvmeof-snapshot-detached
-    capacity: 15Gi
+    capacity: 5Gi
     enableFileDeletion: true
     cleanupCachePVC: true
     cleanupTempPVC: true

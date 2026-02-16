@@ -1,0 +1,38 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: dozzle
+  name: dozzle-data
+  annotations:
+    numberOfReplicas: '1'
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: tns-csi-nvmeof
+  # dataSourceRef:
+  #   kind: ReplicationDestination
+  #   apiGroup: volsync.backube
+  #   name: dozzle-restore
+  resources:
+    requests:
+      storage: 15Gi
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: dozzle-restore
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: restic-dozzle
+    storageClassName: tns-csi-nvmeof
+    accessModes: ["ReadWriteMany"]
+    copyMethod: Snapshot
+    volumeSnapshotClassName: tns-csi-nvmeof-snapshot-detached
+    capacity: 15Gi
+    enableFileDeletion: true
+    cleanupCachePVC: true
+    cleanupTempPVC: true

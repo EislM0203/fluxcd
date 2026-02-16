@@ -9,17 +9,28 @@ spec:
   policyTypes:
     - Egress
   egress:
-    # Allow access to internal NPM
+    # Allow access to internal NPM & cluster traefik
     - to:
         - ipBlock:
             cidr: 10.0.0.103/32
+        - ipBlock:
+            cidr: 10.0.0.201/32
+        - ipBlock:
+            cidr: 10.0.0.202/32
+        - ipBlock:
+            cidr: 10.0.0.203/32
       ports:
         - protocol: TCP
           port: 443
-    # Allow access to Portainer VM
+    # Allow access to internal DNS
     - to:
         - ipBlock:
-            cidr: 10.0.0.151/32
+            cidr: 10.0.0.102/32
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
     # Allow access to pangolin https & udp ports
     - to:
         - ipBlock:

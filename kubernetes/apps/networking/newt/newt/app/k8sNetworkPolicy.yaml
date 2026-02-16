@@ -18,6 +18,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: observability
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: grafana
     # Allow access to harbor
     - to:
         - namespaceSelector:

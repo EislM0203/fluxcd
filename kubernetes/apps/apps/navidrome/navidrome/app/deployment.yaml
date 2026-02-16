@@ -41,7 +41,7 @@ spec:
               value: "1000" #< ACII code for '1044'
             - name: TZ
               value: Europe/Vienna # Container must run as privileged inside of the pod, required for hardware acceleration
-          image: deluan/navidrome:0.59.0
+          image: deluan/navidrome:0.60.3
           imagePullPolicy: Always
           name: navidrome
           ports:

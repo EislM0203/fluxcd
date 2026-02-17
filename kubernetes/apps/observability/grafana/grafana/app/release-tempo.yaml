@@ -9,10 +9,10 @@ spec:
   chart:
     spec:
       chart: tempo
-      version: 1.24.4
+      version: 1.26.1
       sourceRef:
         kind: HelmRepository
-        name: grafana
+        name: grafana-community
         namespace: flux-system
   maxHistory: 2
   install:

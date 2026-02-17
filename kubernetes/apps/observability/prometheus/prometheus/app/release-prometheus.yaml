@@ -133,11 +133,11 @@ spec:
         storageSpec:
           volumeClaimTemplate:
             spec:
-              storageClassName: longhorn-storage
+              storageClassName: tns-csi-nvmeof
               accessModes: ["ReadWriteOnce"]
               resources:
                 requests:
-                  storage: 4Gi
+                  storage: 20Gi
             selector: {}
         # thanos:
         #   objectStorageConfig:
@@ -192,15 +192,6 @@ spec:
           - secretName: alertmanager-cert
             hosts:
               - *host
-        storageSpec:
-          volumeClaimTemplate:
-            spec:
-              storageClassName: tns-csi-nvmeof
-              accessModes: ["ReadWriteMany"]
-              resources:
-                requests:
-                  storage: 500Mi
-            selector: {}
       resources:
         cpu: 10m
         memory: 32Mi

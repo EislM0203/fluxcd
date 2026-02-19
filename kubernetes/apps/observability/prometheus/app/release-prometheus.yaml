@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: kube-prometheus-stack
-      version: 79.12.0
+      version: 81.6.9
       sourceRef:
         kind: HelmRepository
         name: prometheus-community
@@ -133,11 +133,11 @@ spec:
         storageSpec:
           volumeClaimTemplate:
             spec:
-              storageClassName: longhorn-storage
+              storageClassName: tns-csi-nvmeof
               accessModes: ["ReadWriteOnce"]
               resources:
                 requests:
-                  storage: 4Gi
+                  storage: 20Gi
             selector: {}
         # thanos:
         #   objectStorageConfig:
@@ -175,11 +175,11 @@ spec:
       enabled: false
       forceDeployDashboards: true
     alertmanager:
-      enabled: false
+      enabled: true
       service:
         annotations: {}
         labels: {}
-        type: CLusterIP
+        type: ClusterIP
       ingress:
         enabled: true
         className: traefik
@@ -192,50 +192,60 @@ spec:
           - secretName: alertmanager-cert
             hosts:
               - *host
-        storageSpec:
-          volumeClaimTemplate:
-            spec:
-              storageClassName: longhorn-storage
-              accessModes: ["ReadWriteMany"]
-              resources:
-                requests:
-                  storage: 500Mi
-            selector: {}
       resources:
         cpu: 10m
         memory: 32Mi
-      alertmanagerSpec:
-        useExistingSecret: true
-        configSecret: alertmanager-secret
-      # config:
-      #   # enabled: true
-      #   global: {}
-      #   #   webhook_url: ''
-      #   route:
-      #     group_by: ['alertname', 'job']
-      #     group_wait: 30s
-      #     group_interval: 5m
-      #     repeat_interval: 3h
-      #     receiver: discord
-      #   receivers:
-      #   - name: discord
-      #     discord_configs:
-      #     - webhook_url:
-      templates:
-        alertmanager.yml: |
-          route:
-            group_by: ['alertname', 'job']
-            group_wait: 30s
-            group_interval: 5m
-            repeat_interval: 3h
-            receiver: discord
-          receivers:
-          - name: discord
-            discord_configs:
-            - webhook_url: todo
+      config:
+        route:
+          receiver: ntfy-default
 
+          # Reduce noise: group related alerts together
+          group_by: ['alertname', 'cluster', 'namespace']
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
 
+          routes:
+            # Drop explicit "info" unless you want it
+            - matchers:
+                - severity="info"
+              receiver: null-receiver
 
+            # Critical -> dedicated topic, faster repeat
+            - matchers:
+                - severity="critical"
+              receiver: ntfy-critical
+              repeat_interval: 1h
+
+            # Warning -> separate topic
+            - matchers:
+                - severity="warning"
+              receiver: ntfy-warning
+
+        inhibit_rules:
+          # If critical is firing, suppress warning/info for same thing
+          - source_matchers:
+              - severity="critical"
+            target_matchers:
+              - severity=~"warning|info"
+            equal: ['alertname', 'cluster', 'namespace']
+
+        receivers:
+          - name: null-receiver
+
+          # Default / fallback
+          - name: ntfy-default
+            webhook_configs:
+              - url: "http://ntfy.apps.svc.cluster.local/am-default?template=alertmanager"
+                send_resolved: true
+          - name: ntfy-warning
+            webhook_configs:
+              - url: "http://ntfy.apps.svc.cluster.local/am-warning?template=alertmanager"
+                send_resolved: true
+          - name: ntfy-critical
+            webhook_configs:
+              - url: "http://ntfy.apps.svc.cluster.local/am-critical?template=alertmanager"
+                send_resolved: true
     additionalPrometheusRulesMap:
       demo-alerts.yml:
         groups:

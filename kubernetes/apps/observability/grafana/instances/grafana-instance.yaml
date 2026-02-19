@@ -1,0 +1,110 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafana_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: Grafana
+metadata:
+  name: grafana
+  labels:
+    grafana.internal/instance: grafana
+spec:
+  config:
+    analytics:
+      check_for_updates: false
+      check_for_plugin_updates: false
+      reporting_enabled: false
+      feedback_links_enabled: "false"
+    news:
+      news_feed_enabled: false
+    plugins:
+      plugin_admin_enabled: "true"
+    auth.anonymous:
+      enabled: false
+    auth.generic_oauth:
+      enabled: true
+      name: Pocket-ID
+      allow_sign_up: false
+      client_id: dae7fabd-c1db-4a59-8db5-6eef9440f3a1
+      client_secret: ${AUTH_CLIENT_SECRET}
+      scopes: openid email profile
+      email_attribute_path: email:primary
+      skip_org_role_sync: true
+      auth_style: "Auto Detect"
+      auth_url: https://pocketid.traunseenet.com/authorize
+      token_url: https://pocketid.traunseenet.com/api/oidc/token
+      auto_login: false
+      oauth_allow_insecure_email_lookup: true
+    server:
+      # The full public facing url you use in browser, used for redirects and emails
+      enable_gzip: "true"
+      root_url: https://grafana.cloud.traunseenet.com
+  deployment:
+    spec:
+      strategy:
+        type: Recreate
+      template:
+        spec:
+          containers:
+            - name: grafana
+              env:
+                - name: GF_SECURITY_ADMIN_EMAIL
+                  valueFrom:
+                    secretKeyRef:
+                      name: grafana-secrets
+                      key: admin_email
+                - name: GF_SECURITY_ADMIN_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: grafana-secrets
+                      key: admin_user
+                - name: GF_SECURITY_ADMIN_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: grafana-secrets
+                      key: admin_password
+                - name: AUTH_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: grafana-secrets
+                      key: client_secret
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+  ingress:
+    spec:
+      ingressClassName: traefik
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      rules:
+        - host: grafana.cloud.traunseenet.com
+          http:
+            paths:
+              - backend:
+                  service:
+                    name: grafana-service
+                    port:
+                      number: 3000
+                path: /
+                pathType: Prefix
+      tls:
+        - hosts:
+            - grafana.cloud.traunseenet.com
+          secretName: grafana-cert
+  # httpRoute:
+  #   spec:
+  #     hostnames:
+  #       - grafana.cloud.traunseenet.com
+  #     parentRefs:
+  #       - name: traefik-gateway
+  #         namespace: network
+  #     rules:
+  #       - backendRefs:
+  #           - name: grafana-service
+  #             port: 3000

@@ -2,9 +2,10 @@
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: observability
 resources:
-  - auth.yaml
-  - storage.yaml
-  - networking.yaml
-  - longhorn-system.yaml
-  - apps.yaml
+  - grafana-instance.yaml
+  - servicemonitor.yaml
+  - datasource-prometheus.yaml
+  - dashboard-prometheus.yaml
+  - secret.yaml

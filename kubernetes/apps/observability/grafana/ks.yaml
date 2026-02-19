@@ -1,0 +1,70 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: grafana-operators
+  namespace: flux-system
+spec:
+  path: ./kubernetes/apps/observability/grafana/operators
+  prune: true
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  wait: false
+  interval: 30m
+  retryInterval: 15m
+  timeout: 5m
+  targetNamespace: observability
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: grafana-instances
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: traefik-base
+    - name: cert-manager-addons
+    - name: grafana-operators
+    - name: tns-csi
+  path: ./kubernetes/apps/observability/grafana/instances
+  prune: true
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  wait: false # no flux ks dependents
+  interval: 30m
+  retryInterval: 15m
+  timeout: 5m
+  targetNamespace: observability
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: grafana-apps
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: traefik-base
+    - name: cert-manager-addons
+    - name: grafana-operators
+    - name: tns-csi
+  path: ./kubernetes/apps/observability/grafana/grafana-apps
+  prune: true
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  wait: false # no flux ks dependents
+  interval: 30m
+  retryInterval: 15m
+  timeout: 5m
+  targetNamespace: observability

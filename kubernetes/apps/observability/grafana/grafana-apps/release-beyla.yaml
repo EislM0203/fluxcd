@@ -55,6 +55,7 @@ data:
         - k8s_namespace: default
         - k8s_namespace: networking
         - k8s_namespace: auth
+        - k8s_namespace: secured
         - k8s_namespace: flux-system
         - exe_path: (worker)|(backend)|(frontend)|(cilium)|(hubble) # any service exec that has name worker,backent...
           namespace: kube-system

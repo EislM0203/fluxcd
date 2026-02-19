@@ -9,7 +9,6 @@ data:
   ENABLE_LOGIN_FORM: "false"
   OAUTH_MERGE_ACCOUNTS_BY_EMAIL: "true"
   OLLAMA_BASE_URL: "http://10.0.0.59:11434"
-  ENABLE_OPENAI_API: "true"
   OPENAI_API_BASE_URL: "http://10.0.0.59:9000/v1"
   OPENAI_API_KEY: "placeholder"
   OAUTH_PROVIDER_NAME: PocketID

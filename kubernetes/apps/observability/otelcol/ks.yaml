@@ -8,7 +8,7 @@ metadata:
 spec:
   dependsOn:
     - name: cert-manager-addons
-  path: ./kubernetes/apps/observability/otelcol/otelcol/operator
+  path: ./kubernetes/apps/observability/otelcol/operator
   prune: true
   wait: true
   sourceRef:
@@ -29,7 +29,7 @@ metadata:
 spec:
   dependsOn:
     - name: otel-operator
-  path: ./kubernetes/apps/observability/otelcol/otelcol/operator/collector
+  path: ./kubernetes/apps/observability/otelcol/operator/collector
   prune: true
   wait: true
   sourceRef:

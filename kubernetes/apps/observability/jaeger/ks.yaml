@@ -9,7 +9,7 @@ spec:
   dependsOn:
     - name: cert-manager-addons
     - name: traefik-base
-  path: ./kubernetes/apps/observability/jaeger/jaeger/app
+  path: ./kubernetes/apps/observability/jaeger/app
   prune: true
   wait: true
   sourceRef:

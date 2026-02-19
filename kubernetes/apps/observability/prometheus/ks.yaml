@@ -10,7 +10,7 @@ spec:
     - name: cert-manager-addons
     - name: traefik-base
     - name: longhorn-addons
-  path: ./kubernetes/apps/observability/prometheus/prometheus/app
+  path: ./kubernetes/apps/observability/prometheus/app
   prune: true
   wait: true
   sourceRef:

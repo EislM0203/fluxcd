@@ -9,30 +9,30 @@ metadata:
 spec:
   config:
     analytics:
-      check_for_updates: false
-      check_for_plugin_updates: false
-      reporting_enabled: false
+      check_for_updates: "false"
+      check_for_plugin_updates: f"als"e
+      reporting_enabled: "false"
       feedback_links_enabled: "false"
     news:
-      news_feed_enabled: false
+      news_feed_enabled: "false"
     plugins:
       plugin_admin_enabled: "true"
     auth.anonymous:
-      enabled: false
+      enabled: "false"
     auth.generic_oauth:
       enabled: true
       name: Pocket-ID
-      allow_sign_up: false
+      allow_sign_up: "false"
       client_id: dae7fabd-c1db-4a59-8db5-6eef9440f3a1
       client_secret: ${AUTH_CLIENT_SECRET}
       scopes: openid email profile
       email_attribute_path: email:primary
-      skip_org_role_sync: true
+      skip_org_role_sync: "true"
       auth_style: "Auto Detect"
       auth_url: https://pocketid.traunseenet.com/authorize
       token_url: https://pocketid.traunseenet.com/api/oidc/token
-      auto_login: false
-      oauth_allow_insecure_email_lookup: true
+      auto_login: "false"
+      oauth_allow_insecure_email_lookup: "true"
     server:
       # The full public facing url you use in browser, used for redirects and emails
       enable_gzip: "true"

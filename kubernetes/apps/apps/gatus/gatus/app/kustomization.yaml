@@ -4,3 +4,4 @@ resources:
 - cm.yaml
 - ingress.yaml
 - deployment.yaml
+- service.yaml

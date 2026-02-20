@@ -133,6 +133,10 @@ spec:
           enabled: true
     rbac:
       enabled: true
+    metrics:
+      prometheus:
+        serviceMonitor:
+          enabled: true
     service:
       enabled: true
       type: LoadBalancer

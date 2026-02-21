@@ -136,7 +136,7 @@ spec:
     metrics:
       prometheus:
         serviceMonitor:
-          enabled: true
+          enabled: false
     service:
       enabled: true
       type: LoadBalancer

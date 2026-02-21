@@ -1,21 +1,13 @@
 ---
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
-metadata:
-  name: netbirdio
-spec:
-  interval: 2h
-  url: https://netbirdio.github.io/helms
----
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: netbird
+  name: netbird-config
 spec:
   interval: 15m
   chart:
     spec:
-      chart: kubernetes-operator
+      chart: netbird-operator-config
       version: 0.2.1
       sourceRef:
         kind: HelmRepository
@@ -32,13 +24,6 @@ spec:
   uninstall:
     keepHistory: false
   values:
-    managementURL: "https://netbird.traunseenet.com:443"
-    ingress:
-      enabled: true
-    netbirdAPI:
-      keyFromSecret: 
-        name: "netbird-secrets"
-        key: "NB_API_KEY"
     router:
       enabled: true
     policies:
@@ -52,5 +37,6 @@ spec:
         bidirectional: false
       k8s-admins:
         name: App admins
+        description: Policy for app admins access # Optional
         sourceGroups:
           - app-admins

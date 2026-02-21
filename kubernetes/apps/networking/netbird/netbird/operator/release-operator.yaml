@@ -1,0 +1,49 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: netbird-operator
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: kubernetes-operator
+      version: 0.2.1
+      sourceRef:
+        kind: HelmRepository
+        name: netbirdio
+  maxHistory: 2
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    managementURL: "https://netbird.traunseenet.com:443"
+    ingress:
+      enabled: true
+    netbirdAPI:
+      keyFromSecret: 
+        name: "netbird-secrets"
+        key: "NB_API_KEY"
+    router:
+      enabled: true
+    policies:
+      app-users:
+        name: App users # Required, name of policy in NetBird console
+        description: Policy for app users access # Optional
+        sourceGroups: # Required, name of groups to assign as source in Policy.
+          - app-users
+        protocols: # Optional, restricts protocols allowed to resources, defaults to ['tcp', 'udp'].
+          - tcp
+        bidirectional: false
+      k8s-admins:
+        name: App admins
+        description: Policy for app admins access # Optional
+        sourceGroups:
+          - app-admins

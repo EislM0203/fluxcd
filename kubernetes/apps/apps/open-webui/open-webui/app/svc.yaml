@@ -4,9 +4,9 @@ kind: Service
 metadata:
   annotations:
     netbird.io/expose: "true"
-    netbird.io/groups: "app-users"
+    netbird.io/groups: app-users
+    netbird.io/policy: app-users
     netbird.io/resource-name: "gpt"
-    netbird.io/policy-ports: "8080"
   labels:
     app: open-webui
   name: open-webui

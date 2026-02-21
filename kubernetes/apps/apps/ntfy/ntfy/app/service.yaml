@@ -6,9 +6,9 @@ metadata:
   name: ntfy
   annotations:
     netbird.io/expose: "true"
-    netbird.io/groups: "app-users"
+    netbird.io/groups: app-users
+    netbird.io/policy: app-users
     netbird.io/resource-name: "ntfy"
-    netbird.io/policy-ports: "80"
 spec:
   selector:
     app: ntfy

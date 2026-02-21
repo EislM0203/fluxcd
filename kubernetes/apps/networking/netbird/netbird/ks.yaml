@@ -6,7 +6,7 @@ metadata:
   name: netbird-operator
   namespace: flux-system
 spec:
-  path: ./kubernetes/apps/networking/netbird
+  path: ./kubernetes/apps/networking/netbird/netbird/operator
   dependsOn:
     - name: cert-manager-addons
   prune: true

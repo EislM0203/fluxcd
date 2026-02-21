@@ -5,7 +5,7 @@ kind: Service
 metadata:
   name: ntfy
   annotations:
-    netbird.io/expose: true
+    netbird.io/expose: "true"
     netbird.io/groups: "app-users"
     netbird.io/resource-name: "ntfy"
     netbird.io/policy-ports: "80"

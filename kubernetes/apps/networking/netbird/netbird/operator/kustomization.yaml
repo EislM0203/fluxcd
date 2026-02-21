@@ -5,3 +5,4 @@ resources:
   - release-operator.yaml
   - release-config.yaml
   - secret.yaml
+  - repo.yaml

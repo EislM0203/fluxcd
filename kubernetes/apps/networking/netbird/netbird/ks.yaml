@@ -10,7 +10,7 @@ spec:
   dependsOn:
     - name: cert-manager-addons
   prune: true
-  suspend: false
+  suspend: true
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes

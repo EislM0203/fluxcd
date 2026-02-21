@@ -28,7 +28,6 @@ metadata:
 spec:
   dependsOn:
     - name: traefik-base
-    - name: cert-manager-addons
     - name: grafana-operators
     - name: tns-csi
   path: ./kubernetes/apps/observability/grafana/instances
@@ -53,7 +52,6 @@ metadata:
 spec:
   dependsOn:
     - name: traefik-base
-    - name: cert-manager-addons
     - name: grafana-operators
     - name: tns-csi
   path: ./kubernetes/apps/observability/grafana/grafana-apps

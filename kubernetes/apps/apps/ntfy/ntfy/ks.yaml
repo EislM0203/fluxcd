@@ -7,7 +7,6 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: cert-manager-addons
     - name: traefik-base
   path: ./kubernetes/apps/apps/ntfy/ntfy/app
   prune: true

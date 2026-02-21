@@ -6,8 +6,6 @@ metadata:
   name: otel-operator
   namespace: flux-system
 spec:
-  dependsOn:
-    - name: cert-manager-addons
   path: ./kubernetes/apps/observability/otelcol/operator
   prune: true
   wait: true

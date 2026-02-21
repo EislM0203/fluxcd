@@ -33,8 +33,9 @@ resource "proxmox_virtual_environment_vm" "vm" {
   tags = [var.environment, "proxmox", "terraform"]
 
   clone {
-    vm_id = each.value.template_id
-    full  = true
+    vm_id     = each.value.template_id
+    node_name = each.value.template_node
+    full      = true
   }
 
   agent {

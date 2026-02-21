@@ -136,7 +136,7 @@ spec:
     metrics:
       prometheus:
         serviceMonitor:
-          enabled: false
+          enabled: true
     service:
       enabled: true
       type: LoadBalancer
@@ -151,3 +151,6 @@ spec:
         - "10.0.0.200"
         - "10.0.0.201"
         - "10.0.0.202"
+        - "100.99.108.152"
+        - "100.99.217.202"
+        - "100.99.182.58"

@@ -3,3 +3,4 @@ rke2_extra_tls_san:
   - 10.0.0.59
   - 10.0.0.211
   - 10.0.0.67
+  - evo-x2.netbird.internal

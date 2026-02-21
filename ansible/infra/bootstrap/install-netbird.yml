@@ -1,0 +1,46 @@
+---
+- name: Install NetBird on Kubernetes Nodes
+  hosts: rke2_server:rke2_agents
+  become: yes
+  vars:
+    netbird_management_url: "https://netbird.traunseenet.com"
+
+  tasks:
+    - name: Download NetBird install script
+      ansible.builtin.get_url:
+        url: https://pkgs.netbird.io/install.sh
+        dest: /tmp/netbird-install.sh
+        mode: '0755'
+      tags: [bootstrap, netbird]
+
+    - name: Run NetBird installer
+      ansible.builtin.command: sh /tmp/netbird-install.sh
+      args:
+        creates: /usr/bin/netbird
+      tags: [bootstrap, netbird]
+
+    - name: Enable and start NetBird service
+      ansible.builtin.systemd:
+        name: netbird.service
+        enabled: yes
+        state: started
+        daemon_reload: yes
+      tags: [bootstrap, netbird]
+
+    - name: Check NetBird connection status
+      ansible.builtin.command: netbird status
+      register: netbird_status
+      changed_when: false
+      failed_when: false
+      tags: [bootstrap, netbird]
+
+    - name: Connect NetBird to management
+      ansible.builtin.command: >
+        netbird up
+        --management-url {{ netbird_management_url }}
+        --setup-key {{ netbird_setup_key }}
+        --allow-server-ssh 
+        --enable-ssh-local-port-forwarding  
+        --enable-ssh-remote-port-forwarding
+      when: "'Connected' not in netbird_status.stdout"
+      tags: [bootstrap, netbird]

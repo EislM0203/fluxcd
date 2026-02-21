@@ -8,13 +8,15 @@ TFVARS_FILE = tf/terraform.tfvars
 SOPS_AGE_KEY_FILE = $(HOME)/.config/sops/age/keys.txt
 
 .PHONY: bootstrap-infra plan-tf apply-tf destroy-tf wait-for-nodes update-packages \
-	install-longhorn-dependencies install-tns-csi-dependencies reboot-if-required install-rke2-server install-rke2-agent cluster-readiness-check
+	install-longhorn-dependencies install-tns-csi-dependencies reboot-if-required install-rke2-server install-rke2-agent cluster-readiness-check \
+	install-netbird
 
 bootstrap-infra: apply-tf \
 	wait-for-nodes \
 	update-packages \
 	install-longhorn-dependencies \
 	install-tns-csi-dependencies \
+	install-netbird \
 	reboot-if-required \
 	install-rke2-server \
 	install-rke2-agent \
@@ -55,3 +57,8 @@ install-rke2-agent:
 
 cluster-readiness-check:
 	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/cluster-readiness-check.yml"
+
+install-netbird:
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && \
+	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/install-netbird.yml" \
+		--extra-vars "netbird_setup_key=$$NETBIRD_SETUP_KEY"

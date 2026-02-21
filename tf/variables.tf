@@ -54,7 +54,8 @@ variable "proxmox_nodes" {
     cores       = number
     memory      = number
     disk_size   = number
-    template_id = number
+    template_id   = number
+    template_node = string
   }))
   default = {}
 

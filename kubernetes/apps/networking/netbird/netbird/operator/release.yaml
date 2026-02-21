@@ -15,7 +15,7 @@ spec:
   interval: 15m
   chart:
     spec:
-      chart: netbird-operator
+      chart: kubernetes-operator
       version: 0.2.1
       sourceRef:
         kind: HelmRepository

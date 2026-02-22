@@ -31,6 +31,10 @@ spec:
           port: 53
         - protocol: UDP
           port: 53
+    # Allow access to internal docker vm
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.151/32
     # Allow access to pangolin https & udp ports
     - to:
         - ipBlock:

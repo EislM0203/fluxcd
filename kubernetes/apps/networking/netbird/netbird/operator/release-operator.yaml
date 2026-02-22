@@ -27,6 +27,7 @@ spec:
     managementURL: "https://netbird.traunseenet.com:443"
     ingress:
       enabled: true
+      allowAutomaticPolicyCreation: true
     netbirdAPI:
       keyFromSecret: 
         name: "netbird-secrets"

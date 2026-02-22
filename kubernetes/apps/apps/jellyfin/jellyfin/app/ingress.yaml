@@ -10,7 +10,7 @@ spec:
   tls:
     - hosts:
         - jellyfin.cloud.traunseenet.com
-        - jellyfin.proxy.traunseenet.com
+        - jellyfin.web.traunseenet.com
       secretName: jellyfin-cert
   ingressClassName: traefik
   rules:
@@ -24,7 +24,7 @@ spec:
                 name: jellyfin
                 port:
                   name: http-tcp
-    - host: jellyfin.proxy.traunseenet.com
+    - host: jellyfin.web.traunseenet.com
       http:
         paths:
           - path: /

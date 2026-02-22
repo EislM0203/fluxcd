@@ -40,3 +40,6 @@ spec:
         description: Policy for app admins access # Optional
         sourceGroups:
           - app-admins
+        protocols:
+          - tcp
+        bidirectional: false

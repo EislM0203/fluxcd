@@ -9,10 +9,16 @@ spec:
   policyTypes:
     - Egress
   egress:
-    # Allow access to internal NPM
+    # Allow access to internal NPM & cluster Traefik
     - to:
         - ipBlock:
             cidr: 10.0.0.103/32
+        - ipBlock:
+            cidr: 10.0.0.201/32
+        - ipBlock:
+            cidr: 10.0.0.202/32
+        - ipBlock:
+            cidr: 10.0.0.203/32
       ports:
         - protocol: TCP
           port: 443

@@ -5,4 +5,5 @@ resources:
   - deployment.yaml
   - homeNetworkPolicy.yaml
   - k8sNetworkPolicy.yaml
+  - devopsNetworkPolicy.yaml
   - secret.yaml

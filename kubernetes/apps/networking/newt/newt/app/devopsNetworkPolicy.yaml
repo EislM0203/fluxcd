@@ -1,0 +1,48 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: devops-access-newt-egress-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: devops-access-newt
+  policyTypes:
+    - Egress
+  egress:
+    # Allow SSH access to infrastructure hosts
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.59/32
+        - ipBlock:
+            cidr: 10.0.0.67/32
+        - ipBlock:
+            cidr: 10.0.0.225/32
+        - ipBlock:
+            cidr: 10.0.0.150/32
+      ports:
+        - protocol: TCP
+          port: 22
+    # Allow access to pangolin https & udp ports
+    - to:
+        - ipBlock:
+            cidr: 116.203.125.9/32
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: UDP
+          port: 51820
+        - protocol: UDP
+          port: 21820
+    # Allow kube-dns
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

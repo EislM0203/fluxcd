@@ -85,3 +85,47 @@ spec:
               memory: "128Mi"
               cpu: "250m"
           imagePullPolicy: IfNotPresent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-access-newt
+  labels:
+    app: devops-access-newt
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: devops-access-newt
+  template:
+    metadata:
+      labels:
+        app: devops-access-newt
+    spec:
+      containers:
+        - name: devops-access-newt
+          image: fosrl/newt
+          env:
+            - name: PANGOLIN_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: devops-access-newt-auth
+                  key: PANGOLIN_ENDPOINT
+            - name: NEWT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: devops-access-newt-auth
+                  key: NEWT_ID
+            - name: NEWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: devops-access-newt-auth
+                  key: NEWT_SECRET
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+          imagePullPolicy: IfNotPresent

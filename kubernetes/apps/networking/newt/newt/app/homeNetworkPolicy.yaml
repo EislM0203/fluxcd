@@ -16,6 +16,13 @@ spec:
       ports:
         - protocol: TCP
           port: 443
+    # Allow access to cluster via haproxy
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.100/32
+      ports:
+        - protocol: TCP
+          port: 443    
     # Allow access to internal DNS
     - to:
         - ipBlock:

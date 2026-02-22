@@ -9,19 +9,24 @@ spec:
   policyTypes:
     - Egress
   egress:
-    # Allow access to internal NPM & cluster traefik
+    # Allow access to internal NPM
     - to:
         - ipBlock:
             cidr: 10.0.0.103/32
-        - ipBlock:
-            cidr: 10.0.0.201/32
-        - ipBlock:
-            cidr: 10.0.0.202/32
-        - ipBlock:
-            cidr: 10.0.0.203/32
       ports:
         - protocol: TCP
           port: 443
+    # Allow access to cluster Traefik (post-DNAT destination)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 8443
     # Allow access to internal DNS
     - to:
         - ipBlock:

@@ -144,7 +144,7 @@ spec:
         argocd.argoproj.io/ignore-healthcheck: "true" 
       labels: {}
       spec:
-        externalTrafficPolicy: Cluster
+        externalTrafficPolicy: Local
         #loadBalancerIP: 10.0.0.225 # beelink
       loadBalancerSourceRanges: []
       externalIPs:

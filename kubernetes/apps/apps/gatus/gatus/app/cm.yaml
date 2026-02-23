@@ -11,23 +11,23 @@ data:
         conditions:
           - "[STATUS] == 200"
           - "[BODY] == Healthy"
-          - "[RESPONSE_TIME] < 500"
+          - "[RESPONSE_TIME] < 700"
         alerts:
           - type: "ntfy"
-      - name: Karakeep
-        url: "http://karakeep.apps.svc.cluster.local/signin"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 300"
-        alerts:
-          - type: "ntfy"
+      # - name: Karakeep
+      #   url: "http://karakeep.apps.svc.cluster.local/signin"
+      #   interval: 1m
+      #   conditions:
+      #     - "[STATUS] == 200"
+      #     - "[RESPONSE_TIME] < 500"
+      #   alerts:
+      #     - type: "ntfy"
       - name: Navidrome
         url: "http://navidrome.apps.svc.cluster.local:4533/rest/ping"
         interval: 1m
         conditions:
           - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 300"
+          - "[RESPONSE_TIME] < 500"
         alerts:
           - type: "ntfy"
       - name: Ntfy
@@ -36,16 +36,32 @@ data:
         conditions:
           - "[STATUS] == 200"
           - "[BODY].healthy == true"
-          - "[RESPONSE_TIME] < 300"
+          - "[RESPONSE_TIME] < 500"
         alerts:
           - type: "ntfy"
-      - name: Open-Webui
-        url: "http://open-webui.apps.svc.cluster.local:8080/health"
+      # - name: Open-Webui
+      #   url: "http://open-webui.apps.svc.cluster.local:8080/health"
+      #   interval: 1m
+      #   conditions:
+      #     - "[STATUS] == 200"
+      #     - "[BODY].status == true"
+      #     - "[RESPONSE_TIME] < 500"
+      #   alerts:
+      #     - type: "ntfy"
+      - name: MiniIO Cloud
+        url: "http://minio-service.storage.svc.cluster.local:9000/minio/health/live"
         interval: 1m
         conditions:
           - "[STATUS] == 200"
-          - "[BODY].status == true"
-          - "[RESPONSE_TIME] < 300"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+      - name: Paperless NGX
+        url: "http://paperless.apps.svc.cluster.local/accounts/login/?next=/"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 500"
         alerts:
           - type: "ntfy"
     alerting:

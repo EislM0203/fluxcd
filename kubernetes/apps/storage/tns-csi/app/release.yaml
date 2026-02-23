@@ -39,17 +39,9 @@ spec:
         deletionPolicy: Delete
     # Storage class configuration - NVMe-oF
     storageClasses:
-      nfs:
-        enabled: false
-        # name: tns-csi-nfs
-        # pool: "vega"
-        # parentDataset: "vega/csi/tns-csi/nfs/volumes" # use different path
-        # server: "10.0.0.154"
-        # transport: "tcp"
-        # port: "4420"
-      nvmeof:
+      - name: tns-csi-nvmeof
+        protocol: nvmeof
         enabled: true
-        name: tns-csi-nvmeof
         pool: "nvmepool"
         parentDataset: "nvmepool/tns-csi/pod-volume"
         server: "10.0.0.154"

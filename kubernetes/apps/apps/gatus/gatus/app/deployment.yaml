@@ -37,6 +37,5 @@ spec:
         configMap:
           name: gatus-config
       - name: data
-        nfs:
-          server: 10.0.0.154
-          path: /mnt/nvmepool/kubernetes/gatus
+        persistentVolumeClaim:
+          claimName: gatus-db

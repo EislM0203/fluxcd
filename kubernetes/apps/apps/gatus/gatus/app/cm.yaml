@@ -56,3 +56,4 @@ data:
     storage:
       type: sqlite
       path: /etc/gatus/data.db
+    metrics: true

@@ -11,7 +11,7 @@ spec:
   path: ./kubernetes/apps/apps/open-webui/open-webui/app
   prune: true
   wait: true
-  suspend: true
+  suspend: false
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes

@@ -3,19 +3,23 @@ data:
   AIOHTTP_CLIENT_TIMEOUT_OPENAI_MODEL_LIST: "1"
   ENABLE_OAUTH_SIGNUP: "true"
   ENABLE_OTEL: "true"
+  ENABLE_OTEL_TRACES: "true"
+  ENABLE_OTEL_METRICS: "true"
+  ENABLE_OTEL_LOGS: "true"
   ENABLE_WEB_SEARCH: "true"
   ENABLE_SIGNUP: "false"
   ENABLE_OPENAI_API: "true"
+  ENABLE_OLLAMA_API: "true"
   ENABLE_LOGIN_FORM: "false"
   OAUTH_MERGE_ACCOUNTS_BY_EMAIL: "true"
   OLLAMA_BASE_URL: "http://10.0.0.59:11434"
   OPENAI_API_BASE_URL: "http://10.0.0.59:9000/v1"
-  OPENAI_API_KEY: "placeholder"
   OAUTH_PROVIDER_NAME: PocketID
   OAUTH_SCOPES: openid email profile
   OPENID_PROVIDER_URL: https://pocketid.traunseenet.com/.well-known/openid-configuration
   OTEL_EXPORTER_OTLP_ENDPOINT: http://opentelemetry-collector.observability.svc.cluster.local:4317
   OTEL_RESOURCE_ATTRIBUTES: service.name=open-webui
+  OTEL_EXPORTER_OTLP_INSECURE: "true"
   WEB_SEARCH_CONCURRENT_REQUESTS: "10"
   WEB_SEARCH_ENGINE: searxng
   WEB_SEARCH_RESULT_COUNT: "3"

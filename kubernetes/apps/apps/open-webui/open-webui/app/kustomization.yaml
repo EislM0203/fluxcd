@@ -7,3 +7,4 @@ resources:
   - svc.yaml
   - secret.yaml
   - ingress.yaml
+  - pvc.yaml

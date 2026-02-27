@@ -5,6 +5,9 @@ metadata:
 data:
   config.yaml: |
     endpoints:
+      ###########################
+      # Apps
+      ###########################
       - name: Jellyfin
         url: "http://jellyfin.apps.svc.cluster.local:8096/health"
         interval: 1m
@@ -14,14 +17,10 @@ data:
           - "[RESPONSE_TIME] < 700"
         alerts:
           - type: "ntfy"
-      # - name: Karakeep
-      #   url: "http://karakeep.apps.svc.cluster.local/signin"
-      #   interval: 1m
-      #   conditions:
-      #     - "[STATUS] == 200"
-      #     - "[RESPONSE_TIME] < 500"
-      #   alerts:
-      #     - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
       - name: Navidrome
         url: "http://navidrome.apps.svc.cluster.local:4533/rest/ping"
         interval: 1m
@@ -30,6 +29,10 @@ data:
           - "[RESPONSE_TIME] < 500"
         alerts:
           - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
       - name: Ntfy
         url: "http://ntfy.apps.svc.cluster.local/v1/health"
         interval: 1m
@@ -39,15 +42,23 @@ data:
           - "[RESPONSE_TIME] < 500"
         alerts:
           - type: "ntfy"
-      # - name: Open-Webui
-      #   url: "http://open-webui.apps.svc.cluster.local:8080/health"
-      #   interval: 1m
-      #   conditions:
-      #     - "[STATUS] == 200"
-      #     - "[BODY].status == true"
-      #     - "[RESPONSE_TIME] < 500"
-      #   alerts:
-      #     - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      - name: Open-Webui
+        url: "http://open-webui.apps.svc.cluster.local:8080/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].status == true"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
       - name: MiniIO Cloud
         url: "http://minio-service.storage.svc.cluster.local:9000/minio/health/live"
         interval: 1m
@@ -56,6 +67,10 @@ data:
           - "[RESPONSE_TIME] < 500"
         alerts:
           - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
       - name: Paperless NGX
         url: "http://paperless.apps.svc.cluster.local/accounts/login/?next=/"
         interval: 1m
@@ -64,6 +79,133 @@ data:
           - "[RESPONSE_TIME] < 500"
         alerts:
           - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      - name: Cerebro
+        url: "http://cerebro-server.apps.svc.cluster.local/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].message == System operational"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      ###########################
+      # Storage
+      ###########################
+      - name: MinIO S3
+        url: "http://minio-service.storage.svc.cluster.local:9001/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      - name: Harbor Portal
+        url: "http://harbor-portal.storage.svc.cluster.local/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      ###########################
+      # observability
+      ###########################
+      - name: Prometheus
+        url: "http://prometheus-operated.observability.svc.cluster.local:9090/-/healthy"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY] == Prometheus Server is Healthy."
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      - name: Alertmanager
+        url: "http://alertmanager-operated.observability.svc.cluster.local:9093/-/ready"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      - name: Loki
+        url: "http://loki-headless.observability.svc.cluster.local:3100/ready"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY] == ready"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      - name: Tempo
+        url: "http://grafana-tempo.observability.svc.cluster.local:3200/ready"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY] == ready"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      - name: Grafana
+        url: "http://grafana-service.observability.svc.cluster.local:3000/api/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].database == ok"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      ###########################
+      # Networking
+      ###########################
+      - name: Traefik
+        url: "http://traefik-api.networking.svc.cluster.local:8080/ping"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY] == ok"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
     alerting:
       ntfy:
         topic: "gatus"

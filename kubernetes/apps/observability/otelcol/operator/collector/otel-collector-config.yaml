@@ -62,7 +62,7 @@ spec:
     exporters:
       debug: {}
       otlp:
-        endpoint: jaegertracing-collector.observability.svc.cluster.local:4317
+        endpoint: jaegertracing.observability.svc.cluster.local:4317
         tls:
           insecure: true
       otlp/grafana_cloud_tempo:

@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/monitoring.coreos.com/servicemonitor_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: gatus-export
+spec:
+  selector:
+    matchLabels:
+      app: gatus
+  endpoints:
+    - port: http-tcp
+      path: /metrics
+      interval: 60s
+      scrapeTimeout: 30s

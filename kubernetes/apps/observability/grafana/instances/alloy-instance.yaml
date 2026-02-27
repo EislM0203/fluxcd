@@ -1,0 +1,66 @@
+apiVersion: collectors.grafana.com/v1alpha1
+kind: Alloy
+metadata:
+  name: alloy-logs
+spec:
+  controller:
+    type: daemonset
+    tolerations:
+      - effect: NoSchedule
+        operator: Exists
+
+  alloy:
+    mounts:
+      varlog: true
+    extraEnv:
+      - name: CLUSTER_NAME
+        value: daemonset-test-cluster
+    configMap:
+      content: |-
+        prometheus.exporter.self "default" {}
+
+        prometheus.scrape "default" {
+          targets    = prometheus.exporter.self.default.targets
+          forward_to = [prometheus.remote_write.local_prom.receiver]
+        }
+
+        prometheus.remote_write "local_prom" {
+          endpoint {
+            url = "http://prometheus-operated.observability.svc.cluster.local:9090/api/v1/write"
+
+            write_relabel_config {
+              replacement = sys.env("CLUSTER_NAME")
+              target_label = "cluster"
+            }
+          }
+        }
+        loki.relabel "journal" {
+          forward_to = []
+
+          rule {
+            source_labels = ["__journal__systemd_unit"]
+            target_label  = "unit"
+          }
+          rule {
+            source_labels = ["__journal__hostname"]
+            target_label = "systemd_hostname"
+          }
+          rule {
+            source_labels = ["__journal__transport"]
+            target_label = "systemd_transport"
+          }
+        }
+
+        loki.source.journal "host_logs" {
+          forward_to    = [loki.write.loki.receiver]
+          relabel_rules = loki.relabel.journal.rules
+          max_age       = "1h"
+          path          = "/var/log/journal"
+          labels        = {component = "host-logs.loki.source.journal"}
+        }
+
+        loki.write "loki" {
+          endpoint {
+            url = "http://grafana-loki.observability.svc.cluster.local:3100/loki/api/v1/push"
+          }
+        }

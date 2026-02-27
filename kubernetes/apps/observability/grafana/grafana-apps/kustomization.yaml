@@ -5,4 +5,3 @@ resources:
   - release-beyla.yaml
   - release-loki.yaml
   - release-tempo.yaml
-  - release-alloy.yaml

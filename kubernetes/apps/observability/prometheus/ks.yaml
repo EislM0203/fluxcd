@@ -33,7 +33,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: kube-prometheus-stack
+    - name: prometheus-app
   path: ./kubernetes/apps/observability/prometheus/rules
   prune: true
   suspend: false

@@ -5,6 +5,7 @@ kind: Kustomization
 namespace: observability
 resources:
   - grafana-instance.yaml
+  - alloy-instance.yaml
   - servicemonitor.yaml
   - datasource-prometheus.yaml
   - dashboard-prometheus.yaml

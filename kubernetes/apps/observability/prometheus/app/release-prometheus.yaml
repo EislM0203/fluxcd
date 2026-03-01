@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: kube-prometheus-stack
-      version: 82.2.1
+      version: 82.4.3
       sourceRef:
         kind: HelmRepository
         name: prometheus-community
@@ -32,7 +32,7 @@ spec:
     crds:
       enabled: true
     defaultRules:
-      create: false   #this creates alert manager rules
+      create: true   #this creates alert manager rules
       rules:
         alertmanager:                       true
         etcd:                               false
@@ -59,7 +59,7 @@ spec:
         kubernetesStorage:                  true
         kubernetesSystem:                   true
         kubeSchedulerAlerting:              false
-        kubeSchedulerRecording:             true
+        kubeSchedulerRecording:             false
         kubeStateMetrics:                   true
         network:                            true
         node:                               true

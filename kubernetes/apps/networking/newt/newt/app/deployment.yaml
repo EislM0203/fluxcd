@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: k8s-newt
-          image: fosrl/newt
+          image: fosrl/newt:1.10.1
           env:
             - name: PANGOLIN_ENDPOINT
               valueFrom:
@@ -60,7 +60,7 @@ spec:
     spec:
       containers:
         - name: homelab-newt
-          image: fosrl/newt
+          image: fosrl/newt:1.10.1
           env:
             - name: PANGOLIN_ENDPOINT
               valueFrom:
@@ -104,7 +104,7 @@ spec:
     spec:
       containers:
         - name: devops-access-newt
-          image: fosrl/newt
+          image: fosrl/newt:1.10.1
           env:
             - name: PANGOLIN_ENDPOINT
               valueFrom:

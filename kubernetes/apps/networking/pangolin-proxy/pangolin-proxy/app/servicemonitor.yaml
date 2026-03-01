@@ -1,0 +1,12 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: pangolin-proxy
+spec:
+  selector:
+    matchLabels:
+      app: pangolin-proxy
+  endpoints:
+    - port: csm-metrics
+      interval: 60s
+      scrapeTimeout: 30s

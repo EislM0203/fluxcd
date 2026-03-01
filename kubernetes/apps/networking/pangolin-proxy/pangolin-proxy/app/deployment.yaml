@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pangolin-proxy
+  labels:
+    app: pangolin-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pangolin-proxy
+  template:
+    metadata:
+      labels:
+        app: pangolin-proxy
+    spec:
+      containers:
+        - name: olm
+          image: fosrl/olm:1.4.2
+          env:
+            - name: PANGOLIN_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: pangolin-proxy-auth
+                  key: PANGOLIN_ENDPOINT
+            - name: OLM_ID
+              valueFrom:
+                secretKeyRef:
+                  name: pangolin-proxy-auth
+                  key: OLM_ID
+            - name: OLM_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: pangolin-proxy-auth
+                  key: OLM_SECRET
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          # volumeMounts:
+          #   - name: tun-device
+          #     mountPath: /dev/net/tun
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+          imagePullPolicy: IfNotPresent
+        - name: haproxy
+          image: haproxy:lts-alpine
+          ports:
+            - containerPort: 6060
+              name: csm-metrics
+              protocol: TCP
+          volumeMounts:
+            - name: haproxy-config
+              mountPath: /usr/local/etc/haproxy/haproxy.cfg
+              subPath: haproxy.cfg
+              readOnly: true
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+          imagePullPolicy: IfNotPresent
+      volumes:
+        # - name: tun-device
+        #   hostPath:
+        #     path: /dev/net/tun
+        #     type: CharDevice
+        - name: haproxy-config
+          configMap:
+            name: pangolin-proxy-haproxy

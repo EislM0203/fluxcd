@@ -5,4 +5,5 @@ resources:
 - ingress.yaml
 - deployment.yaml
 - service.yaml
+- servicemonitor.yaml
 - pvc.yaml

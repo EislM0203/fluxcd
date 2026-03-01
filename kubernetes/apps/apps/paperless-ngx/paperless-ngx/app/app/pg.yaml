@@ -40,6 +40,8 @@ spec:
           storage: 10Gi
       storageClassName: tns-csi-nvmeof
       volumeMode: Filesystem
+  monitoring:
+    enablePodMonitor: true
   managed:
     services:
       disabledDefaultServices: ["ro", "r"]

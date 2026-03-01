@@ -55,7 +55,7 @@ spec:
               name: csm-metrics
               protocol: TCP
           volumeMounts:
-            - name: haproxy-config
+            - name: haproxy-conf
               mountPath: /usr/local/etc/haproxy/haproxy.cfg
               subPath: haproxy.cfg
               readOnly: true
@@ -72,6 +72,6 @@ spec:
           hostPath:
             path: /dev/net/tun
             type: CharDevice
-        - name: haproxy-config
+        - name: haproxy-conf
           configMap:
             name: pangolin-proxy-haproxy

@@ -37,9 +37,9 @@ spec:
             capabilities:
               add:
                 - NET_ADMIN
-          # volumeMounts:
-          #   - name: tun-device
-          #     mountPath: /dev/net/tun
+          volumeMounts:
+            - name: tun-device
+              mountPath: /dev/net/tun
           resources:
             limits:
               memory: "256Mi"
@@ -68,10 +68,10 @@ spec:
               cpu: "100m"
           imagePullPolicy: IfNotPresent
       volumes:
-        # - name: tun-device
-        #   hostPath:
-        #     path: /dev/net/tun
-        #     type: CharDevice
+        - name: tun-device
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
         - name: haproxy-config
           configMap:
             name: pangolin-proxy-haproxy

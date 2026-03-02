@@ -182,33 +182,6 @@ items:
     groups:
     - name: etcd
       rules:
-      - alert: etcdMembersDown
-        annotations:
-          description: 'etcd cluster "{{ $labels.job }}": members are down ({{ $value
-            }}).'
-          summary: etcd cluster members are down.
-        expr: |-
-          max without (endpoint) (
-            sum without (instance, pod) (up{job=~".*etcd.*"} == bool 0)
-          or
-            count without (To) (
-              sum without (instance, pod) (rate(etcd_network_peer_sent_failures_total{job=~".*etcd.*"}[120s])) > 0.01
-            )
-          )
-          > 0
-        for: 10m
-        labels:
-          severity: critical
-      - alert: etcdInsufficientMembers
-        annotations:
-          description: 'etcd cluster "{{ $labels.job }}": insufficient members ({{
-            $value }}).'
-          summary: etcd cluster has insufficient number of members.
-        expr: sum(up{job=~".*etcd.*"} == bool 1) without (instance, pod) < ((count(up{job=~".*etcd.*"})
-          without (instance, pod) + 1) / 2)
-        for: 3m
-        labels:
-          severity: critical
       - alert: etcdNoLeader
         annotations:
           description: 'etcd cluster "{{ $labels.job }}": member {{ $labels.instance
@@ -2117,25 +2090,6 @@ items:
           runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubeletdown
           summary: Target disappeared from Prometheus target discovery.
         expr: absent(up{job="kubelet", metrics_path="/metrics"} == 1)
-        for: 15m
-        labels:
-          severity: critical
-- apiVersion: monitoring.coreos.com/v1
-  kind: PrometheusRule
-  metadata:
-    annotations: {}
-    labels: {}
-    name: prometheus-stack-kube-prom-kubernetes-system-scheduler
-  spec:
-    groups:
-    - name: kubernetes-system-scheduler
-      rules:
-      - alert: KubeSchedulerDown
-        annotations:
-          description: KubeScheduler has disappeared from Prometheus target discovery.
-          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubeschedulerdown
-          summary: Target disappeared from Prometheus target discovery.
-        expr: absent(up{job="kube-scheduler"} == 1)
         for: 15m
         labels:
           severity: critical

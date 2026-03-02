@@ -206,6 +206,11 @@ spec:
           repeat_interval: 4h
 
           routes:
+            # Drop InfoInhibitor alerts (severity=none, used for info suppression)
+            - matchers:
+                - alertname="InfoInhibitor"
+              receiver: null-receiver
+
             # Drop explicit "info" unless you want it
             - matchers:
                 - severity="info"

@@ -81,7 +81,7 @@ spec:
       #     value: "true"
       #     effect: NoSchedule
       nodeSelector:
-        kubernetes.io/hostname: rke2-node-1
+        kubernetes.io/hostname: rke2-node-1 # Legacy requirement. Since for persistence it is using subpaths and the pvc (tns-csi) only supports RWO it can only live on one noe
     portal:
       <<: *tolerations-and-nodelectors
     core:

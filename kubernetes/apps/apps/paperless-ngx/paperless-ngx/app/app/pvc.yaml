@@ -8,12 +8,12 @@ metadata:
   annotations:
     numberOfReplicas: '1'
 spec:
-  accessModes: ["ReadWriteMany"]
+  accessModes: ["ReadWriteOnce"]
   storageClassName: tns-csi-nvmeof
-  # dataSourceRef:
-  #   kind: ReplicationDestination
-  #   apiGroup: volsync.backube
-  #   name: paperless-restore
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: paperless-restore
   resources:
     requests:
       storage: 10Gi
@@ -29,7 +29,7 @@ spec:
   restic:
     repository: restic-paperless
     storageClassName: tns-csi-nvmeof
-    accessModes: ["ReadWriteMany"]
+    accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
     volumeSnapshotClassName: tns-csi-nvmeof-snapshot-detached
     capacity: 10Gi

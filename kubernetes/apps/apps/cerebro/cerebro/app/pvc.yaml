@@ -8,7 +8,7 @@ metadata:
   annotations:
     numberOfReplicas: '1'
 spec:
-  accessModes: ["ReadWriteMany"]
+  accessModes: ["ReadWriteOnce"]
   storageClassName: tns-csi-nvmeof
   dataSourceRef:
     kind: ReplicationDestination
@@ -29,7 +29,7 @@ spec:
   restic:
     repository: restic-cerebro
     storageClassName: tns-csi-nvmeof
-    accessModes: ["ReadWriteMany"]
+    accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
     volumeSnapshotClassName: tns-csi-nvmeof-snapshot-detached
     capacity: 1Gi

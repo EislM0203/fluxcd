@@ -18,5 +18,5 @@ spec:
       monthly: 2
       yearly: 1
     copyMethod: Snapshot
-    storageClassName: longhorn-backup
+    storageClassName: tns-csi-nvmeof-promoted
     unlock: "something"

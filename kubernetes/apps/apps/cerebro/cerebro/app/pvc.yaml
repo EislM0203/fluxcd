@@ -9,7 +9,7 @@ metadata:
     numberOfReplicas: '1'
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: longhorn-storage
+  storageClassName: tns-csi-nvmeof-promoted
   dataSourceRef:
     kind: ReplicationDestination
     apiGroup: volsync.backube
@@ -28,7 +28,7 @@ spec:
     manual: restore-once
   restic:
     repository: restic-cerebro
-    storageClassName: longhorn-storage
+    storageClassName: tns-csi-nvmeof-promoted
     accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
     capacity: 1Gi

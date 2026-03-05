@@ -31,12 +31,12 @@ spec:
     # Volume Snapshot Class config
     snapshots:
       enabled: true
-      detached:
-        enabled: true
+      #detached:
+      #  enabled: true
         # Optional: specify parent dataset for detached snapshots
         # If not set, defaults to {pool}/csi-detached-snapshots
-        parentDataset: "nvmepool/tns-csi/snapshots"
-        deletionPolicy: Delete
+      #  parentDataset: "nvmepool/tns-csi/snapshots"
+      #  deletionPolicy: Delete
     # Storage class configuration - NVMe-oF
     storageClasses:
       - name: tns-csi-nvmeof

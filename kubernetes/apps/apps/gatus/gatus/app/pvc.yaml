@@ -9,7 +9,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: tns-csi-nvmeof-promoted
+  storageClassName: tns-csi-nvmeof
   resources:
     requests:
       storage: 1Gi

@@ -133,7 +133,7 @@ spec:
         storageSpec:
           volumeClaimTemplate:
             spec:
-              storageClassName: tns-csi-nvmeof-retain
+              storageClassName: tns-csi-nvmeof
               accessModes: ["ReadWriteOnce"]
               resources:
                 requests:

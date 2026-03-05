@@ -31,7 +31,7 @@ spec:
     storageClassName: tns-csi-nvmeof
     accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
-    volumeSnapshotClassName: tns-csi-nvmeof-snapshot-detached
+    volumeSnapshotClassName: tns-csi-snapshot-vsc
     capacity: 10Gi
     enableFileDeletion: true
     cleanupCachePVC: true

@@ -6,7 +6,7 @@ provisioner: tns.csi.io
 parameters:
   protocol: nvmeof
   pool: "nvmepool"
-  parentDataset: "nvmepool/tns-csi-retain/pod-volume"
+  parentDataset: "nvmepool/tns-csi/pod-volume"
   server: "10.0.0.154"
   transport: "tcp"
   port: "4420"

@@ -8,6 +8,7 @@ metadata:
 spec:
   dependsOn:
     - name: tns-csi
+    - name: cert-manager-addons
   path: ./kubernetes/apps/storage/cnpg/cnpg/app
   prune: true
   wait: true

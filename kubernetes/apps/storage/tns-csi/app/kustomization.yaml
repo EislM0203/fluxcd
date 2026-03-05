@@ -5,4 +5,6 @@ namespace: storage
 resources:
   - release.yaml
   - secret.yaml
+  - storageclass-promoted.yaml
   - storageclass-retain.yaml
+  - snapshotclass.yaml

@@ -6,6 +6,8 @@ metadata:
   name: cert-manager-base
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: prometheus-app
   path: ./kubernetes/apps/auth/cert-manager/cert-manager/base
   prune: true
   wait: true

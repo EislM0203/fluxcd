@@ -18,6 +18,5 @@ spec:
       monthly: 2
       yearly: 1
     copyMethod: Snapshot
-    storageClassName: tns-csi-nvmeof
-    volumeSnapshotClassName: tns-csi-nvmeof-snapshot-detached
+    storageClassName: tns-csi-nvmeof-promoted
     unlock: "something"

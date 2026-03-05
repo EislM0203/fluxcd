@@ -47,24 +47,25 @@ spec:
         server: "10.0.0.154"
         transport: "tcp"
         port: "4420"
-    dashboard:
-      # Enable the in-cluster web dashboard
-      enabled: true
-      # Port to expose dashboard on
-      port: 9090
-      # Ingress for external access to dashboard
-      ingress:
+    controller:
+      dashboard:
+        # Enable the in-cluster web dashboard
         enabled: true
-        className: "traefik"
-        annotations:
-          traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          cert-manager.io/cluster-issuer: "letsencrypt-prod"
-        hosts:
-        - host: tns-csi.cloud.traunseenet.com
-          paths:
-            - path: /dashboard
-              pathType: Prefix
-        tls:
-        - secretName: tns-csi-cert
+        # Port to expose dashboard on
+        port: 9090
+        # Ingress for external access to dashboard
+        ingress:
+          enabled: true
+          className: "traefik"
+          annotations:
+            traefik.ingress.kubernetes.io/router.entrypoints: websecure
+            cert-manager.io/cluster-issuer: "letsencrypt-prod"
           hosts:
-            - tns-csi.cloud.traunseenet.com
+          - host: tns-csi.cloud.traunseenet.com
+            paths:
+              - path: /dashboard
+                pathType: Prefix
+          tls:
+          - secretName: tns-csi-cert
+            hosts:
+              - tns-csi.cloud.traunseenet.com

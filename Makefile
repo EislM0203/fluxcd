@@ -16,7 +16,6 @@ bootstrap-infra: apply-tf \
 	update-packages \
 	install-longhorn-dependencies \
 	install-tns-csi-dependencies \
-	install-netbird \
 	reboot-if-required \
 	install-rke2-server \
 	install-rke2-agent \
@@ -30,6 +29,9 @@ plan-tf:
 
 apply-tf:
 	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="tf" apply -auto-approve
+
+upgrade-tf:
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="tf" init -upgrade
 
 destroy-tf:
 	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="tf" destroy -auto-approve

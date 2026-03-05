@@ -6,10 +6,10 @@ metadata:
     app: harbor
   name: harbor-data
   annotations:
-    numberOfReplicas: '1'
+    numberOfReplicas: '2'
 spec:
   accessModes: ["ReadWriteMany"]
-  storageClassName: tns-csi-nvmeof-promoted
+  storageClassName: longhorn-storage
   dataSourceRef:
     kind: ReplicationDestination
     apiGroup: volsync.backube
@@ -17,6 +17,7 @@ spec:
   resources:
     requests:
       storage: 5Gi
+status: {}
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
 apiVersion: volsync.backube/v1alpha1
@@ -28,11 +29,10 @@ spec:
     manual: restore-once
   restic:
     repository: restic-harbor
-    storageClassName: tns-csi-nvmeof-promoted
+    storageClassName: longhorn-storage
     accessModes: ["ReadWriteMany"]
     copyMethod: Snapshot
-    volumeSnapshotClassName: tns-csi-snapshot-vsc
     capacity: 5Gi
-    enableFileDeletion: true
-    cleanupCachePVC: true
-    cleanupTempPVC: true
+    enableFileDeletion: false
+    cleanupCachePVC: false
+    cleanupTempPVC: false

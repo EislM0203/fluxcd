@@ -47,6 +47,10 @@ spec:
         server: "10.0.0.154"
         transport: "tcp"
         port: "4420"
+    grafana:
+      dashboards:
+        # Enable Grafana dashboard ConfigMap (auto-discovered by Grafana sidecar)
+        enabled: true
     controller:
       dashboard:
         # Enable the in-cluster web dashboard

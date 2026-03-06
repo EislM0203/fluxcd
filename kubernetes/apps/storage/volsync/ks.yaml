@@ -6,6 +6,8 @@ metadata:
   name: volsync
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: prometheus-app
   path: ./kubernetes/apps/storage/volsync/app
   suspend: false
   prune: true

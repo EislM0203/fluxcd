@@ -2,18 +2,19 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: tns-csi-metrics
+  name: volsync
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/component: controller
-      app.kubernetes.io/instance: tns-csi
-      app.kubernetes.io/name: tns-csi-driver
+      control-plane: volsync-controller
   namespaceSelector:
     matchNames:
       - storage
   endpoints:
-    - port: metrics
+    - port: https
       path: /metrics
       interval: 60s
       scrapeTimeout: 30s
+      scheme: https
+      tlsConfig:
+        insecureSkipVerify: true

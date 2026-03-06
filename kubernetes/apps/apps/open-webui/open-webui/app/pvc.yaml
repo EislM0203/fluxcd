@@ -9,7 +9,7 @@ metadata:
     numberOfReplicas: '1'
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: tns-csi-nvmeof-promoted
+  storageClassName: longhorn-storage
   dataSourceRef:
     kind: ReplicationDestination
     apiGroup: volsync.backube
@@ -28,11 +28,10 @@ spec:
     manual: restore-once
   restic:
     repository: restic-openwebui
-    storageClassName: tns-csi-nvmeof-promoted
+    storageClassName: longhorn-storage
     accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
-    volumeSnapshotClassName: tns-csi-snapshot-vsc
     capacity: 5Gi
-    enableFileDeletion: true
-    cleanupCachePVC: true
-    cleanupTempPVC: true
+    enableFileDeletion: false
+    cleanupCachePVC: false
+    cleanupTempPVC: false

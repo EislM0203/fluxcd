@@ -10,6 +10,9 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+  datasources:
+    - inputName: DS_PROMETHEUS
+      datasourceName: Prometheus
   configMapRef:
-    name: tns.csi.io-grafana-dashboard
+    name: tns-csi-grafana-dashboard
     key: tns-csi-overview.json

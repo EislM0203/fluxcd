@@ -1,0 +1,82 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: track-pg
+  annotations:
+    cnpg.io/skipEmptyWalArchiveCheck: "enabled"
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.6-system-trixie
+  enableSuperuserAccess: true
+  primaryUpdateStrategy: unsupervised
+  externalClusters:
+    - name: &name track-pg
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: *name
+          serverName: *name
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: *name
+        serverName: *name
+  bootstrap:
+    initdb:
+      database: track
+      owner: track
+    # recovery:
+    #   source: *name
+    #   database: track
+    #   owner: app
+  storage:
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: tns-csi-nvmeof-promoted
+      volumeMode: Filesystem
+  monitoring:
+    enablePodMonitor: true
+  managed:
+    services:
+      disabledDefaultServices: ["ro", "r"]
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: track-pg
+spec:
+  retentionPolicy: 20d
+  configuration:
+    destinationPath: s3://cnpg-backups/track
+    endpointURL: http://10.0.0.107:9000
+    s3Credentials:
+      accessKeyId:
+        name: minio-track-pg-backup
+        key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        name: minio-track-pg-backup
+        key: AWS_SECRET_ACCESS_KEY
+    data:
+      compression: bzip2
+    wal:
+      compression: bzip2
+      maxParallel: 8
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: track-pg-backup
+spec:
+  schedule: "0 */6 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: track-pg
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io

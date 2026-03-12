@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: track-config
+  namespace: track
+  labels:
+    app: track
+data:
+  APP_PORT: "8000"
+  DEBUG: "false"
+  NTFY_ENABLED: "true"
+  NTFY_URL: "http://ntfy.apps.svc.cluster.local"
+  NTFY_TOPIC: "eros"
+  NTFY_REMINDER_TIME: "20:00"
+  NTFY_NUDGE_TIME: "09:00"

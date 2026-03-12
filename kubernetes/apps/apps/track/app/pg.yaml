@@ -24,13 +24,13 @@ spec:
         barmanObjectName: *name
         serverName: *name
   bootstrap:
-    initdb:
+    # initdb:
+    #   database: track
+    #   owner: track
+    recovery:
+      source: *name
       database: track
       owner: track
-    # recovery:
-    #   source: *name
-    #   database: track
-    #   owner: app
   storage:
     pvcTemplate:
       accessModes:

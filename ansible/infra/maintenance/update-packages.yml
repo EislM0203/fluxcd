@@ -4,6 +4,14 @@
   become: yes
 
   tasks:
+    - name: Wait for automatic apt operations to finish
+      ansible.builtin.shell: >
+        while fuser /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock /var/lib/dpkg/lock >/dev/null 2>&1; do
+          sleep 5;
+        done
+      changed_when: false
+      tags: [maintenance, packages]
+
     - name: Update and upgrade packages
       ansible.builtin.apt:
         update_cache: yes

@@ -38,7 +38,7 @@ spec:
       resources:
         requests:
           storage: 1Gi
-      storageClassName: tns-csi-nvmeof-promoted
+      storageClassName: tns-csi-nvmeof
       volumeMode: Filesystem
   monitoring:
     enablePodMonitor: true

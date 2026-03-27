@@ -12,7 +12,7 @@ spec:
   path: ./kubernetes/apps/apps/cerebro/cerebro/app
   prune: true
   wait: true
-  suspend: false
+  suspend: true
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes
@@ -38,7 +38,7 @@ spec:
     - name: cerebro-app
   path: ./kubernetes/apps/apps/cerebro/cerebro/app/backup
   prune: true
-  suspend: false
+  suspend: true
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes

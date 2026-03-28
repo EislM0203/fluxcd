@@ -88,7 +88,6 @@ data:
         interval: 1m
         conditions:
           - "[STATUS] == 200"
-          - "[BODY].status == healthy"
           - "[RESPONSE_TIME] < 500"
         alerts:
           - type: "ntfy"

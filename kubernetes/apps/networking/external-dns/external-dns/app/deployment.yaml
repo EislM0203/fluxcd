@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &name external-dns-technitium
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: *name
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: *name
+    spec:
+      automountServiceAccountToken: true
+      serviceAccountName: external-dns-technitium
+      securityContext:
+        fsGroup: 65534
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: external-dns
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 65532
+            runAsNonRoot: true
+            runAsUser: 65532
+          env:
+            - name: EXTERNAL_DNS_TXT_PREFIX
+              value: "cluster-local_"
+            - name: EXTERNAL_DNS_TXT_OWNER_ID
+              value: "cluster-local"
+            - name: EXTERNAL_DNS_RFC2136_TSIG_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: key
+                  name: tsig-key
+          image: registry.k8s.io/external-dns/external-dns:v0.20.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - --log-level=info
+            # - --log-level=debug # change back to info once find out wtf is going on with err
+            # - --log-format=text
+            - --log-format=json
+            # - --interval=1m
+            - --interval=30s
+            - --source=ingress
+            - --source=service
+            - --source=gateway-httproute
+            - --source=gateway-grpcroute
+            - --source=gateway-tlsroute
+            - --source=gateway-tcproute
+            # - --source=gateway-udproute
+            - --policy=sync
+            - --registry=txt
+            - --provider=rfc2136
+            - --rfc2136-host=10.0.0.99
+            - --rfc2136-port=53
+            - --rfc2136-tsig-secret-alg=hmac-sha256
+            - --rfc2136-tsig-axfr # required for domain removal; enable zone transfer in the zone!
+            - --rfc2136-tsig-keyname=external-dns # key name on Technitium
+            - --domain-filter=traunseenet.com # domain filter required; without it bad auth errors crash the pod
+            - --domain-filter=internal
+            - --rfc2136-zone=traunseenet.com
+            - --rfc2136-zone=internal
+            - --rfc2136-min-ttl=60s # actual TTL
+            # - --txt-prefix=cluster-local-
+            # - --txt-owner-id=cluster-local
+          ports:
+            - name: http
+              protocol: TCP
+              containerPort: 7979
+          livenessProbe:
+            failureThreshold: 2
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 6
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5

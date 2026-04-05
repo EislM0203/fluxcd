@@ -6,7 +6,7 @@ metadata:
   name: externaldns-app
   namespace: flux-system
 spec:
-  path: ./kubernetes/apps/networking/externaldns/externaldns/app
+  path: ./kubernetes/apps/networking/external-dns/external-dns/app
   prune: true
   wait: true
   suspend: false
@@ -33,7 +33,7 @@ metadata:
 spec:
   dependsOn:
     - name: prometheus-app
-  path: ./kubernetes/apps/networking/externaldns/externaldns/observability
+  path: ./kubernetes/apps/networking/external-dns/external-dns/observability
   prune: true
   suspend: false
   sourceRef:

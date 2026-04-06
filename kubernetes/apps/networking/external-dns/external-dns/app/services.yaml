@@ -7,5 +7,5 @@ metadata:
      external-dns.alpha.kubernetes.io/hostname: "navidrome.cloud.traunseenet.com"
 spec:
   type: ExternalName
-  externalName: 10.2.12.201
+  externalName: 10.0.0.100
   ports: []

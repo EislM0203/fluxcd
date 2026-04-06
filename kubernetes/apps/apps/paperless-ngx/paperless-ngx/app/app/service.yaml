@@ -11,3 +11,14 @@ spec:
     - port: 80
       targetPort: 8000
       protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "paperless.cloud.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.100
+  ports: []

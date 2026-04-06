@@ -7,4 +7,3 @@ resources:
   - clusterrolebinding.yaml
   - secret.yaml
   - serviceaccount.yaml
-  - services.yaml

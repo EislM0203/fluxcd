@@ -20,5 +20,5 @@ metadata:
      external-dns.alpha.kubernetes.io/hostname: "paperless.cloud.traunseenet.com"
 spec:
   type: ExternalName
-  externalName: 10.0.0.201,10.0.0.202,10.0.0.203
+  externalName: 10.0.0.100
   ports: []

@@ -56,8 +56,8 @@ spec:
             - --source=service
             - --source=gateway-httproute
             - --source=gateway-grpcroute
-            - --source=gateway-tlsroute
-            - --source=gateway-tcproute
+            # - --source=gateway-tlsroute  # CRD not installed
+            # - --source=gateway-tcproute  # CRD not installed
             # - --source=gateway-udproute
             - --policy=sync
             - --registry=txt

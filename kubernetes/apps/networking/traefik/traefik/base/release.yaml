@@ -131,6 +131,7 @@ spec:
         allowExternalNameServices: true
         publishedService:
           enabled: true
+          pathOverride: "networking/traefik"
     rbac:
       enabled: true
     metrics:
@@ -140,8 +141,6 @@ spec:
     service:
       enabled: true
       type: LoadBalancer
-      annotations: 
-        argocd.argoproj.io/ignore-healthcheck: "true" 
       labels: {}
       spec:
         externalTrafficPolicy: Local
@@ -151,6 +150,3 @@ spec:
         - "10.0.0.201"
         - "10.0.0.202"
         - "10.0.0.203"
-        - "100.80.11.32"
-        - "100.80.234.220"
-        - "100.80.193.228"

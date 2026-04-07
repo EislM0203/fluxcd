@@ -140,12 +140,12 @@ spec:
           enabled: true
     service:
       enabled: true
-      type: LoadBalancer
+      type: ClusterIP
       labels: {}
-      spec:
-        externalTrafficPolicy: Local
+      #spec:
+       # externalTrafficPolicy: Local
         #loadBalancerIP: 10.0.0.225 # beelink
-      loadBalancerSourceRanges: []
+      #loadBalancerSourceRanges: []
       externalIPs:
         - "10.0.0.201"
         - "10.0.0.202"

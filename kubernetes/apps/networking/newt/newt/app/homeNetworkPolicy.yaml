@@ -16,14 +16,14 @@ spec:
       ports:
         - protocol: TCP
           port: 443
-    # Allow access to cluster via haproxy
+    # Allow access to cluster
     - to:
         - ipBlock:
-            cidr: 10.0.0.100/32
+            cidr: 10.0.0.50/32
       ports:
         - protocol: TCP
           port: 443   
-    # Allow access to cluster via traefik
+    # Allow access to npm
     - to:
         - ipBlock:
             cidr: 10.0.0.103/32
@@ -34,6 +34,14 @@ spec:
     - to:
         - ipBlock:
             cidr: 10.0.0.102/32
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.99/32
       ports:
         - protocol: TCP
           port: 53

@@ -1,0 +1,187 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitea-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "gitea.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: adguard-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "adguard.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nas-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "nas.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: npm-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "npm.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "alertmanager.cloud.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.100
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ocis-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "ocis.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pbs-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "pbs.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pve-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "pve.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pocketid-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "pocketid.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portainer-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "portainer.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "s3.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-api-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "s3-api.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: searxng-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "searxng.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: technitium-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "technitium.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: termix-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "termix.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wg-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "wg.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "immich.cloud.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []

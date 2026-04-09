@@ -142,9 +142,13 @@ spec:
       enabled: true
       type: LoadBalancer
       # labels: {}
-      #spec:
-       # externalTrafficPolicy: Local
-        #loadBalancerIP: 10.0.0.225 # beelink
+      spec:
+        # externalTrafficPolicy: Local
+        # Use DHCP to obtain LoadBalancer IP from network DHCP server
+        loadBalancerIP: "0.0.0.0"
+      annotations:
+        # Optional: hostname for DHCP lease registration
+        kube-vip.io/loadbalancerHostname: traefik-cluster
       #loadBalancerSourceRanges: []
       # externalIPs:
       #   - "10.0.0.201"

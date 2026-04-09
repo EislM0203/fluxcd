@@ -46,17 +46,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: alertmanager-dns
-  annotations:
-     external-dns.alpha.kubernetes.io/hostname: "alertmanager.cloud.traunseenet.com"
-spec:
-  type: ExternalName
-  externalName: 10.0.0.100
-  ports: []
----
-apiVersion: v1
-kind: Service
-metadata:
   name: ocis-dns
   annotations:
      external-dns.alpha.kubernetes.io/hostname: "ocis.local.traunseenet.com"
@@ -170,17 +159,6 @@ metadata:
   name: wg-dns
   annotations:
      external-dns.alpha.kubernetes.io/hostname: "wg.local.traunseenet.com"
-spec:
-  type: ExternalName
-  externalName: 10.0.0.103
-  ports: []
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: immich-dns
-  annotations:
-     external-dns.alpha.kubernetes.io/hostname: "immich.cloud.traunseenet.com"
 spec:
   type: ExternalName
   externalName: 10.0.0.103

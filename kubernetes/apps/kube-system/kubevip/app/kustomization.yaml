@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # kube-vip DaemonSet - advertises VIPs via ARP
+  - rbac.yaml
+  - daemonset.yaml
+  # kube-vip Cloud Provider - assigns IPs to LoadBalancer services
+  - rbac-cloud-controller.yaml
+  - deployment.yaml
+  - configmap.yaml

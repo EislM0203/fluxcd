@@ -8,6 +8,7 @@ metadata:
 spec:
   dependsOn:
     - name: cert-manager-addons
+    - name: kubevip-app
   path: ./kubernetes/apps/networking/traefik/traefik/base
   prune: true
   wait: true

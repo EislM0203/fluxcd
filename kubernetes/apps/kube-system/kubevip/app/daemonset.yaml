@@ -1,0 +1,94 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kube-vip-ds
+  labels:
+    app.kubernetes.io/name: kube-vip
+    app.kubernetes.io/component: daemonset
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-vip
+      app.kubernetes.io/component: daemonset
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kube-vip
+        app.kubernetes.io/component: daemonset
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Exists
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: Exists
+      containers:
+        - name: kube-vip
+          image: ghcr.io/kube-vip/kube-vip:v1.1.2
+          imagePullPolicy: IfNotPresent
+          args:
+            - manager
+          env:
+            # -- Enable ARP mode for layer 2 VIP advertisement
+            - name: vip_arp
+              value: "true"
+            # -- Interface to bind VIPs
+            - name: vip_interface
+              value: "eth0"
+            # -- Port for control plane load balancing (not used when cp_enable=false)
+            - name: port
+              value: "6443"
+            # -- Subnet mask for VIPs
+            - name: vip_subnet
+              value: "32"
+            # -- Disable control plane VIP (RKE2 handles this itself)
+            - name: cp_enable
+              value: "false"
+            # -- Enable service LoadBalancer support
+            - name: svc_enable
+              value: "true"
+            # -- Use EndpointSlices for better performance
+            - name: enableEndpointSlices
+              value: "true"
+            # -- Namespace for leader election lease
+            - name: cp_namespace
+              value: kube-system
+            # -- Enable leader election (required for ARP mode)
+            - name: vip_leaderelection
+              value: "true"
+            # -- Per-service leader election for better distribution
+            - name: svc_election
+              value: "true"
+            # -- Leader election timings (seconds)
+            - name: vip_leaseduration
+              value: "5"
+            - name: vip_renewdeadline
+              value: "3"
+            - name: vip_retryperiod
+              value: "1"
+            # -- Prometheus metrics port
+            - name: prometheus_server
+              value: :2112
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - NET_RAW
+      hostNetwork: true
+      serviceAccountName: kube-vip
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists

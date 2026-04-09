@@ -148,3 +148,4 @@ spec:
         # DHCP configuration - kube-vip creates macvlan with this MAC and requests IP via DHCP
         kube-vip.io/hwaddr: "00:00:6c:43:0c:1e"
         kube-vip.io/loadbalancerHostname: traefik-cluster
+        external-dns.alpha.kubernetes.io/hostname: traefik-cluster.internal

@@ -16,6 +16,7 @@ bootstrap-infra: apply-tf \
 	update-packages \
 	install-longhorn-dependencies \
 	install-tns-csi-dependencies \
+	install-netbird \
 	reboot-if-required \
 	install-rke2-server \
 	install-rke2-agent \

@@ -14,9 +14,13 @@ spec:
     name: fluxcd-kubernetes
     namespace: flux-system
   healthChecks:
-    - apiVersion: helm.toolkit.fluxcd.io/v2beta1
-      kind: HelmRelease
-      name: newt
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: k8s-newt
+      namespace: networking
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: homelab-newt
       namespace: networking
   interval: 15m
   retryInterval: 15m

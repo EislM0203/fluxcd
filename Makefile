@@ -57,8 +57,3 @@ install-rke2-agent:
 
 cluster-readiness-check:
 	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/cluster-readiness-check.yml"
-
-install-netbird:
-	@set -a && eval "$$(sops --decrypt .env)" && set +a && \
-	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/install-netbird.yml" \
-		--extra-vars "netbird_setup_key=$$NETBIRD_SETUP_KEY"

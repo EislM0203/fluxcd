@@ -73,7 +73,7 @@ kind: ScheduledBackup
 metadata:
   name: track-pg-backup
 spec:
-  schedule: "0 */6 * * *"
+  schedule: "0 0 */6 * * *"
   backupOwnerReference: self
   cluster:
     name: track-pg

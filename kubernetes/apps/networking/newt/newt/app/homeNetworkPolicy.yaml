@@ -22,7 +22,14 @@ spec:
             cidr: 10.0.0.50/32
       ports:
         - protocol: TCP
-          port: 443   
+          port: 443
+    # Allow access to cluster
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.151/32
+      ports:
+        - protocol: TCP
+          port: 2283
     # Allow access to internal DNS
     - to:
         - ipBlock:

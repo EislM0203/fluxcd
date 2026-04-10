@@ -8,3 +8,4 @@ resources:
   - ./jaeger/ks.yaml
   - ./otelcol/ks.yaml
   - namespace.yaml
+  - loadbalancer-services.yaml

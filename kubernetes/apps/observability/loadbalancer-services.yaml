@@ -1,0 +1,67 @@
+---
+# LoadBalancer Services for the observability stack.
+# Expose Prometheus, Loki, and the OTel Collector outside the cluster
+# so that external Alloy instances can ship telemetry data.
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-lb
+  namespace: observability
+  annotations:
+    kube-vip.io/loadbalancerHostname: prometheus-obs
+    external-dns.alpha.kubernetes.io/hostname: prometheus-obs.internal
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "0.0.0.0"
+  selector:
+    app.kubernetes.io/name: prometheus
+    operator.prometheus.io/name: prometheus-stack-prometheus
+  ports:
+    - name: http
+      port: 9090
+      targetPort: 9090
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki-lb
+  namespace: observability
+  annotations:
+    kube-vip.io/loadbalancerHostname: loki-obs
+    external-dns.alpha.kubernetes.io/hostname: loki-obs.internal
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "0.0.0.0"
+  selector:
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/instance: grafana-loki
+  ports:
+    - name: http
+      port: 3100
+      targetPort: 3100
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector-lb
+  namespace: observability
+  annotations:
+    kube-vip.io/loadbalancerHostname: otelcol-obs
+    external-dns.alpha.kubernetes.io/hostname: otelcol-obs.internal
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "0.0.0.0"
+  selector:
+    app.kubernetes.io/name: opentelemetry-collector
+    app.kubernetes.io/instance: observability.opentelemetry
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP

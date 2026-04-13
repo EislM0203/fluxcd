@@ -1,0 +1,85 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: &name immich-pg
+  annotations:
+    cnpg.io/skipEmptyWalArchiveCheck: "enabled"
+spec:
+  instances: 1
+  imageName: ghcr.io/tensorchord/cloudnative-vectorchord:18.3
+  postgresql:
+    shared_preload_libraries:
+      - "vchord.so"
+  primaryUpdateStrategy: unsupervised
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: immich-pg-superuser
+  externalClusters:
+    - name: *name
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: *name
+          serverName: *name
+  plugins:
+  - name: barman-cloud.cloudnative-pg.io
+    isWALArchiver: true
+    parameters:
+      barmanObjectName: *name
+      serverName: *name
+  bootstrap:
+    initdb:
+      database: immich
+      owner: immich
+    # recovery:
+    #   source: immich-pg
+  storage:
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: tns-csi-nvmeof
+      volumeMode: Filesystem
+  managed:
+    roles:
+      - name: immich
+        superuser: true
+        login: true
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: immich-pg
+spec:
+  retentionPolicy: 30d
+  configuration:
+    destinationPath: s3://cnpg-backups/immich
+    endpointURL: http://10.0.0.154:9000
+    s3Credentials:
+      accessKeyId:
+        name: rustfs-postgres-backup-secrets
+        key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        name: rustfs-postgres-backup-secrets
+        key: AWS_SECRET_ACCESS_KEY
+    data:
+      compression: bzip2
+    wal:
+      compression: bzip2
+      maxParallel: 8
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: immich-pg-backup
+spec:
+  # immediate: true #To trigger a backup immediately
+  schedule: "0 0 4 * * *" # daily at 4
+  backupOwnerReference: self
+  cluster:
+    name: immich-pg
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io

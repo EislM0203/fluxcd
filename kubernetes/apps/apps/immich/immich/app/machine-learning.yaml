@@ -1,0 +1,103 @@
+---
+# Source: immich/templates/machine-learning.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: &name immich-machine-learning-cache
+  labels:
+    app: *name
+spec:
+  storageClassName: tns-csi-nvmeof
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "10Gi"
+
+---
+# Source: immich/templates/machine-learning.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: &name immich-machine-learning
+  labels:
+    app: *name
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3003
+      targetPort: http
+      protocol: TCP
+  selector:
+    app: *name
+---
+# Source: immich/templates/machine-learning.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &name immich-machine-learning
+  labels:
+    app: *name
+spec:
+  revisionHistoryLimit: 3
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: *name
+  template:
+    metadata:
+      labels:
+        app: *name
+    spec:
+      containers:
+        - name: immich-machine-learning
+          image: ghcr.io/immich-app/immich-machine-learning:v2.7.4
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DB_HOSTNAME
+              value: pg-immich-rw
+            - name: IMMICH_MACHINE_LEARNING_URL
+              value: http://immich-machine-learning:3003
+            - name: REDIS_HOSTNAME
+              value: immich-redis-master
+          envFrom:
+            - secretRef:
+                name: immich-auth
+          ports:
+            - name: http
+              containerPort: 3003
+              protocol: TCP
+          volumeMounts:
+            - name: cache
+              mountPath: /cache
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+          startupProbe:
+            failureThreshold: 60
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+      volumes:
+        - name: cache
+          persistentVolumeClaim:
+            claimName: immich-machine-learning-cache

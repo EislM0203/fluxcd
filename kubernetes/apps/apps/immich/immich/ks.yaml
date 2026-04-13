@@ -1,0 +1,41 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: immich-app
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: traefik-base
+    - name: tns-csi
+    - name: cnpg
+  path: ./kubernetes/apps/apps/immich/immich/app
+  prune: true
+  wait: true
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: jellyfin
+      namespace: apps
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: immich-machine-learning
+      namespace: apps
+    - apiVersion: apps/v1
+      kind: StatefulSet
+      name: immich-redis-master
+      namespace: apps
+    - apiVersion: apps/v1
+      kind: Pod
+      name: immich-pg-1
+      namespace: apps
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: apps

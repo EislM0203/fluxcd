@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &name immich-server
+  labels:
+    app: *name
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: *name
+  template:
+    metadata:
+      labels:
+        app: *name
+    spec:
+      containers:
+      - name: immich-server
+        image: ghcr.io/immich-app/immich-server:v2.7.4
+        env:
+        - name: DB_HOSTNAME
+          value: pg-immich-rw
+        - name: IMMICH_MACHINE_LEARNING_URL
+          value: http://immich-machine-learning:3003
+        - name: REDIS_HOSTNAME
+          value: immich-redis-master
+        envFrom:
+        - secretRef:
+            name: immich-auth
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 2283
+          name: http
+          protocol: TCP
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/server/ping
+            port: http
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/server/ping
+            port: http
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        startupProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /api/server/ping
+            port: http
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /usr/src/app/upload
+          name: library
+          subPath: immich
+        - mountPath: /data/photos
+          name: library
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: library
+        persistentVolumeClaim:
+            claimName: immich-photos
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: &name immich-photos
+  labels:
+    app: *name
+spec:
+  storageClassName: tns-csi-nvmeof-retain
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "15Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: &name immich-server
+  labels:
+    app: *name
+spec:
+  ports:
+  - name: http
+    port: 2283
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: immich-server
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: &name immich-server
+  labels:
+    app: *name
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - immich.cloud.traunseenet.com
+      secretName: immich-cert
+  rules:
+  - host: immich.cloud.traunseenet.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: immich-server
+            port:
+              name: http
+        path: /
+        pathType: Prefix

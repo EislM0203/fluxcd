@@ -26,11 +26,11 @@ spec:
       barmanObjectName: *name
       serverName: *name
   bootstrap:
-    # initdb:
-    #   database: immich
-    #   owner: immich
-    recovery:
-      source: immich-pg
+    initdb:
+      database: immich
+      owner: immich
+    # recovery:
+    #   source: immich-pg
   storage:
     pvcTemplate:
       accessModes:
@@ -40,11 +40,6 @@ spec:
           storage: 5Gi
       storageClassName: tns-csi-nvmeof
       volumeMode: Filesystem
-  managed:
-    roles:
-      - name: immich
-        superuser: true
-        login: true
 ---
 apiVersion: barmancloud.cnpg.io/v1
 kind: ObjectStore

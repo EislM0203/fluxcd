@@ -19,7 +19,7 @@ spec:
         image: ghcr.io/immich-app/immich-server:v2.7.4
         env:
         - name: DB_HOSTNAME
-          value: pg-immich-rw
+          value: immich-pg-rw
         - name: IMMICH_MACHINE_LEARNING_URL
           value: http://immich-machine-learning:3003
         - name: REDIS_HOSTNAME

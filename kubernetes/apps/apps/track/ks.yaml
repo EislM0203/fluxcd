@@ -10,6 +10,7 @@ spec:
     - name: traefik-base
     - name: tns-csi
     - name: cnpg
+    - name: harbor-app
   path: ./kubernetes/apps/apps/track/app
   prune: true
   wait: true

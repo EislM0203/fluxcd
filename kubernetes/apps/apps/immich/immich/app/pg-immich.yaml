@@ -12,8 +12,6 @@ spec:
       - "vchord.so"
   primaryUpdateStrategy: unsupervised
   enableSuperuserAccess: true
-  superuserSecret:
-    name: immich-pg-superuser
   externalClusters:
     - name: *name
       plugin:
@@ -39,7 +37,7 @@ spec:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 10Gi
+          storage: 5Gi
       storageClassName: tns-csi-nvmeof
       volumeMode: Filesystem
   managed:

@@ -25,6 +25,14 @@ spec:
     parameters:
       barmanObjectName: *name
       serverName: *name
+  managed:
+    roles:
+      - name: immich
+        superuser: true
+        login: true
+        ensure: present
+        passwordSecret:
+          name: immich-pg-app
   bootstrap:
     # initdb:
     #  database: immich

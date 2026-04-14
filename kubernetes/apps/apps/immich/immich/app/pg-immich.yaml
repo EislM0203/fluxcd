@@ -39,6 +39,8 @@ spec:
     #  owner: immich
     recovery:
       source: immich-pg
+      database: immich
+      owner: immich
   storage:
     pvcTemplate:
       accessModes:

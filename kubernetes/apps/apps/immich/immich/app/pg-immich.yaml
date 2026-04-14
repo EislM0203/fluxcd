@@ -26,11 +26,11 @@ spec:
       barmanObjectName: *name
       serverName: *name
   bootstrap:
-    initdb:
-      database: immich
-      owner: immich
-    # recovery:
-    #   source: immich-pg
+    # initdb:
+    #  database: immich
+    #  owner: immich
+    recovery:
+      source: immich-pg
   storage:
     pvcTemplate:
       accessModes:

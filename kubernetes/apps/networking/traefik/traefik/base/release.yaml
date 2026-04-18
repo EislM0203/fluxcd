@@ -27,7 +27,7 @@ spec:
   values:
     #https://github.com/traefik/traefik-helm-chart/blob/master/traefik/VALUES.md
     #apiVersion: traefik.containo.us/v1alpha1
-    globalArguments:
+    global:
       sendAnonymousUsage: false
       checkNewVersion: false
     additionalArguments:

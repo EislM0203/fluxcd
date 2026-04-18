@@ -62,10 +62,10 @@ spec:
     endpointURL: http://10.0.0.154:9000
     s3Credentials:
       accessKeyId:
-        name: rustfs-postgres-backup-secrets
+        name: s3-immich-backup-secrets
         key: AWS_ACCESS_KEY_ID
       secretAccessKey:
-        name: rustfs-postgres-backup-secrets
+        name: s3-immich-backup-secrets
         key: AWS_SECRET_ACCESS_KEY
     data:
       compression: bzip2

@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: traefik
-      version: 37.4.0
+      version: 39.0.8
       sourceRef:
         kind: HelmRepository
         name: traefik
@@ -28,8 +28,8 @@ spec:
     #https://github.com/traefik/traefik-helm-chart/blob/master/traefik/VALUES.md
     #apiVersion: traefik.containo.us/v1alpha1
     globalArguments:
-      - '--global.sendanonymoususage=false'
-      - '--global.checknewversion=false'
+      sendAnonymousUsage: false
+      checkNewVersion: false
     additionalArguments:
       - '--serversTransport.insecureSkipVerify=true'
       - '--log.level=DEBUG'
@@ -51,11 +51,12 @@ spec:
         cpu: '3000m'
     ports:
       web:
-        redirections:
-          entryPoint:
-            to: websecure
-            scheme: https
-            permanent: true
+        http:
+          redirections:
+            entryPoint:
+              to: websecure
+              scheme: https
+              permanent: true
       websecure:
         #hostPort: 443
         port: 8443
@@ -63,8 +64,9 @@ spec:
         expose:
           default: true
         exposedPort: 443
-        tls:
-          enabled: true
+        http:
+          tls:
+            enabled: true
         transport:
           respondingTimeouts:
             readTimeout: 360

@@ -10,10 +10,10 @@ metadata:
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: tns-csi-nvmeof
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: openwebui-restore
+  # dataSourceRef:
+  #   kind: ReplicationDestination
+  #   apiGroup: volsync.backube
+  #   name: openwebui-restore
   resources:
     requests:
       storage: 5Gi

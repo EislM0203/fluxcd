@@ -3,4 +3,4 @@ kind: Group
 metadata:
   name: apps-resources
 spec:
-  name: apps-resources
+  name: Apps Resources

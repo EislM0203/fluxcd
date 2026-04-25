@@ -8,7 +8,6 @@ metadata:
 spec:
   dependsOn:
     - name: traefik-base
-    - name: netbird-apps-misc
   path: ./kubernetes/apps/apps/jellyfin/jellyfin/app
   prune: true
   wait: true

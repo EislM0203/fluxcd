@@ -4,6 +4,6 @@ metadata:
   name: apps-router
 spec:
   dnsZoneRef:
-    name: apps.home  # must exist in NetBird DNS → Zones
+    name: home  # must exist in NetBird DNS → Zones
   workloadOverride:
     replicas: 1

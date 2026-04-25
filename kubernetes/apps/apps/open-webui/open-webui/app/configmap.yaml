@@ -16,7 +16,7 @@ data:
   OPENAI_API_BASE_URL: "http://10.0.0.59:9000/v1"
   OAUTH_PROVIDER_NAME: PocketID
   OAUTH_SCOPES: openid email profile
-  OPENID_PROVIDER_URL: https://pocketid.traunseenet.com/.well-known/openid-configuration
+  OPENID_PROVIDER_URL: https://sso.traunseenet.com/.well-known/openid-configuration
   OTEL_EXPORTER_OTLP_ENDPOINT: http://opentelemetry-collector.observability.svc.cluster.local:4317
   OTEL_RESOURCE_ATTRIBUTES: service.name=open-webui
   OTEL_EXPORTER_OTLP_INSECURE: "true"

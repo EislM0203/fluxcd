@@ -19,3 +19,16 @@ spec:
       targetPort: 8080
   selector:
     app: openwebui
+---
+apiVersion: netbird.io/v1alpha1
+kind: NetworkResource
+metadata:
+  name: gpt
+spec:
+  networkRouterRef:
+    name: home-router
+    namespace: networking
+  serviceRef:
+    name: open-webui
+  groups:
+    - name: Apps Resources

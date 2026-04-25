@@ -18,3 +18,4 @@ resources:
   - ./grafana.yaml
   - ./prometheus.yaml
   - ./it-tools.yaml
+  - ./netbirdio.yaml

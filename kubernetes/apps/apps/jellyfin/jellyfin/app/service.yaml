@@ -28,5 +28,4 @@ spec:
   serviceRef:
     name: jellyfin
   groups:
-    - localRef:
-        name: apps-resources
+    - name: apps-resources

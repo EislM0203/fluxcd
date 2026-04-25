@@ -23,10 +23,10 @@ metadata:
   name: jellyfin
 spec:
   networkRouterRef:
-    name: apps-router
-    namespace: apps
+    name: home-router
+    namespace: networking
   serviceRef:
     name: jellyfin
   groups:
     - localRef:
-        name: apps-users
+        name: apps-resources

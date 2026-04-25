@@ -1,6 +1,6 @@
 apiVersion: netbird.io/v1alpha1
 kind: Group
 metadata:
-  name: apps-users
+  name: apps-resources
 spec:
-  name: apps-users
+  name: apps-resources

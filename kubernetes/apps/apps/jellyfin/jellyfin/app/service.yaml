@@ -16,3 +16,17 @@ spec:
       name: https-tcp
       targetPort: 8920
       protocol: TCP
+---
+apiVersion: netbird.io/v1alpha1
+kind: NetworkResource
+metadata:
+  name: jellyfin
+spec:
+  networkRouterRef:
+    name: apps-router
+    namespace: apps
+  serviceRef:
+    name: jellyfin
+  groups:
+    - localRef:
+        name: jellyfin

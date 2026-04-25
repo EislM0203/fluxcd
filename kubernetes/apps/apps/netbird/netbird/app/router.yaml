@@ -1,0 +1,9 @@
+apiVersion: netbird.io/v1alpha1
+kind: NetworkRouter
+metadata:
+  name: apps-router
+spec:
+  dnsZoneRef:
+    name: apps.home  # must exist in NetBird DNS → Zones
+  workloadOverride:
+    replicas: 1

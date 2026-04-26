@@ -16,7 +16,7 @@ spec:
   #   name: pocketid-restore  # Name of the ReplicationDestination
   resources:
     requests:
-      storage: 1Gi
+      storage: 2Gi
 status: {}
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
@@ -33,7 +33,7 @@ status: {}
 #     accessModes: ["ReadWriteOnce"]
 #     copyMethod: Snapshot
 #     volumeSnapshotClassName: tns-csi-nvmeof-snapshot-detached
-#     capacity: 1Gi
+#     capacity: 2Gi
 #     enableFileDeletion: true
 #     cleanupCachePVC: true
 #     cleanupTempPVC: true

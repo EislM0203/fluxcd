@@ -16,7 +16,7 @@ spec:
   #   name: pocketid-restore  # Name of the ReplicationDestination
   resources:
     requests:
-      storage: 5Gi
+      storage: 1Gi
 status: {}
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
@@ -29,10 +29,11 @@ status: {}
 #     manual: restore-once
 #   restic:
 #     repository: restic-pocketid
-#     storageClassName: longhorn-storage
+#     storageClassName: tns-csi-nvmeof
 #     accessModes: ["ReadWriteOnce"]
 #     copyMethod: Snapshot
-#     capacity: 5Gi
-#     enableFileDeletion: false
-#     cleanupCachePVC: false
-#     cleanupTempPVC: false
+#     volumeSnapshotClassName: tns-csi-nvmeof-snapshot-detached
+#     capacity: 1Gi
+#     enableFileDeletion: true
+#     cleanupCachePVC: true
+#     cleanupTempPVC: true

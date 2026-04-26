@@ -22,6 +22,11 @@ spec:
               value: "https://pocketid.cloud.traunseenet.com"
             - name: TRUST_PROXY
               value: "true"
+            - name: ENCRYPTION_KEY                                                                                                           
+              valueFrom:                                      
+                secretKeyRef:                                                                                                                
+                  name: pocketid-secret
+                  key: ENCRYPTION_KEY 
           ports:
             - containerPort: 1411
               name: http

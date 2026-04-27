@@ -1,0 +1,101 @@
+http:
+  middlewares:
+    badger:
+      plugin:
+        badger:
+          disableForwardAuth: true
+    crowdsec:
+      plugin:
+        crowdsec:
+          crowdsecLapiScheme: http
+          crowdsecLapiHost: crowdsec:8080
+          crowdsecLapiKey: "{{ crowdsec_bouncer_key }}"
+          crowdsecAppsecEnabled: true
+          crowdsecAppsecHost: crowdsec:7422
+          crowdsecAppsecFailureBlock: true
+          crowdsecAppsecUnreachableBlock: true
+          crowdsecAppsecBodyLimit: 10485760
+          crowdsecMode: live
+          enabled: true
+          updateIntervalSeconds: 15
+          defaultDecisionSeconds: 15
+          updateMaxFailure: 0
+          logLevel: INFO
+          clientTrustedIPs:
+            - 10.0.0.0/8
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+    security-headers:
+      headers:
+        forceSTSHeader: true
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        contentTypeNosniff: true
+        customFrameOptionsValue: SAMEORIGIN
+        referrerPolicy: strict-origin-when-cross-origin
+        hostsProxyHeaders:
+          - X-Forwarded-Host
+        sslProxyHeaders:
+          X-Forwarded-Proto: https
+        customResponseHeaders:
+          Server: ""
+          X-Powered-By: ""
+          X-Forwarded-Proto: https
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+  routers:
+    api-router:
+      entryPoints:
+        - websecure
+      middlewares:
+        - security-headers
+      rule: "Host(`{{ pangolin_dashboard_url }}`) && PathPrefix(`/api/v1`)"
+      service: api-service
+      priority: 200
+      tls:
+        certResolver: letsencrypt
+    main-app-router-redirect:
+      entryPoints:
+        - web
+      middlewares:
+        - redirect-to-https
+      rule: Host(`{{ pangolin_dashboard_url }}`)
+      service: next-service
+    next-router:
+      entryPoints:
+        - websecure
+      middlewares:
+        - security-headers
+      rule: Host(`{{ pangolin_dashboard_url }}`) && !PathPrefix(`/api/v1`)
+      service: next-service
+      tls:
+        certResolver: letsencrypt
+    ws-router:
+      entryPoints:
+        - websecure
+      middlewares:
+        - security-headers
+      rule: Host(`{{ pangolin_dashboard_url }}`)
+      service: api-service
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    api-service:
+      loadBalancer:
+        servers:
+          - url: http://pangolin:443
+    next-service:
+      loadBalancer:
+        servers:
+          - url: http://pangolin:3002
+tcp:
+  serversTransports:
+    pp-transport-v1:
+      proxyProtocol:
+        version: 1
+    pp-transport-v2:
+      proxyProtocol:
+        version: 2

@@ -1,0 +1,92 @@
+api:
+  dashboard: true
+  insecure: true
+
+experimental:
+  plugins:
+    badger:
+      moduleName: github.com/fosrl/badger
+      version: v1.2.1
+    crowdsec:
+      moduleName: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
+      version: v1.4.4
+
+providers:
+  file:
+    filename: /etc/traefik/dynamic_config.yml
+    watch: true
+  http:
+    endpoint: http://pangolin:3001/api/v1/traefik-config
+    pollInterval: 5s
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entrypoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+    http:
+      middlewares:
+        - crowdsec@file
+      tls:
+        certResolver: letsencrypt
+    transport:
+      respondingTimeouts:
+        readTimeout: 30m
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: "{{ pangolin_admin_email }}"
+      storage: /letsencrypt/acme.json
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"
+
+serversTransport:
+  insecureSkipVerify: true
+
+log:
+  level: INFO
+  format: json
+  compress: true
+  maxSize: 100
+  maxAge: 3
+  maxBackups: 3
+  filePath: /var/log/traefik/traefik.log
+
+accessLog:
+  filePath: /var/log/traefik/access.log
+  format: json
+  bufferingSize: 100
+  fields:
+    defaultMode: drop
+    names:
+      ClientAddr: keep
+      ClientHost: keep
+      DownstreamStatus: keep
+      Duration: keep
+      RequestMethod: keep
+      RequestPath: keep
+      ServiceName: keep
+      StartUTC: keep
+    headers:
+      defaultMode: drop
+      names:
+        User-Agent: keep
+        X-Forwarded-For: keep
+        Content-Type: keep
+  filters:
+    statusCodes:
+      - "200-299"
+      - "400-499"
+      - "500-599"
+
+ping:
+  entryPoint: web

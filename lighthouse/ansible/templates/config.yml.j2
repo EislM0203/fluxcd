@@ -1,0 +1,37 @@
+app:
+  dashboard_url: "https://{{ pangolin_dashboard_url }}"
+  log_level: "info"
+  telemetry:
+    anonymous_usage: false
+
+server:
+  external_port: 443
+  internal_port: 3001
+  next_port: 3002
+  secret: "{{ pangolin_secret }}"
+  maxmind_db_path: "./config/GeoLite2-Country.mmdb"
+  cors:
+    origins:
+      - "https://{{ pangolin_dashboard_url }}"
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+    allowed_headers: ["X-CSRF-Token", "Content-Type"]
+    credentials: false
+
+domains:
+  domain1:
+    base_domain: "{{ pangolin_base_domain }}"
+    cert_resolver: "letsencrypt"
+
+gerbil:
+  start_port: 51820
+  base_endpoint: "{{ pangolin_dashboard_url }}"
+  reachable_at: "http://gerbil:3004"
+  generate_and_save_key_to: "/var/config/key"
+  remote_config: "http://pangolin:3001/api/v1/"
+
+flags:
+  require_email_verification: false
+  disable_signup_without_invite: true
+  disable_user_create_org: false
+  allow_raw_resources: true
+  allow_base_domain_resources: true

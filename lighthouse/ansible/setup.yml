@@ -1,0 +1,236 @@
+---
+- name: Deploy Pangolin stack
+  hosts: pangolin
+  become: true
+  gather_facts: false
+
+  vars:
+    pangolin_dir: /home/{{ ansible_user }}/pangolin
+
+  pre_tasks:
+    - name: Wait for SSH
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+        delay: 10
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
+    - name: Wait for cloud-init to complete
+      ansible.builtin.command: cloud-init status --wait
+      changed_when: false
+
+  tasks:
+
+    - name: Wait for Docker socket
+      ansible.builtin.wait_for:
+        path: /var/run/docker.sock
+        timeout: 120
+
+    # ── Directories ──────────────────────────────────────────────────────────
+
+    - name: Create directory tree
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0755"
+      loop:
+        - "{{ pangolin_dir }}"
+        - "{{ pangolin_dir }}/config"
+        - "{{ pangolin_dir }}/config/traefik"
+        - "{{ pangolin_dir }}/config/letsencrypt"
+        - "{{ pangolin_dir }}/config/logs"
+        - "{{ pangolin_dir }}/config/crowdsec"
+        - "{{ pangolin_dir }}/config/crowdsec/acquis.d"
+        - "{{ pangolin_dir }}/config/crowdsec/db"
+        - "{{ pangolin_dir }}/crowdsec-manager"
+        - "{{ pangolin_dir }}/crowdsec-manager/backups"
+        - "{{ pangolin_dir }}/crowdsec-manager/data"
+
+    - name: Check if GeoIP database exists
+      ansible.builtin.stat:
+        path: "{{ pangolin_dir }}/config/GeoLite2-Country.mmdb"
+      register: geoip_stat
+
+    - name: Download and extract GeoIP database if missing
+      when: not geoip_stat.stat.exists
+      block:
+        - name: Download GeoIP tarball from Mirror
+          ansible.builtin.get_url:
+            url: "https://github.com/GitSquared/node-geolite2-redist/raw/refs/heads/master/redist/GeoLite2-Country.tar.gz"
+            dest: "/tmp/GeoLite2-Country.tar.gz"
+
+        - name: Extract .mmdb file
+          ansible.builtin.unarchive:
+            src: "/tmp/GeoLite2-Country.tar.gz"
+            dest: "/tmp"
+            remote_src: yes
+
+        - name: Move .mmdb to final config location
+          ansible.builtin.shell: |
+            mv /tmp/GeoLite2-Country_*/GeoLite2-Country.mmdb {{ pangolin_dir }}/config/GeoLite2-Country.mmdb
+          changed_when: true
+
+        - name: Clean up temporary files
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "/tmp/GeoLite2-Country.tar.gz"
+            - "/tmp/GeoLite2-Country_*"
+
+    # ── Static config files ───────────────────────────────────────────────────
+
+    - name: Template docker-compose.yml (initial — no CrowdSec Manager key yet)
+      ansible.builtin.template:
+        src: templates/docker-compose.yml.j2
+        dest: "{{ pangolin_dir }}/docker-compose.yml"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0644"
+
+    - name: Template Pangolin config.yml
+      ansible.builtin.template:
+        src: templates/config.yml.j2
+        dest: "{{ pangolin_dir }}/config/config.yml"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0600"
+
+    - name: Template Traefik static config
+      ansible.builtin.template:
+        src: templates/traefik_config.yml.j2
+        dest: "{{ pangolin_dir }}/config/traefik/traefik_config.yml"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0644"
+
+    - name: Template CrowdSec Traefik acquisition config
+      ansible.builtin.template:
+        src: templates/crowdsec_acquis_traefik.yaml.j2
+        dest: "{{ pangolin_dir }}/config/crowdsec/acquis.d/traefik.yaml"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0644"
+
+    - name: Template CrowdSec AppSec acquisition config
+      ansible.builtin.template:
+        src: templates/crowdsec_acquis_appsec.yaml.j2
+        dest: "{{ pangolin_dir }}/config/crowdsec/acquis.d/appsec.yaml"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0644"
+
+    - name: Ensure acme.json has correct permissions
+      ansible.builtin.file:
+        path: "{{ pangolin_dir }}/config/letsencrypt/acme.json"
+        state: file
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0600"
+      register: _acme_check
+      failed_when: false
+
+    - name: Create acme.json only if missing
+      ansible.builtin.file:
+        path: "{{ pangolin_dir }}/config/letsencrypt/acme.json"
+        state: touch
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0600"
+      when: _acme_check.state is not defined
+
+    # ── CrowdSec bootstrap ────────────────────────────────────────────────────
+
+    - name: Start CrowdSec
+      ansible.builtin.command:
+        cmd: docker compose up -d crowdsec
+        chdir: "{{ pangolin_dir }}"
+      changed_when: true
+
+    - name: Wait for CrowdSec to be healthy
+      ansible.builtin.command:
+        cmd: docker inspect --format={{ '{{.State.Health.Status}}' }} crowdsec
+      register: crowdsec_health
+      until: crowdsec_health.stdout == "healthy"
+      retries: 18
+      delay: 10
+      changed_when: false
+
+    - name: Remove existing Traefik bouncer (idempotent)
+      ansible.builtin.command:
+        cmd: docker exec crowdsec cscli bouncers delete traefik-bouncer
+      failed_when: false
+      changed_when: false
+
+    - name: Generate CrowdSec Traefik bouncer API key
+      ansible.builtin.command:
+        cmd: docker exec crowdsec cscli bouncers add traefik-bouncer -o raw
+      register: crowdsec_key_result
+      changed_when: true
+
+    - name: Remove existing CrowdSec Manager bouncer (idempotent)
+      ansible.builtin.command:
+        cmd: docker exec crowdsec cscli bouncers delete crowdsec-manager
+      failed_when: false
+      changed_when: false
+
+    - name: Generate CrowdSec Manager API key
+      ansible.builtin.command:
+        cmd: docker exec crowdsec cscli bouncers add crowdsec-manager -o raw
+      register: crowdsec_manager_key_result
+      changed_when: true
+
+    - name: Template docker-compose.yml with CrowdSec Manager key
+      ansible.builtin.template:
+        src: templates/docker-compose.yml.j2
+        dest: "{{ pangolin_dir }}/docker-compose.yml"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0644"
+      vars:
+        crowdsec_manager_key: "{{ crowdsec_manager_key_result.stdout | trim }}"
+
+    - name: Template Traefik dynamic config with bouncer key
+      ansible.builtin.template:
+        src: templates/dynamic_config.yml.j2
+        dest: "{{ pangolin_dir }}/config/traefik/dynamic_config.yml"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0644"
+      vars:
+        crowdsec_bouncer_key: "{{ crowdsec_key_result.stdout | trim }}"
+
+    # ── Start full stack ──────────────────────────────────────────────────────
+
+    - name: Pull latest images
+      ansible.builtin.command:
+        cmd: docker compose pull
+        chdir: "{{ pangolin_dir }}"
+      changed_when: true
+
+    - name: Start full Pangolin stack
+      ansible.builtin.command:
+        cmd: docker compose up -d
+        chdir: "{{ pangolin_dir }}"
+      changed_when: true
+
+    - name: Wait for Pangolin to be healthy
+      ansible.builtin.command:
+        cmd: docker inspect --format={{ '{{.State.Health.Status}}' }} pangolin
+      register: pangolin_health
+      until: pangolin_health.stdout == "healthy"
+      retries: 20
+      delay: 10
+      changed_when: false
+
+    - name: Create Pangolin admin account
+      ansible.builtin.command:
+        cmd: >
+          docker exec pangolin pangctl set-admin-credentials
+          --email {{ pangolin_admin_email }}
+          --password {{ pangolin_admin_password }}
+      changed_when: true
+      no_log: true

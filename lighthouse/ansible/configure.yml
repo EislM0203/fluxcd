@@ -1,0 +1,315 @@
+---
+- name: Configure Pangolin resources
+  hosts: pangolin
+  become: false
+  gather_facts: true
+
+  tasks:
+
+    - name: Wait for Pangolin HTTPS to be reachable
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/"
+        validate_certs: false
+        status_code: [200, 400, 401, 404]
+      register: _pangolin_https
+      failed_when: false
+      until: _pangolin_https.status | default(0) in [200, 400, 401, 404]
+      retries: 30
+      delay: 10
+
+    - name: Login to Pangolin API
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/auth/login"
+        method: POST
+        validate_certs: false
+        body_format: json
+        body:
+          email: "{{ pangolin_admin_email }}"
+          password: "{{ pangolin_admin_password }}"
+        headers:
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: 200
+      register: _pangolin_login
+      no_log: true
+
+    - name: Create Homelab organization
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/org"
+        method: PUT
+        validate_certs: false
+        body_format: json
+        body:
+          orgId: "homelab"
+          name: "Homelab"
+          subnet: "100.89.137.0/24"
+          utilitySubnet: "100.96.128.0/24"
+        headers:
+          Cookie: "{{ _pangolin_login.cookies_string }}"
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: [200, 201, 409]
+      register: _pangolin_org
+      failed_when: _pangolin_org.status not in [200, 201, 409]
+
+    - name: Set org ID
+      ansible.builtin.set_fact:
+        _pangolin_org_id: "homelab"
+
+    # ── Local site ────────────────────────────────────────────────────────────
+
+    - name: List existing sites
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/org/{{ _pangolin_org_id }}/sites"
+        method: GET
+        validate_certs: false
+        headers:
+          Cookie: "{{ _pangolin_login.cookies_string }}"
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: 200
+      register: _sites_list
+
+    - name: Set local site IDs if already exists
+      ansible.builtin.set_fact:
+        _hetzner_site_niceid: "{{ (_sites_list.json.data.sites | selectattr('name', 'equalto', 'hetzner-host') | list | first).niceId }}"
+        _hetzner_site_id: "{{ (_sites_list.json.data.sites | selectattr('name', 'equalto', 'hetzner-host') | list | first).siteId }}"
+      when: (_sites_list.json.data.sites | selectattr('name', 'equalto', 'hetzner-host') | list | length) > 0
+
+    - name: Create local site for co-located Docker services
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/org/{{ _pangolin_org_id }}/site"
+        method: PUT
+        validate_certs: false
+        body_format: json
+        body:
+          name: "hetzner-host"
+          type: "local"
+        headers:
+          Cookie: "{{ _pangolin_login.cookies_string }}"
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: [200, 201]
+      register: _new_site
+      when: _hetzner_site_niceid is not defined
+
+    - name: Set local site IDs from creation response
+      ansible.builtin.set_fact:
+        _hetzner_site_niceid: "{{ _new_site.json.data.niceId }}"
+        _hetzner_site_id: "{{ _new_site.json.data.siteId }}"
+      when: _hetzner_site_niceid is not defined
+
+    # ── Machine clients ───────────────────────────────────────────────────────
+
+    - name: List existing clients
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/org/{{ _pangolin_org_id }}/clients"
+        method: GET
+        validate_certs: false
+        headers:
+          Cookie: "{{ _pangolin_login.cookies_string }}"
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: 200
+      register: _clients_list
+
+    - name: Check if Cluster Forwarder client already exists
+      ansible.builtin.set_fact:
+        _cluster_forwarder_exists: "{{ (_clients_list.json.data.clients | selectattr('name', 'equalto', 'Cluster Forwarder') | list | length) > 0 }}"
+
+    - name: Get defaults for Cluster Forwarder client
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/org/{{ _pangolin_org_id }}/pick-client-defaults"
+        method: GET
+        validate_certs: false
+        headers:
+          Cookie: "{{ _pangolin_login.cookies_string }}"
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: 200
+      register: _cluster_forwarder_defaults
+      no_log: true
+      when: not _cluster_forwarder_exists
+
+    - name: Create Cluster Forwarder machine client
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/org/{{ _pangolin_org_id }}/client"
+        method: PUT
+        validate_certs: false
+        body_format: json
+        body:
+          name: "Cluster Forwarder"
+          type: "olm"
+          olmId: "{{ _cluster_forwarder_defaults.json.data.olmId }}"
+          secret: "{{ _cluster_forwarder_defaults.json.data.olmSecret }}"
+          subnet: "{{ _cluster_forwarder_defaults.json.data.subnet }}"
+        headers:
+          Cookie: "{{ _pangolin_login.cookies_string }}"
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: [200, 201]
+      register: _cluster_forwarder_created
+      no_log: true
+      when: not _cluster_forwarder_exists
+
+    - name: Set Cluster Forwarder client info
+      ansible.builtin.set_fact:
+        _cluster_forwarder_niceid: >-
+          {{ (_clients_list.json.data.clients | selectattr('name', 'equalto', 'Cluster Forwarder') | list | first).niceId
+             if _cluster_forwarder_exists else
+             _cluster_forwarder_created.json.data.niceId }}
+
+    # ── Resources (blueprint) ─────────────────────────────────────────────────
+
+    - name: Apply CrowdSec Manager blueprint
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/org/{{ _pangolin_org_id }}/blueprint"
+        method: PUT
+        validate_certs: false
+        body_format: json
+        body:
+          name: "crowdsec-manager"
+          blueprint: "{{ _crowdsec_blueprint }}"
+        headers:
+          Cookie: "{{ _pangolin_login.cookies_string }}"
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: [200, 201, 409]
+      vars:
+        _crowdsec_blueprint: |
+          public-resources:
+            crowdsec-manager:
+              name: "CrowdSec Manager"
+              protocol: http
+              full-domain: "crowdsec.{{ pangolin_base_domain }}"
+              targets:
+                - hostname: crowdsec-manager
+                  port: 8080
+                  method: http
+                  site: "{{ _hetzner_site_niceid }}"
+              auth:
+                sso-enabled: true
+          private-resources:
+            crowdsec-metrics:
+              name: "CrowdSec"
+              mode: host
+              site: "{{ _hetzner_site_niceid }}"
+              destination: crowdsec
+              tcp-ports: "6060"
+              alias: "csm-internal.{{ pangolin_base_domain }}"
+              machines:
+                - "{{ _cluster_forwarder_niceid }}"
+            hetzner-vps:
+              name: "Hetzner VPS"
+              mode: host
+              site: "{{ _hetzner_site_niceid }}"
+              destination: "{{ inventory_hostname }}"
+              tcp-ports: "22"
+              alias: "vps.{{ pangolin_base_domain }}"
+              users:
+                - "{{ pangolin_admin_email }}"
+
+    # ── Newt sites ────────────────────────────────────────────────────────────
+
+    - name: Check which newt sites already exist
+      ansible.builtin.set_fact:
+        _k8s_site_exists: "{{ (_sites_list.json.data.sites | selectattr('name', 'equalto', 'Kubernetes Cluster') | list | length) > 0 }}"
+        _home_site_exists: "{{ (_sites_list.json.data.sites | selectattr('name', 'equalto', 'Home Network') | list | length) > 0 }}"
+
+    - name: Get defaults for Kubernetes Cluster site
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/org/{{ _pangolin_org_id }}/pick-site-defaults"
+        method: GET
+        validate_certs: false
+        headers:
+          Cookie: "{{ _pangolin_login.cookies_string }}"
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: 200
+      register: _k8s_defaults
+      no_log: true
+      when: not _k8s_site_exists
+
+    - name: Create Kubernetes Cluster newt site
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/org/{{ _pangolin_org_id }}/site"
+        method: PUT
+        validate_certs: false
+        body_format: json
+        body:
+          name: "Kubernetes Cluster"
+          type: "newt"
+          exitNodeId: "{{ _k8s_defaults.json.data.exitNodeId }}"
+          newtId: "{{ _k8s_defaults.json.data.newtId }}"
+          secret: "{{ _k8s_defaults.json.data.newtSecret }}"
+        headers:
+          Cookie: "{{ _pangolin_login.cookies_string }}"
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: [200, 201]
+      no_log: true
+      when: not _k8s_site_exists
+
+    - name: Get defaults for Home Network site
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/org/{{ _pangolin_org_id }}/pick-site-defaults"
+        method: GET
+        validate_certs: false
+        headers:
+          Cookie: "{{ _pangolin_login.cookies_string }}"
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: 200
+      register: _home_defaults
+      no_log: true
+      when: not _home_site_exists
+
+    - name: Create Home Network newt site
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/org/{{ _pangolin_org_id }}/site"
+        method: PUT
+        validate_certs: false
+        body_format: json
+        body:
+          name: "Home Network"
+          type: "newt"
+          exitNodeId: "{{ _home_defaults.json.data.exitNodeId }}"
+          newtId: "{{ _home_defaults.json.data.newtId }}"
+          secret: "{{ _home_defaults.json.data.newtSecret }}"
+        headers:
+          Cookie: "{{ _pangolin_login.cookies_string }}"
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: [200, 201]
+      no_log: true
+      when: not _home_site_exists
+
+    # ── Save credentials ──────────────────────────────────────────────────────
+
+    - name: Save Kubernetes Cluster newt credentials
+      ansible.builtin.copy:
+        content: |
+          # kubernetes-cluster — generated {{ ansible_facts['date_time']['iso8601'] }}
+          endpoint: "{{ pangolin_dashboard_url }}"
+          newt-id: "{{ _k8s_defaults.json.data.newtId }}"
+          newt-secret: "{{ _k8s_defaults.json.data.newtSecret }}"
+        dest: "{{ playbook_dir }}/../credentials-kubernetes-cluster.yml"
+        mode: "0600"
+      delegate_to: localhost
+      when: not _k8s_site_exists
+
+    - name: Save Home Network newt credentials
+      ansible.builtin.copy:
+        content: |
+          # home-network — generated {{ ansible_facts['date_time']['iso8601'] }}
+          endpoint: "{{ pangolin_dashboard_url }}"
+          newt-id: "{{ _home_defaults.json.data.newtId }}"
+          newt-secret: "{{ _home_defaults.json.data.newtSecret }}"
+        dest: "{{ playbook_dir }}/../credentials-home-network.yml"
+        mode: "0600"
+      delegate_to: localhost
+      when: not _home_site_exists
+
+    - name: Save Cluster Forwarder OLM credentials
+      ansible.builtin.copy:
+        content: |
+          # cluster-forwarder — generated {{ ansible_facts['date_time']['iso8601'] }}
+          endpoint: "{{ pangolin_dashboard_url }}"
+          olm-id: "{{ _cluster_forwarder_defaults.json.data.olmId }}"
+          olm-secret: "{{ _cluster_forwarder_defaults.json.data.olmSecret }}"
+        dest: "{{ playbook_dir }}/../credentials-cluster-forwarder.yml"
+        mode: "0600"
+      delegate_to: localhost
+      when: not _cluster_forwarder_exists
+
+    - name: Show Pangolin URL
+      ansible.builtin.debug:
+        msg: "Pangolin is ready and configured at: https://{{ pangolin_dashboard_url }}"

@@ -39,7 +39,7 @@ spec:
     - name: pocketid-app
   path: ./kubernetes/apps/auth/pocketid/pocketid/backup
   prune: true
-  suspend: true
+  suspend: false
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes

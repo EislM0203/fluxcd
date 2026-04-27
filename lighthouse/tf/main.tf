@@ -21,11 +21,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "fluxcd-cluster-node-state"
+    bucket = "homelab-tf-state"
     key    = "hetzner-pangolin/terraform.tfstate"
 
     endpoints = {
-      s3 = "http://10.0.0.107:9000"
+      s3 = "http://10.0.0.154:9000"
     }
 
     region                      = "us-east-1"

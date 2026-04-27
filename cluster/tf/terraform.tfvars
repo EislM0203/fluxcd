@@ -1,12 +1,4 @@
 # ==========================================
-# General Configuration
-# ==========================================
-ssh_public_key_path  = "~/.ssh/cluster-ssh.pub"
-ssh_private_key_path = "~/.ssh/cluster-ssh"
-proxmox_api_url      = "https://10.0.0.67:8006/"
-proxmox_tls_insecure = true
-
-# ==========================================
 # Node Configuration
 # ==========================================
 # disk_size is in GB (number), template_id is the numeric VM ID of your template

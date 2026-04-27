@@ -13,12 +13,12 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "fluxcd-cluster-node-state"
+    bucket = "homelab-tf-state"
     key    = "fluxcd/terraform.tfstate"
 
     # MinIO connection - update these values for your environment
     endpoints = {
-      s3 = "http://10.0.0.107:9000"
+      s3 = "http://10.0.0.154:9000"
     }
 
     region                      = "us-east-1"

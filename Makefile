@@ -1,11 +1,11 @@
-INVENTORY = ansible/inventory.ini
-MAINTENANCE_DIR = ansible/infra/maintenance
-BOOTSTRAP_DIR = ansible/infra/bootstrap
-CLUSTER_DIR = ansible/cluster
+INVENTORY = cluster/ansible/inventory.ini
+MAINTENANCE_DIR = cluster/ansible/infra/maintenance
+BOOTSTRAP_DIR = cluster/ansible/infra/bootstrap
+CLUSTER_DIR = cluster/ansible
 LIGHTHOUSE_ANSIBLE_DIR = lighthouse/ansible
 
 SECRETS_FILE = secrets.yaml
-TFVARS_FILE = tf/terraform.tfvars
+TFVARS_FILE = cluster/tf/terraform.tfvars
 SOPS_AGE_KEY_FILE = $(HOME)/.config/sops/age/keys.txt
 
 .PHONY: bootstrap-infra plan-tf apply-tf destroy-tf wait-for-nodes update-packages \
@@ -25,16 +25,16 @@ bootstrap-infra: apply-tf \
 	cluster-readiness-check
 
 init-tf:
-	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="tf" init
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="cluster/tf" init
 
 plan-tf:
-	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="tf" plan
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="cluster/tf" plan
 
 apply-tf:
-	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="tf" apply -auto-approve
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="cluster/tf" apply -auto-approve
 
 destroy-tf:
-	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="tf" destroy -auto-approve
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="cluster/tf" destroy -auto-approve
 
 wait-for-nodes:
 	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/wait-for-nodes.yml"
@@ -65,16 +65,16 @@ cluster-readiness-check:
 # ==========================================
 
 lighthouse-init:
-	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="lighthouse" init
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="lighthouse/tf" init
 
 lighthouse-plan:
-	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="lighthouse" plan
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="lighthouse/tf" plan
 
 lighthouse-apply:
-	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="lighthouse" apply
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="lighthouse/tf" apply
 
 lighthouse-bootstrap:
-	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="lighthouse" apply -auto-approve
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="lighthouse/tf" apply -auto-approve
 	ansible-playbook -i "${LIGHTHOUSE_ANSIBLE_DIR}/inventory.ini" "${LIGHTHOUSE_ANSIBLE_DIR}/site.yml"
 
 lighthouse-setup:
@@ -84,4 +84,4 @@ lighthouse-configure:
 	@set -a && eval "$$(sops --decrypt .env)" && set +a && ansible-playbook -i "${LIGHTHOUSE_ANSIBLE_DIR}/inventory.ini" "${LIGHTHOUSE_ANSIBLE_DIR}/configure.yml"
 
 lighthouse-destroy:
-	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="lighthouse" destroy -auto-approve
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="lighthouse/tf" destroy -auto-approve

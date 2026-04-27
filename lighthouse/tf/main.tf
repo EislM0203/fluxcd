@@ -142,7 +142,7 @@ resource "cloudflare_record" "pangolin_wildcard" {
 }
 
 resource "local_file" "ansible_inventory" {
-  filename        = "${path.module}/ansible/inventory.ini"
+  filename        = "${path.module}/../ansible/inventory.ini"
   file_permission = "0600"
   content         = templatefile("${path.module}/inventory.tpl", {
     server_ip               = hcloud_server.pangolin.ipv4_address

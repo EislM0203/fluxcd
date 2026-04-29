@@ -3,7 +3,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: nb-operator
+  name: netbird-operator
   namespace: flux-system
 spec:
   path: ./kubernetes/apps/networking/netbird/netbird/operator
@@ -31,7 +31,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: prometheus-app
+    - name: nb-operator
   path: ./kubernetes/apps/networking/netbird/netbird/app
   prune: true
   wait: true

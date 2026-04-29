@@ -31,7 +31,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: nb-operator
+    - name: netbird-operator
   path: ./kubernetes/apps/networking/netbird/netbird/app
   prune: true
   wait: true

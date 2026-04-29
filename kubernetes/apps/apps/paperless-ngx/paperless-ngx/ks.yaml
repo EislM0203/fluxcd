@@ -8,6 +8,7 @@ metadata:
 spec:
   dependsOn:
     - name: traefik-base
+    - name: netbird-app
     - name: tns-csi
     - name: cnpg
   path: ./kubernetes/apps/apps/paperless-ngx/paperless-ngx/app

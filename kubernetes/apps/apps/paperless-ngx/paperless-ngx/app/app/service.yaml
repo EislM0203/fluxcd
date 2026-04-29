@@ -11,16 +11,3 @@ spec:
     - port: 80
       targetPort: 8000
       protocol: TCP
----
-apiVersion: netbird.io/v1alpha1
-kind: NetworkResource
-metadata:
-  name: paperless
-spec:
-  networkRouterRef:
-    name: home-router
-    namespace: networking
-  serviceRef:
-    name: paperless
-  groups:
-    - name: Apps Resources

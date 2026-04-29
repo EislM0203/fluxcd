@@ -9,7 +9,6 @@ resources:
   - ./longhorn.yaml
   - ./traefik.yaml
   - ./backube.yaml
-  - ./open-webui.yaml
   - ./priaeus.yaml
   - ./harbor.yaml
   - ./renovate.yaml
@@ -17,5 +16,4 @@ resources:
   - ./jaeger.yaml
   - ./grafana.yaml
   - ./prometheus.yaml
-  - ./it-tools.yaml
   - ./netbirdio.yaml

@@ -20,6 +20,13 @@ data:
         site: "home-network"
         udp-ports: "53"
         alias: "dns.internal"
+      evo:
+        name: "Evo-X2"
+        mode: host
+        destination: "10.0.0.59"
+        site: "home-network"
+        tcp-ports: "22"
+        alias: "evo.internal"
 ---
 apiVersion: v1
 kind: ConfigMap

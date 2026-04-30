@@ -46,6 +46,24 @@ data:
               interval: 30
               timeout: 5
               unhealthy-interval: 10
+      ntfy:
+        name: "Ntfy"
+        protocol: http
+        auth:
+          sso-enabled: false
+        full-domain: ntfy.cloud.traunseenet.com
+        targets:
+          - site: k8s-cluster
+            hostname: ntfy.apps.svc.cluster.local
+            port: 80
+            method: http
+            healthcheck:
+              hostname: ntfy.apps.svc.cluster.local
+              port: 80
+              path: /
+              interval: 30
+              timeout: 5
+              unhealthy-interval: 10
       immich:
         name: "Immich"
         protocol: http

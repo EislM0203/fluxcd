@@ -41,10 +41,6 @@
         body:
           orgId: "homelab"
           name: "Homelab"
-          # Must NOT overlap gerbil.subnet_group (default 100.89.137.0/20),
-          # otherwise site CIDR allocation collides and Pangolin pushes a
-          # malformed bare IP to Newt → "invalid IP address format".
-          # See fosrl/newt#201.
           subnet: "100.90.128.0/24"
           utilitySubnet: "100.96.128.0/24"
         headers:
@@ -340,6 +336,7 @@
           exitNodeId: "{{ _k8s_defaults.json.data.exitNodeId }}"
           newtId: "{{ _k8s_defaults.json.data.newtId }}"
           secret: "{{ _k8s_defaults.json.data.newtSecret }}"
+          address: "{{ _k8s_defaults.json.data.clientAddress }}"
         headers:
           Cookie: "{{ _pangolin_login.cookies_string }}"
           X-CSRF-Token: "x-csrf-protection"
@@ -373,6 +370,7 @@
           exitNodeId: "{{ _home_defaults.json.data.exitNodeId }}"
           newtId: "{{ _home_defaults.json.data.newtId }}"
           secret: "{{ _home_defaults.json.data.newtSecret }}"
+          address: "{{ _home_defaults.json.data.clientAddress }}"
         headers:
           Cookie: "{{ _pangolin_login.cookies_string }}"
           X-CSRF-Token: "x-csrf-protection"

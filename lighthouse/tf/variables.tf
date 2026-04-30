@@ -77,7 +77,7 @@ variable "create_wildcard_dns" {
 variable "image_pangolin" {
   description = "Pangolin Docker image tag"
   type        = string
-  default     = "1.18.0"
+  default     = "1.18.1"
 }
 
 variable "pocketid_base_url" {

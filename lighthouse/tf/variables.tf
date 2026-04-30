@@ -68,12 +68,6 @@ variable "pangolin_admin_password" {
   sensitive   = true
 }
 
-variable "create_wildcard_dns" {
-  description = "Create a wildcard *.base_domain DNS record (needed for Pangolin tunnel resources)"
-  type        = bool
-  default     = true
-}
-
 variable "image_pangolin" {
   description = "Pangolin Docker image tag"
   type        = string

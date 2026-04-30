@@ -9,6 +9,13 @@ spec:
   policyTypes:
     - Egress
   egress:
+    # Allow access to evo
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.59/32
+      ports:
+        - protocol: TCP
+          port: 22
     # Allow access to internal NPM
     - to:
         - ipBlock:
@@ -16,6 +23,8 @@ spec:
       ports:
         - protocol: TCP
           port: 443
+        - protocol: TCP
+          port: 80
     # Allow access to cluster
     - to:
         - ipBlock:
@@ -23,6 +32,8 @@ spec:
       ports:
         - protocol: TCP
           port: 443
+        - protocol: TCP
+          port: 80
     # Allow access to internal DNS
     - to:
         - ipBlock:

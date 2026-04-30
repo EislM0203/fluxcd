@@ -48,6 +48,24 @@ locals {
   # Derive the DNS record name relative to the Cloudflare zone.
   # e.g. pangolin_base_domain="pg.traunseenet.com", cloudflare_zone_domain="traunseenet.com" → "pg"
   pangolin_dns_name = trimsuffix(var.pangolin_base_domain, ".${var.cloudflare_zone_domain}")
+
+  # Parse the k8s-newt-blueprint ConfigMap and extract the public-resources hostnames
+  # so the Cloudflare zone mirrors exactly what's exposed through the cluster Newt site.
+  k8s_newt_cm_path = "${path.module}/../../kubernetes/apps/networking/newt/newt/app/cm.yaml"
+  k8s_newt_cm_docs = [
+    for doc in split("\n---\n", "\n${file(local.k8s_newt_cm_path)}") :
+    yamldecode(doc) if length(trimspace(doc)) > 0
+  ]
+  k8s_newt_blueprint = yamldecode(one([
+    for doc in local.k8s_newt_cm_docs :
+    doc.data["blueprint.yaml"]
+    if try(doc.metadata.name, "") == "k8s-newt-blueprint"
+  ]))
+  k8s_public_dns_names = toset([
+    for _, res in try(local.k8s_newt_blueprint["public-resources"], {}) :
+    trimsuffix(res["full-domain"], ".${var.cloudflare_zone_domain}")
+    if try(endswith(res["full-domain"], ".${var.cloudflare_zone_domain}"), false)
+  ])
 }
 
 data "cloudflare_zones" "main" {
@@ -130,15 +148,17 @@ resource "cloudflare_record" "pangolin_dashboard" {
   proxied = false
 }
 
-# Tunnel resources: *.pg.traunseenet.com
-resource "cloudflare_record" "pangolin_wildcard" {
-  count   = var.create_wildcard_dns ? 1 : 0
-  zone_id = data.cloudflare_zones.main.zones[0].id
-  name    = "*.${local.pangolin_dns_name}"
-  content = hcloud_server.pangolin.ipv4_address
-  type    = "A"
-  ttl     = 60
-  proxied = false
+# Per-resource A records mirrored from k8s-newt-blueprint public-resources.
+# Replaces the previous wildcard so unknown subdomains return NXDOMAIN
+# instead of hitting the VPS Traefik with its default cert.
+resource "cloudflare_record" "k8s_public" {
+  for_each = local.k8s_public_dns_names
+  zone_id  = data.cloudflare_zones.main.zones[0].id
+  name     = each.value
+  content  = hcloud_server.pangolin.ipv4_address
+  type     = "A"
+  ttl      = 60
+  proxied  = false
 }
 
 resource "local_file" "ansible_inventory" {

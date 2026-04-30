@@ -181,6 +181,17 @@
                   site: "{{ _hetzner_site_niceid }}"
               auth:
                 sso-enabled: true
+              rules:
+                - name: "Allow Austria"
+                  action: pass
+                  priority: 10
+                  match: country
+                  value: AT
+                - name: "Block Rest of World"
+                  action: deny
+                  priority: 90
+                  match: country
+                  value: ALL
           private-resources:
             crowdsec-metrics:
               name: "CrowdSec"
@@ -200,6 +211,99 @@
               alias: "vps.{{ pangolin_base_domain }}"
               users:
                 - "{{ pangolin_admin_email }}"
+
+    # ── PocketID SSO ──────────────────────────────────────────────────────────
+    # IDPs are global (not org-scoped) — /api/v1/idp, no orgId in path
+
+    - name: List existing IDPs
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/idp"
+        method: GET
+        validate_certs: false
+        headers:
+          Cookie: "{{ _pangolin_login.cookies_string }}"
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: 200
+      register: _idp_list
+
+    - name: Set PocketID IDP facts
+      ansible.builtin.set_fact:
+        _pocketid_idp_exists: "{{ (_idp_list.json.data.idps | selectattr('name', 'equalto', 'PocketID') | list | length) > 0 }}"
+        _pocketid_idp_id: >-
+          {{ (_idp_list.json.data.idps | selectattr('name', 'equalto', 'PocketID') | list | first).idpId
+             if (_idp_list.json.data.idps | selectattr('name', 'equalto', 'PocketID') | list | length) > 0
+             else '' }}
+
+    - name: Create PocketID IDP
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/idp/oidc"
+        method: PUT
+        validate_certs: false
+        body_format: json
+        body:
+          name: "PocketID"
+          clientId: "{{ pocketid_client_id }}"
+          clientSecret: "{{ pocketid_client_secret }}"
+          authUrl: "{{ pocketid_base_url }}/authorize"
+          tokenUrl: "{{ pocketid_base_url }}/api/oidc/token"
+          identifierPath: "email"
+          emailPath: "email"
+          namePath: "name"
+          scopes: "openid profile email groups"
+          autoProvision: true
+          defaultRoleMapping: "contains(groups, 'pangolin-admin') ? 'Admin' : contains(groups, 'pangolin-member') ? 'Member' : ''"
+        headers:
+          Cookie: "{{ _pangolin_login.cookies_string }}"
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: [200, 201]
+      register: _pocketid_idp_created
+      no_log: true
+      when: not _pocketid_idp_exists
+
+    - name: Update PocketID IDP
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/idp/{{ _pocketid_idp_id }}/oidc"
+        method: POST
+        validate_certs: false
+        body_format: json
+        body:
+          name: "PocketID"
+          clientId: "{{ pocketid_client_id }}"
+          clientSecret: "{{ pocketid_client_secret }}"
+          authUrl: "{{ pocketid_base_url }}/authorize"
+          tokenUrl: "{{ pocketid_base_url }}/api/oidc/token"
+          identifierPath: "email"
+          emailPath: "email"
+          namePath: "name"
+          scopes: "openid profile email groups"
+          autoProvision: true
+          defaultRoleMapping: "contains(groups, 'pangolin-admin') ? 'Admin' : contains(groups, 'pangolin-member') ? 'Member' : ''"
+        headers:
+          Cookie: "{{ _pangolin_login.cookies_string }}"
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: [200, 201]
+      no_log: true
+      when: _pocketid_idp_exists
+
+    - name: Resolve PocketID IDP ID
+      ansible.builtin.set_fact:
+        _pocketid_idp_id: >-
+          {{ _pocketid_idp_created.json.data.idpId
+             if not _pocketid_idp_exists
+             else _pocketid_idp_id }}
+
+    - name: Link PocketID IDP to homelab org
+      ansible.builtin.uri:
+        url: "https://{{ pangolin_dashboard_url }}/api/v1/idp/{{ _pocketid_idp_id }}/org/{{ _pangolin_org_id }}"
+        method: PUT
+        validate_certs: false
+        body_format: json
+        body: {}
+        headers:
+          Cookie: "{{ _pangolin_login.cookies_string }}"
+          X-CSRF-Token: "x-csrf-protection"
+        status_code: [200, 201, 409]
+      when: not _pocketid_idp_exists
 
     # ── Newt sites ────────────────────────────────────────────────────────────
 
@@ -229,6 +333,7 @@
         body_format: json
         body:
           name: "Kubernetes Cluster"
+          niceId: "k8s-cluster"
           type: "newt"
           exitNodeId: "{{ _k8s_defaults.json.data.exitNodeId }}"
           newtId: "{{ _k8s_defaults.json.data.newtId }}"
@@ -261,6 +366,7 @@
         body_format: json
         body:
           name: "Home Network"
+          niceId: "home-network"
           type: "newt"
           exitNodeId: "{{ _home_defaults.json.data.exitNodeId }}"
           newtId: "{{ _home_defaults.json.data.newtId }}"

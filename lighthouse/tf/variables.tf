@@ -77,7 +77,23 @@ variable "create_wildcard_dns" {
 variable "image_pangolin" {
   description = "Pangolin Docker image tag"
   type        = string
-  default     = "1.17.1"
+  default     = "1.18.0"
+}
+
+variable "pocketid_base_url" {
+  description = "PocketID base URL (e.g. https://pocketid.example.com)"
+  type        = string
+}
+
+variable "pocketid_client_id" {
+  description = "PocketID OAuth2 client ID for Pangolin"
+  type        = string
+}
+
+variable "pocketid_client_secret" {
+  description = "PocketID OAuth2 client secret for Pangolin"
+  type        = string
+  sensitive   = true
 }
 
 variable "image_gerbil" {

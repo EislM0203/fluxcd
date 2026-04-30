@@ -17,6 +17,14 @@ spec:
       containers:
         - name: k8s-newt
           image: fosrl/newt:1.11.0
+          args:
+            - --blueprint-file
+            - /etc/newt/blueprint.yaml
+          volumeMounts:
+            - name: blueprint
+              mountPath: /etc/newt/blueprint.yaml
+              subPath: blueprint.yaml
+              readOnly: true
           env:
             - name: PANGOLIN_ENDPOINT
               valueFrom:
@@ -41,6 +49,10 @@ spec:
               memory: "128Mi"
               cpu: "250m"
           imagePullPolicy: IfNotPresent
+      volumes:
+        - name: blueprint
+          configMap:
+            name: homelab-newt-blueprint
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -61,6 +73,14 @@ spec:
       containers:
         - name: homelab-newt
           image: fosrl/newt:1.11.0
+          args:
+            - --blueprint-file
+            - /etc/newt/blueprint.yaml
+          volumeMounts:
+            - name: blueprint
+              mountPath: /etc/newt/blueprint.yaml
+              subPath: blueprint.yaml
+              readOnly: true
           env:
             - name: PANGOLIN_ENDPOINT
               valueFrom:
@@ -85,3 +105,7 @@ spec:
               memory: "128Mi"
               cpu: "250m"
           imagePullPolicy: IfNotPresent
+      volumes:
+        - name: blueprint
+          configMap:
+            name: k8s-newt-blueprint

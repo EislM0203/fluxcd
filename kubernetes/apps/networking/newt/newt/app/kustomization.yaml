@@ -6,3 +6,4 @@ resources:
   - homeNetworkPolicy.yaml
   - k8sNetworkPolicy.yaml
   - secret.yaml
+  - cm.yaml

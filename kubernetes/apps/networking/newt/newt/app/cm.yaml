@@ -1,0 +1,182 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homelab-newt-blueprint
+data:
+  blueprint.yaml: |
+    private-resources:
+      k8s-proxy:
+        name: "Cluster Proxy"
+        mode: host
+        destination: "10.0.0.50"
+        site: "home-network"
+        tcp-ports: "443"
+        alias: "proxy.internal"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8s-newt-blueprint
+data:
+  blueprint.yaml: |
+    public-resources:
+      pocketid:
+        name: "Pocket ID"
+        protocol: http
+        auth:
+          sso-enabled: false
+        full-domain: pocketid.cloud.traunseenet.com
+        targets:
+          - site: k8s-cluster
+            hostname: pocket-id.auth.svc.cluster.local
+            port: 1411
+            method: http
+            healthcheck:
+              hostname: pocket-id.auth.svc.cluster.local
+              port: 1411
+              path: /
+              interval: 30
+              timeout: 5
+              unhealthy-interval: 10
+      immich:
+        name: "Immich"
+        protocol: http
+        auth:
+          sso-enabled: false
+        rules:
+          - name: "Allow Austria"
+            action: pass
+            priority: 10
+            match: country
+            value: AT
+          - name: "Block Rest of World"
+            action: deny
+            priority: 90
+            match: country
+            value: ALL
+        full-domain: immich.cloud.traunseenet.com
+        targets:
+          - site: k8s-cluster
+            hostname: immich-server.apps.svc.cluster.local
+            port: 2283
+            method: http
+            healthcheck:
+              hostname: immich-server.apps.svc.cluster.local
+              port: 2283
+              path: /
+              interval: 30
+              timeout: 5
+              unhealthy-interval: 10
+      open-webui:
+        name: "Open WebUI"
+        protocol: http
+        auth:
+          sso-enabled: true
+        rules:
+          - name: "Allow Austria"
+            action: pass
+            priority: 10
+            match: country
+            value: AT
+          - name: "Block Rest of World"
+            action: deny
+            priority: 90
+            match: country
+            value: ALL
+        full-domain: gpt.cloud.traunseenet.com
+        targets:
+          - site: k8s-cluster
+            hostname: open-webui.apps.svc.cluster.local
+            port: 8080
+            method: http
+            healthcheck:
+              hostname: open-webui.apps.svc.cluster.local
+              port: 8080
+              path: /
+              interval: 30
+              timeout: 5
+              unhealthy-interval: 10
+      grafana:
+        name: "Grafana"
+        protocol: http
+        auth:
+          sso-enabled: true
+        rules:
+          - name: "Allow Austria"
+            action: pass
+            priority: 10
+            match: country
+            value: AT
+          - name: "Block Rest of World"
+            action: deny
+            priority: 90
+            match: country
+            value: ALL
+        targets:
+          - hostname: grafana-service.observability.svc.cluster.local
+            port: 3000
+            method: http
+            site: "k8s-cluster"
+            healthcheck:
+              path: /api/health
+              interval: 30
+              timeout: 5
+      harbor:
+        name: "Harbor"
+        protocol: http
+        auth:
+          sso-enabled: false
+        rules:
+          - name: "Allow Austria"
+            action: pass
+            priority: 10
+            match: country
+            value: AT
+          - name: "Block Rest of World"
+            action: deny
+            priority: 90
+            match: country
+            value: ALL
+        targets:
+          - hostname: harbor-portal.storage.svc.cluster.local
+            port: 80
+            method: http
+            site: "k8s-cluster"
+            priority: 10
+            healthcheck:
+              path: /
+              interval: 30
+              timeout: 5
+          - hostname: harbor-core.storage.svc.cluster.local
+            port: 80
+            method: http
+            site: "k8s-cluster"
+            priority: 10
+            match:
+              paths:
+                - prefix: /v2/
+          - hostname: harbor-core.storage.svc.cluster.local
+            port: 80
+            method: http
+            site: "k8s-cluster"
+            priority: 10
+            match:
+              paths:
+                - prefix: /c/
+          - hostname: harbor-core.storage.svc.cluster.local
+            port: 80
+            method: http
+            site: "k8s-cluster"
+            priority: 10
+            match:
+              paths:
+                - prefix: /service/
+          - hostname: harbor-core.storage.svc.cluster.local
+            port: 80
+            method: http
+            site: "k8s-cluster"
+            priority: 10
+            match:
+              paths:
+                - prefix: /api/

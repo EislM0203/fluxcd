@@ -159,6 +159,9 @@ resource "local_file" "ansible_inventory" {
     image_traefik           = var.image_traefik
     image_crowdsec          = var.image_crowdsec
     image_crowdsec_manager  = var.image_crowdsec_manager
+    pocketid_base_url       = var.pocketid_base_url
+    pocketid_client_id      = var.pocketid_client_id
+    pocketid_client_secret  = var.pocketid_client_secret
   })
 
   depends_on = [hcloud_server.pangolin]

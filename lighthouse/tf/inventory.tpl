@@ -13,3 +13,6 @@ image_gerbil=${image_gerbil}
 image_traefik=${image_traefik}
 image_crowdsec=${image_crowdsec}
 image_crowdsec_manager=${image_crowdsec_manager}
+pocketid_base_url=${pocketid_base_url}
+pocketid_client_id=${pocketid_client_id}
+pocketid_client_secret=${pocketid_client_secret}

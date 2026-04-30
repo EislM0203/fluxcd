@@ -65,7 +65,7 @@ cluster-readiness-check:
 # ==========================================
 
 lighthouse-init:
-	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="lighthouse/tf" init
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="lighthouse/tf" init -reconfigure
 
 lighthouse-plan:
 	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="lighthouse/tf" plan

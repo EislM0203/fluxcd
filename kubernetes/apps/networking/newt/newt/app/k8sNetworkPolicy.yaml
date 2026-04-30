@@ -17,6 +17,13 @@ spec:
     - to:
         - namespaceSelector:
             matchLabels:
+              kubernetes.io/metadata.name: auth
+          podSelector:
+            matchLabels:
+              app: poketid
+    - to:
+        - namespaceSelector:
+            matchLabels:
               kubernetes.io/metadata.name: observability
           podSelector:
             matchLabels:

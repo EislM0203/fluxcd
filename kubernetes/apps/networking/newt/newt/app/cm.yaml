@@ -9,7 +9,7 @@ data:
       k8s-proxy:
         name: "Cluster Proxy"
         mode: host
-        destination: "10.0.0.50"
+        destination: "10.0.0.204"
         site: "home-network"
         tcp-ports: "443"
         alias: "proxy.internal"
@@ -57,7 +57,7 @@ data:
         name: "Ntfy"
         protocol: http
         auth:
-          sso-enabled: false
+          sso-enabled: true
         full-domain: ntfy.cloud.traunseenet.com
         targets:
           - site: k8s-cluster

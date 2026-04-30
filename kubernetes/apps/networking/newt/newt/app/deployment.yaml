@@ -108,4 +108,4 @@ spec:
       volumes:
         - name: blueprint
           configMap:
-            name: k8s-newt-blueprint
+            name: homelab-newt-blueprint

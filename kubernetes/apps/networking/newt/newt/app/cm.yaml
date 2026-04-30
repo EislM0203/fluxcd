@@ -120,12 +120,15 @@ data:
             priority: 90
             match: country
             value: ALL
+        full-domain: grafana.cloud.traunseenet.com
         targets:
           - hostname: grafana-service.observability.svc.cluster.local
             port: 3000
             method: http
             site: "k8s-cluster"
             healthcheck:
+              hostname: grafana-service.observability.svc.cluster.local
+              port: 3000
               path: /api/health
               interval: 30
               timeout: 5
@@ -145,6 +148,7 @@ data:
             priority: 90
             match: country
             value: ALL
+        full-domain: harbord.cloud.traunseenet.com
         targets:
           - hostname: harbor-portal.storage.svc.cluster.local
             port: 80
@@ -152,6 +156,8 @@ data:
             site: "k8s-cluster"
             priority: 10
             healthcheck:
+              hostname: harbor-portal.storage.svc.cluster.local
+              port: 80
               path: /
               interval: 30
               timeout: 5

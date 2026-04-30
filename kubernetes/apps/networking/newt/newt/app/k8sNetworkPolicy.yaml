@@ -20,7 +20,7 @@ spec:
               kubernetes.io/metadata.name: auth
           podSelector:
             matchLabels:
-              app: poketid
+              app: pocketid
     - to:
         - namespaceSelector:
             matchLabels:

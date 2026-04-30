@@ -53,59 +53,59 @@ spec:
         - name: blueprint
           configMap:
             name: k8s-newt-blueprint
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: homelab-newt
-  labels:
-    app: homelab-newt
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: homelab-newt
-  template:
-    metadata:
-      labels:
-        app: homelab-newt
-    spec:
-      containers:
-        - name: homelab-newt
-          image: fosrl/newt:1.11.0
-          args:
-            - --blueprint-file
-            - /etc/newt/blueprint.yaml
-          volumeMounts:
-            - name: blueprint
-              mountPath: /etc/newt/blueprint.yaml
-              subPath: blueprint.yaml
-              readOnly: true
-          env:
-            - name: PANGOLIN_ENDPOINT
-              valueFrom:
-                secretKeyRef:
-                  name: homelab-newt-auth
-                  key: PANGOLIN_ENDPOINT
-            - name: NEWT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: homelab-newt-auth
-                  key: NEWT_ID
-            - name: NEWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: homelab-newt-auth
-                  key: NEWT_SECRET
-          resources:
-            limits:
-              memory: "256Mi"
-              cpu: "500m"
-            requests:
-              memory: "128Mi"
-              cpu: "250m"
-          imagePullPolicy: IfNotPresent
-      volumes:
-        - name: blueprint
-          configMap:
-            name: homelab-newt-blueprint
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: homelab-newt
+#   labels:
+#     app: homelab-newt
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: homelab-newt
+#   template:
+#     metadata:
+#       labels:
+#         app: homelab-newt
+#     spec:
+#       containers:
+#         - name: homelab-newt
+#           image: fosrl/newt:1.11.0
+#           args:
+#             - --blueprint-file
+#             - /etc/newt/blueprint.yaml
+#           volumeMounts:
+#             - name: blueprint
+#               mountPath: /etc/newt/blueprint.yaml
+#               subPath: blueprint.yaml
+#               readOnly: true
+#           env:
+#             - name: PANGOLIN_ENDPOINT
+#               valueFrom:
+#                 secretKeyRef:
+#                   name: homelab-newt-auth
+#                   key: PANGOLIN_ENDPOINT
+#             - name: NEWT_ID
+#               valueFrom:
+#                 secretKeyRef:
+#                   name: homelab-newt-auth
+#                   key: NEWT_ID
+#             - name: NEWT_SECRET
+#               valueFrom:
+#                 secretKeyRef:
+#                   name: homelab-newt-auth
+#                   key: NEWT_SECRET
+#           resources:
+#             limits:
+#               memory: "256Mi"
+#               cpu: "500m"
+#             requests:
+#               memory: "128Mi"
+#               cpu: "250m"
+#           imagePullPolicy: IfNotPresent
+#       volumes:
+#         - name: blueprint
+#           configMap:
+#             name: homelab-newt-blueprint

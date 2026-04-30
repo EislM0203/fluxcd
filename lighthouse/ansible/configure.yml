@@ -41,7 +41,11 @@
         body:
           orgId: "homelab"
           name: "Homelab"
-          subnet: "100.89.137.0/24"
+          # Must NOT overlap gerbil.subnet_group (default 100.89.137.0/20),
+          # otherwise site CIDR allocation collides and Pangolin pushes a
+          # malformed bare IP to Newt → "invalid IP address format".
+          # See fosrl/newt#201.
+          subnet: "100.90.128.0/24"
           utilitySubnet: "100.96.128.0/24"
         headers:
           Cookie: "{{ _pangolin_login.cookies_string }}"

@@ -52,7 +52,7 @@ spec:
       volumes:
         - name: blueprint
           configMap:
-            name: homelab-newt-blueprint
+            name: k8s-newt-blueprint
 ---
 apiVersion: apps/v1
 kind: Deployment

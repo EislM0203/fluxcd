@@ -42,7 +42,7 @@ spec:
     # Allow access to pangolin https & udp ports
     - to:
         - ipBlock:
-            cidr: 116.203.125.9/32
+            cidr: 178.105.32.92/32
       ports:
         - protocol: TCP
           port: 443

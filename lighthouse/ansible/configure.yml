@@ -296,7 +296,7 @@
           namePath: "name"
           scopes: "openid profile email groups"
           autoProvision: true
-          defaultRoleMapping: "contains(groups, 'pangolin_admin') ? 'Admin' : contains(groups, 'pangolin_member') ? 'Member' : ''"
+          defaultRoleMapping: "contains(groups, 'pangolin_admin') && 'Admin' || contains(groups, 'pangolin_member') && 'Member'"
         headers:
           Cookie: "{{ _pangolin_login.cookies_string }}"
           X-CSRF-Token: "x-csrf-protection"

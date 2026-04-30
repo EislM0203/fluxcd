@@ -13,6 +13,13 @@ data:
         site: "home-network"
         tcp-ports: "443"
         alias: "proxy.internal"
+      dns:
+        name: "Technitium DNS"
+        mode: host
+        destination: "10.0.0.99"
+        site: "home-network"
+        udp-ports: "53"
+        alias: "dns.internal"
 ---
 apiVersion: v1
 kind: ConfigMap

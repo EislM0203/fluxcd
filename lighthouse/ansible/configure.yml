@@ -199,7 +199,7 @@
               site: "{{ _hetzner_site_niceid }}"
               destination: crowdsec
               tcp-ports: "6060"
-              alias: "csm-internal.{{ pangolin_base_domain }}"
+              alias: "csm.internal"
               machines:
                 - "{{ _cluster_forwarder_niceid }}"
             hetzner-vps:
@@ -208,7 +208,7 @@
               site: "{{ _hetzner_site_niceid }}"
               destination: "{{ inventory_hostname }}"
               tcp-ports: "22"
-              alias: "vps.{{ pangolin_base_domain }}"
+              alias: "vps.internal"
               users:
                 - "{{ pangolin_admin_email }}"
 
@@ -251,7 +251,7 @@
           namePath: "name"
           scopes: "openid profile email groups"
           autoProvision: true
-          defaultRoleMapping: "contains(groups, 'pangolin-admin') ? 'Admin' : contains(groups, 'pangolin-member') ? 'Member' : ''"
+          defaultRoleMapping: "contains(groups, 'pangolin_admin') ? 'Admin' : contains(groups, 'pangolin_member') ? 'Member' : ''"
         headers:
           Cookie: "{{ _pangolin_login.cookies_string }}"
           X-CSRF-Token: "x-csrf-protection"

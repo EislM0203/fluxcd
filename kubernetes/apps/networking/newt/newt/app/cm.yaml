@@ -12,14 +12,14 @@ data:
         destination: "10.0.0.50"
         site: "home-network"
         tcp-ports: "443"
-        alias: "proxy.internal"
+        alias: "k8s.proxy.internal"
       pve-proxy:
         name: "Pve Proxy"
         mode: host
         destination: "10.0.0.103"
         site: "home-network"
         tcp-ports: "443"
-        alias: "proxy.internal"
+        alias: "pve.proxy.internal"
       dns:
         name: "Technitium DNS"
         mode: host

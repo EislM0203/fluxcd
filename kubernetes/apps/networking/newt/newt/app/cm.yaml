@@ -32,14 +32,14 @@ data:
         mode: host
         destination: "10.0.0.59"
         site: "home-network"
-        tcp-ports: "22"
+        tcp-ports: "22,9000"
         alias: "evo.internal"
       pve-01:
         name: "Pve-01"
         mode: host
         destination: "10.0.0.67"
         site: "home-network"
-        tcp-ports: "22"
+        tcp-ports: "22,8006"
         alias: "pve-01.internal"
       pve-02:
         name: "Pve-02"

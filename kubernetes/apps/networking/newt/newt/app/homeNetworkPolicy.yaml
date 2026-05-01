@@ -9,36 +9,7 @@ spec:
   policyTypes:
     - Egress
   egress:
-    # Allow access to evo
-    - to:
-        - ipBlock:
-            cidr: 10.0.0.59/32
-      ports:
-        - protocol: TCP
-          port: 22
-    # Allow access to internal NPM
-    - to:
-        - ipBlock:
-            cidr: 10.0.0.103/32
-      ports:
-        - protocol: TCP
-          port: 443
-    # Allow access to cluster
-    - to:
-        - ipBlock:
-            cidr: 10.0.0.204/32
-      ports:
-        - protocol: TCP
-          port: 443
-    - to:
-        - ipBlock:
-            cidr: 10.0.0.99/32
-      ports:
-        - protocol: TCP
-          port: 53
-        - protocol: UDP
-          port: 53
-    # Allow access to pangolin https & udp ports
+    # Pangolin VPS (control + data plane)
     - to:
         - ipBlock:
             cidr: 178.105.32.92/32
@@ -49,7 +20,40 @@ spec:
           port: 51820
         - protocol: UDP
           port: 21820
-    # Allow kube-dns
+    # Technitium DNS (off-cluster)
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.99/32
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+    # Internal NPM (off-cluster)
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.103/32
+      ports:
+        - protocol: TCP
+          port: 443
+    # Evo SSH (off-cluster)
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.59/32
+      ports:
+        - protocol: TCP
+          port: 22
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 8443
+    # kube-dns
     - to:
         - namespaceSelector:
             matchLabels:

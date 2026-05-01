@@ -51,8 +51,8 @@ spec:
           imagePullPolicy: IfNotPresent
       volumes:
         - name: blueprint
-          configMap:
-            name: k8s-newt-blueprint
+          secret:
+            secretName: k8s-newt-blueprint
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -107,5 +107,5 @@ spec:
           imagePullPolicy: IfNotPresent
       volumes:
         - name: blueprint
-          configMap:
-            name: homelab-newt-blueprint
+          secret:
+            secretName: homelab-newt-blueprint

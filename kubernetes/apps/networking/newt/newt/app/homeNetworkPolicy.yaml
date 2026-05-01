@@ -64,7 +64,7 @@ spec:
     # PVE-03 (off-cluster)
     - to:
         - ipBlock:
-            cidr: 10.0.0.151/32
+            cidr: 10.0.0.150/32
       ports:
         - protocol: TCP
           port: 22

@@ -43,18 +43,31 @@ spec:
       ports:
         - protocol: TCP
           port: 22
+        - protocol: TCP
+          port: 9000
+    # PVE-01 (off-cluster)
     - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: networking
-          podSelector:
-            matchLabels:
-              app.kubernetes.io/name: traefik
+        - ipBlock:
+            cidr: 10.0.0.67/32
       ports:
         - protocol: TCP
-          port: 8443
+          port: 22
         - protocol: TCP
-          port: 443
+          port: 8006
+    # PVE-02 (off-cluster)
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.225/32
+      ports:
+        - protocol: TCP
+          port: 22
+    # PVE-03 (off-cluster)
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.151/32
+      ports:
+        - protocol: TCP
+          port: 22
     # kube-dns
     - to:
         - namespaceSelector:

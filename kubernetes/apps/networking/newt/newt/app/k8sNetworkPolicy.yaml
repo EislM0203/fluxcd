@@ -9,6 +9,19 @@ spec:
   policyTypes:
     - Egress
   egress:
+    # Allow access to traefik lb
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 8443
+        - protocol: TCP
+          port: 443
     # Allow access to apps namespace
     - to:
         - namespaceSelector:

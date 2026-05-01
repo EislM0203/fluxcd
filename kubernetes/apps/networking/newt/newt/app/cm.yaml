@@ -10,7 +10,7 @@ data:
         name: "Cluster Proxy"
         mode: host
         destination: "10.0.0.50"
-        site: "home-network"
+        site: "k8s-cluster"
         tcp-ports: "443"
         alias: "k8s.proxy.internal"
       pve-proxy:
@@ -34,6 +34,27 @@ data:
         site: "home-network"
         tcp-ports: "22"
         alias: "evo.internal"
+      pve-01:
+        name: "Pve-01"
+        mode: host
+        destination: "10.0.0.67"
+        site: "home-network"
+        tcp-ports: "22"
+        alias: "pve-01.internal"
+      pve-02:
+        name: "Pve-02"
+        mode: host
+        destination: "10.0.0.225"
+        site: "home-network"
+        tcp-ports: "22"
+        alias: "pve-02.internal"
+      pve-03:
+        name: "Pve-03"
+        mode: host
+        destination: "10.0.0.151"
+        site: "home-network"
+        tcp-ports: "22"
+        alias: "pve-03.internal"
 ---
 apiVersion: v1
 kind: ConfigMap

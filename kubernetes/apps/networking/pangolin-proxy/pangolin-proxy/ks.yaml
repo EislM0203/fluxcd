@@ -9,7 +9,7 @@ spec:
   path: ./kubernetes/apps/networking/pangolin-proxy/pangolin-proxy/app
   prune: true
   wait: true
-  suspend: true
+  suspend: false
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes

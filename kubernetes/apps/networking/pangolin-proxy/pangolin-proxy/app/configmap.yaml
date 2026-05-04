@@ -14,9 +14,19 @@ data:
       timeout client 30s
       timeout server 30s
 
+    resolvers olm
+      nameserver olm 100.96.128.1:53
+      resolve_retries 3
+      timeout resolve 2s
+      timeout retry 1s
+      hold valid 30s
+      hold timeout 5s
+      hold refused 5s
+      hold nx 5s
+
     frontend csm_metrics
       bind *:6060
       default_backend csm_backend
 
     backend csm_backend
-      server csm csm.internal:6060
+      server csm csm.internal:6060 resolvers olm init-addr none

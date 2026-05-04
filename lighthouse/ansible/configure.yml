@@ -169,29 +169,6 @@
         status_code: [200, 201, 409]
       vars:
         _crowdsec_blueprint: |
-          public-resources:
-            crowdsec-manager:
-              name: "CrowdSec Manager"
-              protocol: http
-              full-domain: "crowdsec.{{ pangolin_base_domain }}"
-              targets:
-                - hostname: crowdsec-manager
-                  port: 8080
-                  method: http
-                  site: "{{ _hetzner_site_niceid }}"
-              auth:
-                sso-enabled: true
-              rules:
-                - name: "Allow Austria"
-                  action: pass
-                  priority: 10
-                  match: country
-                  value: AT
-                - name: "Block Rest of World"
-                  action: deny
-                  priority: 90
-                  match: country
-                  value: ALL
           private-resources:
             crowdsec-metrics:
               name: "CrowdSec"

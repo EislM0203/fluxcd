@@ -1,7 +1,3 @@
-api:
-  dashboard: true
-  insecure: true
-
 experimental:
   plugins:
     badger:
@@ -34,6 +30,9 @@ entryPoints:
         - crowdsec@file
       tls:
         certResolver: letsencrypt
+    forwardedHeaders:
+      insecure: false
+      trustedIPs: []
     transport:
       respondingTimeouts:
         readTimeout: 30m
@@ -49,16 +48,13 @@ certificatesResolvers:
           - "1.1.1.1:53"
           - "8.8.8.8:53"
 
-serversTransport:
-  insecureSkipVerify: true
-
 log:
   level: INFO
   format: json
   compress: true
   maxSize: 100
-  maxAge: 3
-  maxBackups: 3
+  maxAge: 30
+  maxBackups: 14
   filePath: /var/log/traefik/traefik.log
 
 accessLog:
@@ -85,8 +81,6 @@ accessLog:
   filters:
     statusCodes:
       - "200-299"
+      - "300-399"
       - "400-499"
       - "500-599"
-
-ping:
-  entryPoint: web

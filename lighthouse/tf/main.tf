@@ -146,16 +146,6 @@ resource "cloudflare_record" "pangolin_dashboard" {
   proxied = false
 }
 
-# CrowdSec dashboard: crowdsec.cloud.traunseenet.com
-resource "cloudflare_record" "crowdsec_dashboard" {
-  zone_id = data.cloudflare_zones.main.zones[0].id
-  name    = "crowdsec.cloud"
-  content = var.pangolin_base_domain
-  type    = "CNAME"
-  ttl     = 60
-  proxied = false
-}
-
 # Per-resource CNAMEs to the Pangolin dashboard record.
 # Adding/removing a service only requires a blueprint change --
 # the VPS IP is resolved via the CNAME chain (pg.traunseenet.com → A → VPS IP).
@@ -186,10 +176,11 @@ resource "local_file" "ansible_inventory" {
     image_gerbil            = var.image_gerbil
     image_traefik           = var.image_traefik
     image_crowdsec          = var.image_crowdsec
-    image_crowdsec_manager  = var.image_crowdsec_manager
     pocketid_base_url       = var.pocketid_base_url
     pocketid_client_id      = var.pocketid_client_id
     pocketid_client_secret  = var.pocketid_client_secret
+    crowdsec_console_enroll_key  = var.crowdsec_console_enroll_key
+    crowdsec_discord_webhook_url = var.crowdsec_discord_webhook_url
   })
 
   depends_on = [hcloud_server.pangolin]

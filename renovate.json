@@ -1,3 +1,42 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json"
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":pinDigests"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["^lighthouse/tf/variables\\.tf$"],
+      "matchStrings": [
+        "variable\\s+\"image_pangolin\"\\s*\\{[^}]*?default\\s*=\\s*\"(?<currentValue>[^\"@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "fosrl/pangolin"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^lighthouse/tf/variables\\.tf$"],
+      "matchStrings": [
+        "variable\\s+\"image_gerbil\"\\s*\\{[^}]*?default\\s*=\\s*\"(?<currentValue>[^\"@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "fosrl/gerbil"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^lighthouse/tf/variables\\.tf$"],
+      "matchStrings": [
+        "variable\\s+\"image_traefik\"\\s*\\{[^}]*?default\\s*=\\s*\"(?<currentValue>[^\"@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "traefik"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^lighthouse/tf/variables\\.tf$"],
+      "matchStrings": [
+        "variable\\s+\"image_crowdsec\"\\s*\\{[^}]*?default\\s*=\\s*\"(?<currentValue>[^\"@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "crowdsecurity/crowdsec"
+    }
+  ]
 }

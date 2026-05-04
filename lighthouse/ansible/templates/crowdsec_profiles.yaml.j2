@@ -1,0 +1,40 @@
+name: repeat_offender_remediation
+filters:
+ - Alert.Remediation == true && Alert.GetScope() == "Ip" && GetDecisionsCount(Alert.GetValue()) > 0
+decisions:
+ - type: ban
+   duration: 720h
+duration_expr: Sprintf('%dh', 168 * (1 + GetDecisionsCount(Alert.GetValue())))
+{% if crowdsec_discord_webhook_url | default('') | length > 0 %}
+notifications:
+ - discord
+{% endif %}
+on_success: break
+---
+name: appsec_ip_remediation
+filters:
+ - Alert.Remediation == true && Alert.GetScope() == "Ip" && Alert.GetScenario() startsWith "crowdsecurity/appsec"
+decisions:
+ - type: ban
+   duration: 168h
+{% if crowdsec_discord_webhook_url | default('') | length > 0 %}
+notifications:
+ - discord
+{% endif %}
+on_success: break
+---
+name: default_ip_remediation
+filters:
+ - Alert.Remediation == true && Alert.GetScope() == "Ip"
+decisions:
+ - type: ban
+   duration: 24h
+on_success: break
+---
+name: default_range_remediation
+filters:
+ - Alert.Remediation == true && Alert.GetScope() == "Range"
+decisions:
+ - type: ban
+   duration: 24h
+on_success: break

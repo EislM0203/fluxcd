@@ -108,8 +108,16 @@ variable "image_crowdsec" {
   default     = "v1.7.7"
 }
 
-variable "image_crowdsec_manager" {
-  description = "CrowdSec Manager Docker image tag"
+variable "crowdsec_console_enroll_key" {
+  description = "Enrollment key from app.crowdsec.net (empty = skip enrollment)"
   type        = string
-  default     = "2.3.4"
+  default     = ""
+  sensitive   = true
+}
+
+variable "crowdsec_discord_webhook_url" {
+  description = "Discord webhook URL for high-signal CrowdSec alerts (empty = no notifications)"
+  type        = string
+  default     = ""
+  sensitive   = true
 }

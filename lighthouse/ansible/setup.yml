@@ -45,45 +45,54 @@
         - "{{ pangolin_dir }}/config/crowdsec"
         - "{{ pangolin_dir }}/config/crowdsec/acquis.d"
         - "{{ pangolin_dir }}/config/crowdsec/db"
-        - "{{ pangolin_dir }}/crowdsec-manager"
-        - "{{ pangolin_dir }}/crowdsec-manager/backups"
-        - "{{ pangolin_dir }}/crowdsec-manager/data"
+        - "{{ pangolin_dir }}/config/crowdsec/db/backups"
+        - "{{ pangolin_dir }}/config/crowdsec/parsers"
+        - "{{ pangolin_dir }}/config/crowdsec/parsers/s02-enrich"
 
-    - name: Check if GeoIP database exists
-      ansible.builtin.stat:
-        path: "{{ pangolin_dir }}/config/GeoLite2-Country.mmdb"
-      register: geoip_stat
-
-    - name: Download and extract GeoIP database if missing
-      when: not geoip_stat.stat.exists
+    - name: Download and extract GeoIP databases
       block:
-        - name: Download GeoIP tarball from Mirror
+        - name: Download GeoLite2-Country tarball
           ansible.builtin.get_url:
             url: "https://github.com/GitSquared/node-geolite2-redist/raw/refs/heads/master/redist/GeoLite2-Country.tar.gz"
             dest: "/tmp/GeoLite2-Country.tar.gz"
+            force: true
 
-        - name: Extract .mmdb file
+        - name: Download GeoLite2-ASN tarball
+          ansible.builtin.get_url:
+            url: "https://github.com/GitSquared/node-geolite2-redist/raw/refs/heads/master/redist/GeoLite2-ASN.tar.gz"
+            dest: "/tmp/GeoLite2-ASN.tar.gz"
+            force: true
+
+        - name: Extract Country .mmdb
           ansible.builtin.unarchive:
             src: "/tmp/GeoLite2-Country.tar.gz"
             dest: "/tmp"
             remote_src: yes
 
-        - name: Move .mmdb to final config location
+        - name: Extract ASN .mmdb
+          ansible.builtin.unarchive:
+            src: "/tmp/GeoLite2-ASN.tar.gz"
+            dest: "/tmp"
+            remote_src: yes
+
+        - name: Move Country .mmdb to final config location
           ansible.builtin.shell: |
             mv /tmp/GeoLite2-Country_*/GeoLite2-Country.mmdb {{ pangolin_dir }}/config/GeoLite2-Country.mmdb
           changed_when: true
 
+        - name: Move ASN .mmdb to final config location
+          ansible.builtin.shell: |
+            mv /tmp/GeoLite2-ASN_*/GeoLite2-ASN.mmdb {{ pangolin_dir }}/config/GeoLite2-ASN.mmdb
+          changed_when: true
+
         - name: Clean up temporary files
-          ansible.builtin.file:
-            path: "{{ item }}"
-            state: absent
-          loop:
-            - "/tmp/GeoLite2-Country.tar.gz"
-            - "/tmp/GeoLite2-Country_*"
+          ansible.builtin.shell: |
+            rm -rf /tmp/GeoLite2-*.tar.gz /tmp/GeoLite2-Country_* /tmp/GeoLite2-ASN_*
+          changed_when: true
 
     # ── Static config files ───────────────────────────────────────────────────
 
-    - name: Template docker-compose.yml (initial — no CrowdSec Manager key yet)
+    - name: Template docker-compose.yml
       ansible.builtin.template:
         src: templates/docker-compose.yml.j2
         dest: "{{ pangolin_dir }}/docker-compose.yml"
@@ -123,6 +132,64 @@
         group: "{{ ansible_user }}"
         mode: "0644"
 
+    - name: Template CrowdSec profiles (ban durations)
+      ansible.builtin.template:
+        src: templates/crowdsec_profiles.yaml.j2
+        dest: "{{ pangolin_dir }}/config/crowdsec/profiles.yaml"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0644"
+
+    - name: Template CrowdSec config.yaml.local (enable WAL)
+      ansible.builtin.template:
+        src: templates/crowdsec_config_local.yaml.j2
+        dest: "{{ pangolin_dir }}/config/crowdsec/config.yaml.local"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0644"
+
+    - name: Template CrowdSec custom whitelists (operator + RFC1918)
+      ansible.builtin.template:
+        src: templates/crowdsec_whitelists.yaml.j2
+        dest: "{{ pangolin_dir }}/config/crowdsec/parsers/s02-enrich/custom-whitelists.yaml"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0644"
+
+    - name: Ensure CrowdSec notifications dir exists
+      ansible.builtin.file:
+        path: "{{ pangolin_dir }}/config/crowdsec/notifications"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0755"
+
+    - name: Template Discord notification config
+      ansible.builtin.template:
+        src: templates/crowdsec_notification_discord.yaml.j2
+        dest: "{{ pangolin_dir }}/config/crowdsec/notifications/discord.yaml"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0600"
+      when:
+        - crowdsec_discord_webhook_url is defined
+        - crowdsec_discord_webhook_url | length > 0
+
+    - name: Remove Discord notification config when webhook unset
+      ansible.builtin.file:
+        path: "{{ pangolin_dir }}/config/crowdsec/notifications/discord.yaml"
+        state: absent
+      when: crowdsec_discord_webhook_url is not defined or (crowdsec_discord_webhook_url | length) == 0
+
+    - name: Download CrowdSec bouncer ban.html
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/maxlerebourg/crowdsec-bouncer-traefik-plugin/refs/heads/main/ban.html
+        dest: "{{ pangolin_dir }}/config/traefik/ban.html"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0644"
+        force: true
+
     - name: Ensure acme.json has correct permissions
       ansible.builtin.file:
         path: "{{ pangolin_dir }}/config/letsencrypt/acme.json"
@@ -159,39 +226,52 @@
       delay: 10
       changed_when: false
 
-    - name: Remove existing Traefik bouncer (idempotent)
+    - name: List existing CrowdSec bouncers
+      ansible.builtin.command:
+        cmd: docker exec crowdsec cscli bouncers list -o json
+      register: crowdsec_bouncers_list
+      changed_when: false
+
+    - name: Read persisted bouncer key (if any)
+      ansible.builtin.slurp:
+        src: "{{ pangolin_dir }}/config/crowdsec/.traefik-bouncer-key"
+      register: crowdsec_key_file
+      failed_when: false
+      no_log: true
+
+    - name: Determine if traefik-bouncer is registered AND key is persisted
+      ansible.builtin.set_fact:
+        _bouncer_registered: "{{ 'traefik-bouncer' in (crowdsec_bouncers_list.stdout | from_json | map(attribute='name') | list) }}"
+        _bouncer_key_persisted: "{{ crowdsec_key_file.content is defined }}"
+
+    - name: Delete stale bouncer registration if local key was lost
       ansible.builtin.command:
         cmd: docker exec crowdsec cscli bouncers delete traefik-bouncer
-      failed_when: false
-      changed_when: false
+      when: _bouncer_registered and not _bouncer_key_persisted
+      changed_when: true
 
-    - name: Generate CrowdSec Traefik bouncer API key
+    - name: Generate CrowdSec Traefik bouncer API key (only if missing)
       ansible.builtin.command:
         cmd: docker exec crowdsec cscli bouncers add traefik-bouncer -o raw
-      register: crowdsec_key_result
+      register: crowdsec_key_new
+      when: not _bouncer_registered or not _bouncer_key_persisted
       changed_when: true
+      no_log: true
 
-    - name: Remove existing CrowdSec Manager bouncer (idempotent)
-      ansible.builtin.command:
-        cmd: docker exec crowdsec cscli bouncers delete crowdsec-manager
-      failed_when: false
-      changed_when: false
-
-    - name: Generate CrowdSec Manager API key
-      ansible.builtin.command:
-        cmd: docker exec crowdsec cscli bouncers add crowdsec-manager -o raw
-      register: crowdsec_manager_key_result
-      changed_when: true
-
-    - name: Template docker-compose.yml with CrowdSec Manager key
-      ansible.builtin.template:
-        src: templates/docker-compose.yml.j2
-        dest: "{{ pangolin_dir }}/docker-compose.yml"
+    - name: Persist newly generated bouncer key
+      ansible.builtin.copy:
+        content: "{{ crowdsec_key_new.stdout | trim }}"
+        dest: "{{ pangolin_dir }}/config/crowdsec/.traefik-bouncer-key"
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
-        mode: "0644"
-      vars:
-        crowdsec_manager_key: "{{ crowdsec_manager_key_result.stdout | trim }}"
+        mode: "0600"
+      when: crowdsec_key_new.stdout is defined
+      no_log: true
+
+    - name: Set bouncer key fact for templating
+      ansible.builtin.set_fact:
+        crowdsec_bouncer_key: "{{ crowdsec_key_new.stdout | trim if crowdsec_key_new.stdout is defined else (crowdsec_key_file.content | b64decode | trim) }}"
+      no_log: true
 
     - name: Template Traefik dynamic config with bouncer key
       ansible.builtin.template:
@@ -200,8 +280,6 @@
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
         mode: "0644"
-      vars:
-        crowdsec_bouncer_key: "{{ crowdsec_key_result.stdout | trim }}"
 
     # ── Start full stack ──────────────────────────────────────────────────────
 
@@ -234,3 +312,77 @@
           --password {{ pangolin_admin_password }}
       changed_when: true
       no_log: true
+
+    # ── CrowdSec maintenance ──────────────────────────────────────────────────
+
+    - name: Check for prior CrowdSec console enrollment
+      ansible.builtin.stat:
+        path: "{{ pangolin_dir }}/config/crowdsec/.console-enrolled"
+      register: crowdsec_console_marker
+
+    - name: Enroll CrowdSec instance in app.crowdsec.net
+      ansible.builtin.command:
+        cmd: >
+          docker exec crowdsec cscli console enroll
+          --name {{ inventory_hostname | replace('.', '-') }}
+          {{ crowdsec_console_enroll_key }}
+      when:
+        - crowdsec_console_enroll_key is defined
+        - crowdsec_console_enroll_key | length > 0
+        - not crowdsec_console_marker.stat.exists
+      changed_when: true
+      no_log: true
+      register: crowdsec_console_enroll
+
+    - name: Mark CrowdSec console as enrolled
+      ansible.builtin.file:
+        path: "{{ pangolin_dir }}/config/crowdsec/.console-enrolled"
+        state: touch
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0600"
+      when: crowdsec_console_enroll is defined and crowdsec_console_enroll is not skipped
+
+    - name: Schedule weekly CrowdSec hub upgrade
+      ansible.builtin.cron:
+        name: "crowdsec hub upgrade"
+        weekday: "0"
+        hour: "4"
+        minute: "30"
+        user: root
+        job: >-
+          docker exec crowdsec cscli hub update &&
+          docker exec crowdsec cscli hub upgrade &&
+          docker exec crowdsec cscli collections upgrade --all &&
+          docker exec crowdsec cscli parsers upgrade --all &&
+          docker exec crowdsec cscli scenarios upgrade --all &&
+          docker exec crowdsec cscli appsec-configs upgrade --all &&
+          docker exec crowdsec cscli appsec-rules upgrade --all &&
+          docker kill -s HUP crowdsec
+
+    - name: Schedule daily CrowdSec SQLite backup (rotates day-of-week)
+      ansible.builtin.cron:
+        name: "crowdsec sqlite backup"
+        hour: "3"
+        minute: "15"
+        user: root
+        job: >-
+          sqlite3 {{ pangolin_dir }}/config/crowdsec/db/crowdsec.db
+          ".backup '{{ pangolin_dir }}/config/crowdsec/db/backups/crowdsec-$(date +\%u).db'"
+
+    - name: Schedule weekly GeoIP DB refresh
+      ansible.builtin.cron:
+        name: "geoip refresh"
+        weekday: "1"
+        hour: "5"
+        minute: "0"
+        user: root
+        job: >-
+          set -e;
+          cd /tmp;
+          curl -sfL -o GeoLite2-Country.tar.gz https://github.com/GitSquared/node-geolite2-redist/raw/refs/heads/master/redist/GeoLite2-Country.tar.gz &&
+          curl -sfL -o GeoLite2-ASN.tar.gz https://github.com/GitSquared/node-geolite2-redist/raw/refs/heads/master/redist/GeoLite2-ASN.tar.gz &&
+          tar -xzf GeoLite2-Country.tar.gz && tar -xzf GeoLite2-ASN.tar.gz &&
+          mv GeoLite2-Country_*/GeoLite2-Country.mmdb {{ pangolin_dir }}/config/GeoLite2-Country.mmdb &&
+          mv GeoLite2-ASN_*/GeoLite2-ASN.mmdb {{ pangolin_dir }}/config/GeoLite2-ASN.mmdb &&
+          rm -rf GeoLite2-Country* GeoLite2-ASN*

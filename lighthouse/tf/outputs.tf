@@ -12,3 +12,9 @@ output "ssh_command" {
   value       = "ssh -i ${var.ssh_private_key_path} ${var.ssh_username}@${hcloud_server.pangolin.ipv4_address}"
   description = "SSH command to connect to the server"
 }
+
+output "pangolin_secret" {
+  value       = random_password.pangolin_secret.result
+  description = "Generated Pangolin server.secret (session/JWT signing key)"
+  sensitive   = true
+}

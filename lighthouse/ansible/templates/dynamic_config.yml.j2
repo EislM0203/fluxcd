@@ -13,14 +13,23 @@ http:
           crowdsecAppsecEnabled: true
           crowdsecAppsecHost: crowdsec:7422
           crowdsecAppsecFailureBlock: true
-          crowdsecAppsecUnreachableBlock: true
+          crowdsecAppsecUnreachableBlock: false
           crowdsecAppsecBodyLimit: 10485760
           crowdsecMode: live
           enabled: true
           updateIntervalSeconds: 15
           defaultDecisionSeconds: 15
-          updateMaxFailure: 0
+          updateMaxFailure: -1
           logLevel: INFO
+          banHTMLFilePath: /etc/traefik/ban.html
+          forwardedHeadersTrustedIPs: []
+          forwardedHeadersCustomName: ""
+          redactRequestHeaders:
+            - Authorization
+            - Cookie
+            - Set-Cookie
+            - X-Api-Key
+            - Proxy-Authorization
           clientTrustedIPs:
             - 10.0.0.0/8
             - 172.16.0.0/12
@@ -32,8 +41,10 @@ http:
         stsIncludeSubdomains: true
         stsPreload: true
         contentTypeNosniff: true
+        browserXssFilter: true
         customFrameOptionsValue: SAMEORIGIN
         referrerPolicy: strict-origin-when-cross-origin
+        permissionsPolicy: "camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(), usb=()"
         hostsProxyHeaders:
           - X-Forwarded-Host
         sslProxyHeaders:
@@ -41,7 +52,9 @@ http:
         customResponseHeaders:
           Server: ""
           X-Powered-By: ""
-          X-Forwarded-Proto: https
+          Cross-Origin-Opener-Policy: same-origin
+          Cross-Origin-Resource-Policy: same-origin
+          X-Robots-Tag: "noindex, nofollow"
     redirect-to-https:
       redirectScheme:
         scheme: https

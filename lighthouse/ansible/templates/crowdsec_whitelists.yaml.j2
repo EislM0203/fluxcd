@@ -1,0 +1,17 @@
+name: custom/trusted-sources
+description: "Operator IPs and internal subnets — never ban"
+whitelist:
+  reason: "trusted operator and internal sources"
+{% if crowdsec_whitelist_ips | default([]) | length > 0 %}
+  ip:
+{% for addr in crowdsec_whitelist_ips %}
+    - "{{ addr }}"
+{% endfor %}
+{% endif %}
+  cidr:
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+    - "192.168.0.0/16"
+{% for c in crowdsec_whitelist_cidrs | default([]) %}
+    - "{{ c }}"
+{% endfor %}

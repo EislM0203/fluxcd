@@ -1,0 +1,16 @@
+type: http
+name: discord
+log_level: info
+
+url: {{ crowdsec_discord_webhook_url }}
+method: POST
+headers:
+  Content-Type: application/json
+
+group_wait: 60s
+group_threshold: 10
+
+format: |
+{% raw %}
+  {"username":"CrowdSec","content":"🚨 **AppSec block** — {{ len . }} alert(s)\n{{range $i, $a := .}}{{if lt $i 5}}• `{{$a.Source.IP}}` ({{if $a.Source.Cn}}{{$a.Source.Cn}}{{else}}?{{end}}) → `{{$a.Scenario}}` for {{(index $a.Decisions 0).Duration}}\n{{end}}{{end}}{{if gt (len .) 5}}_+{{sub (len .) 5}} more_{{end}}"}
+{% endraw %}

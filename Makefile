@@ -10,7 +10,6 @@ SOPS_AGE_KEY_FILE = $(HOME)/.config/sops/age/keys.txt
 
 .PHONY: bootstrap-infra plan-tf apply-tf destroy-tf wait-for-nodes update-packages \
 	install-longhorn-dependencies install-tns-csi-dependencies reboot-if-required install-rke2-server install-rke2-agent cluster-readiness-check \
-	install-netbird \
 	lighthouse-init lighthouse-plan lighthouse-apply lighthouse-bootstrap lighthouse-setup lighthouse-configure lighthouse-redeploy lighthouse-destroy
 
 bootstrap-infra: apply-tf \
@@ -18,7 +17,6 @@ bootstrap-infra: apply-tf \
 	update-packages \
 	install-longhorn-dependencies \
 	install-tns-csi-dependencies \
-	install-netbird \
 	reboot-if-required \
 	install-rke2-server \
 	install-rke2-agent \

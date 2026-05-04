@@ -8,7 +8,6 @@ metadata:
 spec:
   dependsOn:
     - name: traefik-base
-    - name: netbird-app
   path: ./kubernetes/apps/apps/open-webui/open-webui/app
   prune: true
   wait: true

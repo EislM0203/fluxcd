@@ -12,6 +12,8 @@ spec:
       - "vchord.so"
   primaryUpdateStrategy: unsupervised
   enableSuperuserAccess: true
+  monitoring:
+    enablePodMonitor: true
   externalClusters:
     - name: *name
       plugin:

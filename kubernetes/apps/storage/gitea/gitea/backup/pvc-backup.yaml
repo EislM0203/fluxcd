@@ -3,14 +3,14 @@
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:
-  name:  n8n-backup
+  name:  gitea-backup
 spec:
-  sourcePVC: n8n-claim0
+  sourcePVC: gitea-data
   trigger:
     schedule: "0 */6 * * *"
   restic:
     pruneIntervalDays: 1
-    repository: restic-n8n
+    repository: restic-gitea
     retain:
       hourly: 5
       daily: 4

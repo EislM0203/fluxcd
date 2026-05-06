@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    service: n8n-claim0
+  name: n8n-claim0
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: tns-csi-nvmeof
+  # dataSourceRef:
+  #   kind: ReplicationDestination
+  #   apiGroup: volsync.backube
+  #   name: n8n-restore
+  resources:
+    requests:
+      storage: 2Gi
+---
+#yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: n8n-restore
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: restic-n8n
+    storageClassName: tns-csi-nvmeof
+    accessModes: ["ReadWriteOnce"]
+    copyMethod: Snapshot
+    volumeSnapshotClassName: tns-csi-nvmeof-snapshot-detached
+    capacity: 2Gi
+    enableFileDeletion: true
+    cleanupCachePVC: true
+    cleanupTempPVC: true

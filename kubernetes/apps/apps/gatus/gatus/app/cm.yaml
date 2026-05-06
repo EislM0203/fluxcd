@@ -6,6 +6,21 @@ data:
   config.yaml: |
     endpoints:
       ###########################
+      # Auth
+      ###########################
+      - name: PocketID
+        url: "http://pocket-id.auth.svc.cluster.local:1411"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      ###########################
       # Apps
       ###########################
       - name: Jellyfin
@@ -59,18 +74,6 @@ data:
             description: "healthcheck failed"
             failure-threshold: 5
             send-on-resolved: true
-      - name: MiniIO Cloud
-        url: "http://minio-service.storage.svc.cluster.local:9000/minio/health/live"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
       - name: Paperless NGX
         url: "http://paperless.apps.svc.cluster.local/accounts/login/?next=/"
         interval: 1m
@@ -88,6 +91,19 @@ data:
         interval: 1m
         conditions:
           - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      - name: N8N
+        url: "http://n8n.apps.svc.cluster.local:5678/healthz/readiness"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].status == ok"
           - "[RESPONSE_TIME] < 500"
         alerts:
           - type: "ntfy"
@@ -115,6 +131,19 @@ data:
         interval: 1m
         conditions:
           - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      - name: Gitea
+        url: "http://gitea.storage.svc.cluster.local:3000/api/healthz"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].status == pass"
           - "[RESPONSE_TIME] < 500"
         alerts:
           - type: "ntfy"

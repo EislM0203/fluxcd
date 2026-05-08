@@ -71,7 +71,7 @@ spec:
           # keys in the secret should be REGISTRY_STORAGE_S3_ACCESSKEY and REGISTRY_STORAGE_S3_SECRETKEY for registry
           existingSecret: "harbor-secret"
           region: us-east-1
-          bucket: harbor-images
+          bucket: harbor-image-store
           regionendpoint: http://10.0.0.154:9000
           rootdirectory: /
           

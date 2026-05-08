@@ -1,10 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":pinDigests"],
+  "extends": ["config:recommended"],
+  "pinDigests": true,
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^lighthouse/tf/variables\\.tf$"],
+      "managerFilePatterns": ["/^lighthouse/tf/variables\\.tf$/"],
       "matchStrings": [
         "variable\\s+\"image_pangolin\"\\s*\\{[^}]*?default\\s*=\\s*\"(?<currentValue>[^\"@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
       ],
@@ -13,7 +14,7 @@
     },
     {
       "customType": "regex",
-      "fileMatch": ["^lighthouse/tf/variables\\.tf$"],
+      "managerFilePatterns": ["/^lighthouse/tf/variables\\.tf$/"],
       "matchStrings": [
         "variable\\s+\"image_gerbil\"\\s*\\{[^}]*?default\\s*=\\s*\"(?<currentValue>[^\"@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
       ],
@@ -22,7 +23,7 @@
     },
     {
       "customType": "regex",
-      "fileMatch": ["^lighthouse/tf/variables\\.tf$"],
+      "managerFilePatterns": ["/^lighthouse/tf/variables\\.tf$/"],
       "matchStrings": [
         "variable\\s+\"image_traefik\"\\s*\\{[^}]*?default\\s*=\\s*\"(?<currentValue>[^\"@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
       ],
@@ -31,7 +32,7 @@
     },
     {
       "customType": "regex",
-      "fileMatch": ["^lighthouse/tf/variables\\.tf$"],
+      "managerFilePatterns": ["/^lighthouse/tf/variables\\.tf$/"],
       "matchStrings": [
         "variable\\s+\"image_crowdsec\"\\s*\\{[^}]*?default\\s*=\\s*\"(?<currentValue>[^\"@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
       ],

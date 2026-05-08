@@ -39,38 +39,14 @@ spec:
           "printConfig": true,
           "dependencyDashboard": true,
           "repositories": ["EislM0203/fluxcd"],
-          "hostRules": [
-            {
-              "matchHost": "index.docker.io",
-              "hostType": "docker",
-              "timeout": 60000
-            },
-            {
-              "matchHost": "ghcr.io",
-              "hostType": "docker",
-              "timeout": 60000
-            }
-          ],
-          "packageRules": [
-            {
-              "matchDatasources": ["docker"],
-              "matchPackagePatterns": ["^harbor\\.cloud\\.traunseenet\\.com/docker\\.io/"],
-              "registryUrls": ["https://index.docker.io"]
-            },
-            {
-              "matchDatasources": ["docker"],
-              "matchPackagePatterns": ["^harbor\\.cloud\\.traunseenet\\.com/ghcr\\.io/"],
-              "registryUrls": ["https://ghcr.io"]
-            }
-          ],
           "flux": {
-            "fileMatch": ["\\.yaml$"]
+            "managerFilePatterns": ["/\\.yaml$/"]
           },
           "kubernetes": {
-            "fileMatch": ["\\.yaml$"]
+            "managerFilePatterns": ["/\\.yaml$/"]
           },
           "helm-values": {
-            "fileMatch": ["\\.yaml$"]
+            "managerFilePatterns": ["/\\.yaml$/"]
           }
         }
     envFrom:

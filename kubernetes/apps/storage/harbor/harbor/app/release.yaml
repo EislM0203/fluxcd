@@ -74,7 +74,9 @@ spec:
           bucket: harbor-image-store
           regionendpoint: http://10.0.0.154:9000
           rootdirectory: /
-          
+          chunksize: "209715200"
+          multipartcopythresholdsize: "5368709120"
+          multipartcopychunksize: "209715200"
     tolerations-and-nodelectors: &tolerations-and-nodelectors
       # tolerations: 
       #   - key: node-role.kubernetes.io/master

@@ -9,7 +9,7 @@ spec:
   dependsOn:
     - name: cert-manager-addons
     - name: traefik-base
-    - name: longhorn-addons
+    - name: tns-csi
   path: ./kubernetes/apps/storage/harbor/harbor/app
   prune: true
   wait: true

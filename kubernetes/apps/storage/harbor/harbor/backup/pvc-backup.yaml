@@ -8,7 +8,7 @@ metadata:
 spec:
   sourcePVC: harbor-data
   trigger:
-    schedule: "*/600 * * * *"
+    schedule: "0 */10 * * *"
   restic:
     pruneIntervalDays: 1
     repository: restic-harbor
@@ -19,5 +19,6 @@ spec:
       monthly: 2
       yearly: 1
     copyMethod: Snapshot
-    storageClassName: longhorn-backup
+    storageClassName: tns-csi-nvmeof
+    volumeSnapshotClassName: tns-csi-nvmeof-snapshot-detached
     unlock: "something"

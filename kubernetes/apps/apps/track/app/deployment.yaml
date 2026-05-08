@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: track
-          image: markuseisl00/track:1.0.0
+          image: markuseisl00/track:1.0.1
           ports:
             - containerPort: 8000
           env:

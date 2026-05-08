@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: track
-          image: harbor.cloud.traunseenet.com/public/track:1.0.4
+          image: markuseisl00/track:1.0.0
           ports:
             - containerPort: 8000
           env:

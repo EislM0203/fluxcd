@@ -105,7 +105,7 @@ variable "image_traefik" {
 variable "image_crowdsec" {
   description = "CrowdSec Docker image tag"
   type        = string
-  default     = "v1.7.7"
+  default     = "v1.7.8"
 }
 
 variable "crowdsec_console_enroll_key" {

@@ -49,8 +49,8 @@ spec:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 5Gi
-      storageClassName: tns-csi-nvmeof
+          storage: 2Gi
+      storageClassName: longhorn-storage
       volumeMode: Filesystem
 ---
 apiVersion: barmancloud.cnpg.io/v1

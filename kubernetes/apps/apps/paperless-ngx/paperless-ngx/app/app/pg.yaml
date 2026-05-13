@@ -37,8 +37,8 @@ spec:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 10Gi
-      storageClassName: tns-csi-nvmeof
+          storage: 5Gi
+      storageClassName: longhorn-storage
       volumeMode: Filesystem
   monitoring:
     enablePodMonitor: true

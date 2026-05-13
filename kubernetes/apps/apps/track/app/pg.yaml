@@ -38,7 +38,7 @@ spec:
       resources:
         requests:
           storage: 1Gi
-      storageClassName: tns-csi-nvmeof
+      storageClassName: longhorn-storage
       volumeMode: Filesystem
   monitoring:
     enablePodMonitor: true

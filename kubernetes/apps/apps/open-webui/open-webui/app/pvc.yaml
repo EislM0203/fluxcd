@@ -9,14 +9,14 @@ metadata:
     numberOfReplicas: '1'
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: tns-csi-nvmeof
+  storageClassName: longhorn-storage
   dataSourceRef:
     kind: ReplicationDestination
     apiGroup: volsync.backube
     name: openwebui-restore
   resources:
     requests:
-      storage: 5Gi
+      storage: 2Gi
 ---
 #yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
 apiVersion: volsync.backube/v1alpha1
@@ -28,11 +28,10 @@ spec:
     manual: restore-once
   restic:
     repository: restic-openwebui
-    storageClassName: tns-csi-nvmeof
+    storageClassName: longhorn-storage
     accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
-    volumeSnapshotClassName: tns-csi-nvmeof-snapshot-detached
-    capacity: 5Gi
-    enableFileDeletion: true
-    cleanupCachePVC: true
-    cleanupTempPVC: true
+    capacity: 2Gi
+    enableFileDeletion: false
+    cleanupCachePVC: false
+    cleanupTempPVC: false

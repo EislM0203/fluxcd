@@ -13,7 +13,7 @@ spec:
     name: gitea-restore
   resources:
     requests:
-      storage: 2Gi
+      storage: 1Gi
 ---
 #yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
 apiVersion: volsync.backube/v1alpha1
@@ -28,7 +28,7 @@ spec:
     storageClassName: longhorn-storage
     accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
-    capacity: 2Gi
+    capacity: 1Gi
     enableFileDeletion: false
     cleanupCachePVC: false
     cleanupTempPVC: false

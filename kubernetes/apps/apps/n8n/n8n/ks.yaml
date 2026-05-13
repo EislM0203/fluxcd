@@ -13,7 +13,7 @@ spec:
   path: ./kubernetes/apps/apps/n8n/n8n/app
   prune: true
   wait: true
-  suspend: true
+  suspend: false
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes
@@ -34,7 +34,7 @@ spec:
     - name: n8n-app
   path: ./kubernetes/apps/apps/n8n/n8n/backup
   prune: true
-  suspend: true
+  suspend: false
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes

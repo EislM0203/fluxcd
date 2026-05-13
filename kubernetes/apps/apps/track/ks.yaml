@@ -8,7 +8,7 @@ metadata:
 spec:
   dependsOn:
     - name: traefik-base
-    - name: tns-csi
+    - name: longhorn-addons
     - name: cnpg
     - name: harbor-app
   path: ./kubernetes/apps/apps/track/app

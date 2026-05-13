@@ -7,7 +7,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: tns-csi
+    - name: longhorn-addons
     - name: cert-manager-addons
   path: ./kubernetes/apps/storage/cnpg/cnpg/app
   prune: true

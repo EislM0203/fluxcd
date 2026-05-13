@@ -8,7 +8,7 @@ metadata:
 spec:
   dependsOn:
     - name: traefik-base
-    - name: tns-csi
+    - name: longhorn-addons
     - name: cnpg
   path: ./kubernetes/apps/apps/paperless-ngx/paperless-ngx/app
   prune: true

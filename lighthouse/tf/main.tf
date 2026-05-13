@@ -146,6 +146,15 @@ resource "cloudflare_record" "pangolin_dashboard" {
   proxied = false
 }
 
+resource "cloudflare_record" "crowdsec_manager" {
+  zone_id = data.cloudflare_zones.main.zones[0].id
+  name    = "csm.${local.pangolin_dns_name}"
+  content = var.pangolin_base_domain
+  type    = "CNAME"
+  ttl     = 60
+  proxied = false
+}
+
 # Per-resource CNAMEs to the Pangolin dashboard record.
 # Adding/removing a service only requires a blueprint change --
 # the VPS IP is resolved via the CNAME chain (pg.traunseenet.com → A → VPS IP).

@@ -169,6 +169,25 @@
         status_code: [200, 201, 409]
       vars:
         _crowdsec_blueprint: |
+          public-resources:
+            crowdsec-manager:
+              name: "CrowdSec Manager"
+              protocol: http
+              auth:
+                sso-enabled: true
+                auto-login-idp: 1
+              full-domain: "csm.{{ pangolin_base_domain }}"
+              targets:
+                - site: "{{ _hetzner_site_niceid }}"
+                  hostname: crowdsec-manager
+                  port: 8080
+                  method: http
+                  healthcheck:
+                    hostname: crowdsec-manager
+                    port: 8080
+                    path: /health
+                    interval: 30
+                    timeout: 5
           private-resources:
             crowdsec-metrics:
               name: "CrowdSec"

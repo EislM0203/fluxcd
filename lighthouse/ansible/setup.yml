@@ -48,6 +48,9 @@
         - "{{ pangolin_dir }}/config/crowdsec/db/backups"
         - "{{ pangolin_dir }}/config/crowdsec/parsers"
         - "{{ pangolin_dir }}/config/crowdsec/parsers/s02-enrich"
+        - "{{ pangolin_dir }}/crowdsec-manager"
+        - "{{ pangolin_dir }}/crowdsec-manager/data"
+        - "{{ pangolin_dir }}/crowdsec-manager/backups"
 
     - name: Download and extract GeoIP databases
       block:

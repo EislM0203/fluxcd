@@ -6,11 +6,11 @@ metadata:
   name: gitea-data
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: tns-csi-nvmeof
-  # dataSourceRef:
-  #   kind: ReplicationDestination
-  #   apiGroup: volsync.backube
-  #   name: gitea-restore
+  storageClassName: longhorn-storage
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: gitea-restore
   resources:
     requests:
       storage: 2Gi
@@ -25,11 +25,10 @@ spec:
     manual: restore-once
   restic:
     repository: restic-gitea
-    storageClassName: tns-csi-nvmeof
+    storageClassName: longhorn-storage
     accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
-    volumeSnapshotClassName: tns-csi-nvmeof-snapshot-detached
     capacity: 2Gi
-    enableFileDeletion: true
-    cleanupCachePVC: true
-    cleanupTempPVC: true
+    enableFileDeletion: false
+    cleanupCachePVC: false
+    cleanupTempPVC: false

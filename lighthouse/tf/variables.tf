@@ -71,7 +71,7 @@ variable "pangolin_admin_password" {
 variable "image_pangolin" {
   description = "Pangolin Docker image tag"
   type        = string
-  default     = "1.18.2"
+  default     = "1.18.4"
 }
 
 variable "pocketid_base_url" {

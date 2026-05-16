@@ -174,3 +174,14 @@ spec:
   type: ExternalName
   externalName: 10.0.0.103
   ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openshell-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "openshell.cloud.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.50
+  ports: []

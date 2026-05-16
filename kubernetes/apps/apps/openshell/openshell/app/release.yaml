@@ -101,7 +101,9 @@ spec:
 
       oidc:
         issuer: "https://pocketid.cloud.traunseenet.com"
-        audience: "openshell-cli"
+        # PocketID emits the OIDC client UUID as the `aud` claim, not a human
+        # name. This must match the client created in PocketID admin UI.
+        audience: "b1a99173-a4e5-4034-a6cf-9dd3b520c222"
         jwksTtl: 3600
         rolesClaim: "groups"
         adminRole: "openshell-admin"

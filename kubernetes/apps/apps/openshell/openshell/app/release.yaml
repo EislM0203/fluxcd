@@ -105,9 +105,9 @@ spec:
         # name. This must match the client created in PocketID admin UI.
         audience: "b1a99173-a4e5-4034-a6cf-9dd3b520c222"
         jwksTtl: 3600
-        rolesClaim: "sub"
-        adminRole: "8fe86b7d-43a2-43ad-a87a-fcb998abc15b"
-        userRole: "8fe86b7d-43a2-43ad-a87a-fcb998abc15b"
+        rolesClaim: "amr"
+        adminRole: "phr"
+        userRole: "phr"
 
     # Chart's NetworkPolicy locks sandbox SSH (port 2222) to the gateway only.
     networkPolicy:

@@ -106,8 +106,8 @@ spec:
         audience: "b1a99173-a4e5-4034-a6cf-9dd3b520c222"
         jwksTtl: 3600
         rolesClaim: "groups"
-        adminRole: "openshell-admin"
-        userRole: "openshell-user"
+        adminRole: "openshell_admin"
+        userRole: "openshell_user"
 
     # Chart's NetworkPolicy locks sandbox SSH (port 2222) to the gateway only.
     networkPolicy:

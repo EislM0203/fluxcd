@@ -1,0 +1,19 @@
+---
+# TLS-passthrough so the chart's cert-manager-issued server cert reaches
+# the CLI directly. Traefik does SNI routing only - it never sees the
+# decrypted gRPC stream. mTLS + OIDC two-factor auth is enforced at the
+# gateway pod.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: openshell
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: HostSNI(`openshell.cloud.traunseenet.com`)
+      services:
+        - name: openshell
+          port: 8080
+  tls:
+    passthrough: true

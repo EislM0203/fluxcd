@@ -5,3 +5,4 @@ kind: Kustomization
 resources:
   - ./snapshot-controller/ks.yaml
   - ./kubevip/ks.yaml
+  - ./agent-sandbox/ks.yaml

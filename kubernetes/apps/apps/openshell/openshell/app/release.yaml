@@ -1,0 +1,139 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: openshell
+spec:
+  interval: 30m
+  chartRef:
+    kind: OCIRepository
+    name: openshell
+    namespace: flux-system
+  install:
+    # Sandbox CRD is installed by the agent-sandbox Kustomization, not this chart.
+    crds: Skip
+    createNamespace: false
+    remediation:
+      retries: 3
+  upgrade:
+    crds: Skip
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  # The chart hardcodes the StatefulSet's volumeClaimTemplate without a
+  # storageClassName, so it would otherwise use the cluster default. Pin it
+  # to tns-csi-nvmeof-retain via a Kustomize JSON patch (retain reclaim policy
+  # so the gateway's sqlite state survives a HelmRelease delete/reinstall).
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: StatefulSet
+              name: openshell
+            patch: |
+              - op: add
+                path: /spec/volumeClaimTemplates/0/spec/storageClassName
+                value: tns-csi-nvmeof-retain
+  values:
+    replicaCount: 1
+
+    image:
+      repository: ghcr.io/nvidia/openshell/gateway
+      tag: "0.0.42"
+      pullPolicy: IfNotPresent
+
+    supervisor:
+      image:
+        repository: ghcr.io/nvidia/openshell/supervisor
+        tag: "0.0.42"
+
+    serviceAccount:
+      create: true
+
+    service:
+      type: ClusterIP
+      port: 8080
+      healthPort: 8081
+      metricsPort: 9090
+
+    podSecurityContext:
+      fsGroup: 1000
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+
+    server:
+      logLevel: info
+      # Empty = release namespace ("apps") - Sandbox CRs spawn alongside other workloads.
+      sandboxNamespace: ""
+      # Upstream sandbox base image has no semver tags - only :latest + commit SHAs.
+      # Pinned to the current digest for reproducibility. Bump manually after
+      # reviewing diffs at https://github.com/NVIDIA/openshell-community.
+      sandboxImage: "ghcr.io/nvidia/openshell-community/sandboxes/base@sha256:e29a8e98c1399aa08a8c624d758d1814b6edbe0302eb570c0468a6d3e811d167"
+      sandboxImagePullPolicy: "IfNotPresent"
+
+      # End-to-end mTLS: Traefik TLS-passthroughs the connection so the
+      # chart-issued server cert is what the CLI sees. Combined with OIDC,
+      # this gives two-factor auth (client cert + JWT) and preserves the
+      # supervisor's sandbox-class identity for in-cluster callbacks.
+      disableTls: false
+      disableGatewayAuth: false
+      enableLoopbackServiceHttp: true
+
+      tls:
+        certSecretName: openshell-server-tls
+        clientCaSecretName: openshell-server-client-ca
+        clientTlsSecretName: openshell-client-tls
+
+      oidc:
+        issuer: "https://pocketid.cloud.traunseenet.com"
+        audience: "openshell-cli"
+        jwksTtl: 3600
+        rolesClaim: "groups"
+        adminRole: "openshell-admin"
+        userRole: "openshell-user"
+
+    # Chart's NetworkPolicy locks sandbox SSH (port 2222) to the gateway only.
+    networkPolicy:
+      enabled: true
+
+    # cert-manager issues an internal CA + server cert + client cert for mTLS.
+    # SANs include the external hostname (Traefik passthrough preserves SNI),
+    # the in-cluster service names (supervisor callbacks), and localhost
+    # (kubectl port-forward fallback).
+    pkiInitJob:
+      enabled: false
+    certManager:
+      enabled: true
+      caSecretName: openshell-ca-tls
+      clientCaFromServerTlsSecret: true
+      certificateDuration: 8760h
+      certificateRenewBefore: 720h
+      serverDnsNames:
+        - openshell.cloud.traunseenet.com
+        - openshell
+        - openshell.apps.svc
+        - openshell.apps.svc.cluster.local
+        - localhost
+        - openshell.localhost
+        - "*.openshell.localhost"
+        - host.docker.internal
+      serverIpAddresses:
+        - 127.0.0.1
+
+    grpcRoute:
+      enabled: false

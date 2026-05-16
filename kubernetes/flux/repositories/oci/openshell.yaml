@@ -1,0 +1,12 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/source.toolkit.fluxcd.io/ocirepository_v1beta2.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: openshell
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/nvidia/openshell/helm-chart
+  ref:
+    tag: 0.0.42

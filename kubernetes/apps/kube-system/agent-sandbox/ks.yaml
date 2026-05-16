@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: agent-sandbox
+  namespace: flux-system
+spec:
+  path: ./kubernetes/apps/kube-system/agent-sandbox/app
+  # CRDs and a cluster-scoped controller; prune disabled to avoid accidental
+  # CRD deletion which would garbage-collect every Sandbox CR in the cluster.
+  prune: false
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: agent-sandbox-controller
+      namespace: agent-sandbox-system
+  interval: 1h
+  retryInterval: 5m
+  timeout: 5m

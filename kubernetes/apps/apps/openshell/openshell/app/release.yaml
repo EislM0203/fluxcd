@@ -42,13 +42,13 @@ spec:
 
     image:
       repository: ghcr.io/nvidia/openshell/gateway
-      tag: "0.0.42"
+      tag: "0.0.46"
       pullPolicy: IfNotPresent
 
     supervisor:
       image:
         repository: ghcr.io/nvidia/openshell/supervisor
-        tag: "0.0.42"
+        tag: "0.0.46"
 
     serviceAccount:
       create: true

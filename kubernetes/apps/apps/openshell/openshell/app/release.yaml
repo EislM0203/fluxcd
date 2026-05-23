@@ -42,13 +42,13 @@ spec:
 
     image:
       repository: ghcr.io/nvidia/openshell/gateway
-      tag: "0.0.46"
+      tag: "0.0.47"
       pullPolicy: IfNotPresent
 
     supervisor:
       image:
         repository: ghcr.io/nvidia/openshell/supervisor
-        tag: "0.0.46"
+        tag: "0.0.47"
 
     serviceAccount:
       create: true
@@ -84,7 +84,7 @@ spec:
       # base image's `ip netns add`) is scoped to the namespace and useless
       # against the host. Without this, the runtime's default seccomp blocks
       # the mount syscall even with SYS_ADMIN granted. Requires K8s >= 1.33.
-      enableUserNamespaces: true
+      enableUserNamespaces: false
       # Upstream sandbox base image has no semver tags - only :latest + commit SHAs.
       # Pinned to the current digest for reproducibility. Bump manually after
       # reviewing diffs at https://github.com/NVIDIA/openshell-community.

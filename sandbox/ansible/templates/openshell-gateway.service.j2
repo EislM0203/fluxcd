@@ -1,0 +1,43 @@
+[Unit]
+Description=OpenShell Gateway ({{ openshell_compute_driver }} driver)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ openshell_user }}
+Group={{ openshell_group }}
+{% if openshell_compute_driver == 'vm' %}
+SupplementaryGroups=kvm
+{% elif openshell_compute_driver == 'docker' %}
+SupplementaryGroups=docker
+{% endif %}
+Environment=HOME={{ openshell_home }}
+Environment=XDG_CONFIG_HOME={{ openshell_home }}/.config
+Environment=XDG_STATE_HOME={{ openshell_home }}/.local/state
+Environment=XDG_DATA_HOME={{ openshell_home }}/.local/share
+{% if openshell_compute_driver == 'podman' %}
+# Rootless podman socket lives at $XDG_RUNTIME_DIR/podman/podman.sock — kept alive by
+# linger on the openshell user (see driver-podman.yml). We can't use systemd's %U
+# specifier here: in a system unit, %U is the service-manager UID (0), not the User= UID,
+# so the gateway would look at /run/user/0/podman/podman.sock and fail.
+Environment=XDG_RUNTIME_DIR=/run/user/{{ openshell_uid }}
+{% else %}
+Environment=XDG_RUNTIME_DIR=/run/openshell
+RuntimeDirectory=openshell
+{% endif %}
+EnvironmentFile={{ openshell_config_dir }}/gateway.env
+ExecStart={{ openshell_bin_dir }}/openshell-gateway --config {{ openshell_config_dir }}/gateway.toml
+Restart=on-failure
+RestartSec=5s
+
+# Modest hardening — kept light because the drivers create user namespaces, mounts, and
+# per-sandbox networking. Tighten only after a working baseline.
+ProtectSystem=full
+ProtectHome=false
+PrivateTmp=false
+NoNewPrivileges=false
+ReadWritePaths={{ openshell_home }}
+
+[Install]
+WantedBy=multi-user.target

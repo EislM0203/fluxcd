@@ -1,0 +1,66 @@
+---
+- name: Load SOPS-encrypted PKI bundle
+  community.sops.load_vars:
+    file: "{{ openshell_pki_sops_file }}"
+    name: openshell_pki
+
+- name: Deploy PKI files
+  ansible.builtin.copy:
+    content: "{{ item.content }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ openshell_user }}"
+    group: "{{ openshell_group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { content: "{{ openshell_pki.ca_crt }}",          dest: "{{ openshell_pki_dir }}/ca.crt",          mode: "0644" }
+    - { content: "{{ openshell_pki.server_tls_crt }}",  dest: "{{ openshell_pki_dir }}/server/tls.crt",  mode: "0644" }
+    - { content: "{{ openshell_pki.server_tls_key }}",  dest: "{{ openshell_pki_dir }}/server/tls.key",  mode: "0600" }
+    - { content: "{{ openshell_pki.client_tls_crt }}",  dest: "{{ openshell_pki_dir }}/client/tls.crt",  mode: "0644" }
+    - { content: "{{ openshell_pki.client_tls_key }}",  dest: "{{ openshell_pki_dir }}/client/tls.key",  mode: "0600" }
+    - { content: "{{ openshell_pki.jwt_signing_pem }}", dest: "{{ openshell_pki_dir }}/jwt/signing.pem", mode: "0600" }
+    - { content: "{{ openshell_pki.jwt_public_pem }}",  dest: "{{ openshell_pki_dir }}/jwt/public.pem",  mode: "0644" }
+    - { content: "{{ openshell_pki.jwt_kid }}",         dest: "{{ openshell_pki_dir }}/jwt/kid",         mode: "0644" }
+  no_log: true
+  notify: Restart openshell-gateway
+
+- name: Deploy gateway.toml
+  ansible.builtin.template:
+    src: gateway.toml.j2
+    dest: "{{ openshell_config_dir }}/gateway.toml"
+    owner: "{{ openshell_user }}"
+    group: "{{ openshell_group }}"
+    mode: "0640"
+  notify: Restart openshell-gateway
+
+- name: Deploy gateway environment file
+  ansible.builtin.template:
+    src: gateway.env.j2
+    dest: "{{ openshell_config_dir }}/gateway.env"
+    owner: "{{ openshell_user }}"
+    group: "{{ openshell_group }}"
+    mode: "0640"
+  notify: Restart openshell-gateway
+
+- name: Deploy systemd unit
+  ansible.builtin.template:
+    src: openshell-gateway.service.j2
+    dest: /etc/systemd/system/openshell-gateway.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart openshell-gateway
+
+# Flush pending handlers (daemon-reload + restart) here so the service picks up any
+# config/unit/PKI change before the idempotent enable+start below, avoiding a
+# start-then-restart on first run.
+- name: Apply pending gateway changes
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start openshell-gateway
+  ansible.builtin.systemd:
+    name: openshell-gateway.service
+    enabled: true
+    state: started
+    daemon_reload: true

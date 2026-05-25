@@ -1,0 +1,78 @@
+---
+- name: Create libexec directory for the vm driver
+  when: openshell_compute_driver == 'vm'
+  ansible.builtin.file:
+    path: "{{ openshell_libexec_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Check installed gateway version
+  ansible.builtin.command: "{{ openshell_bin_dir }}/openshell-gateway --version"
+  register: openshell_installed
+  changed_when: false
+  failed_when: false
+
+# Single-artifact install: the upstream .deb contains both /usr/bin/openshell-gateway and
+# /usr/libexec/openshell/openshell-driver-vm. We don't `dpkg -i` it (we don't want its
+# bundled user/systemd-user-unit/config); we just `dpkg -x` to extract the payload and
+# copy the binaries we want into /usr/local.
+- name: Install OpenShell gateway (+ vm-driver binary when driver=vm)
+  when: openshell_version not in (openshell_installed.stdout | default(''))
+  block:
+    - name: Download gateway .deb
+      ansible.builtin.get_url:
+        url: "{{ openshell_release_base }}/{{ openshell_gateway_deb }}"
+        dest: "/tmp/{{ openshell_gateway_deb }}"
+        mode: "0644"
+
+    # Trust-on-first-use: the checksums file is fetched over HTTPS but is not itself
+    # integrity-verified. It gates the .deb (below). Acceptable on a trusted LAN against
+    # pinned GitHub release artifacts.
+    - name: Download combined checksums
+      ansible.builtin.get_url:
+        url: "{{ openshell_release_base }}/{{ openshell_checksums_file }}"
+        dest: "/tmp/{{ openshell_checksums_file }}"
+        mode: "0644"
+
+    - name: Verify .deb checksum
+      ansible.builtin.shell: >-
+        set -o pipefail;
+        cd /tmp &&
+        grep -E {{ ('  ' + openshell_gateway_deb + '$') | quote }}
+        {{ openshell_checksums_file }} | sha256sum -c -
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    - name: Create extraction directory
+      ansible.builtin.file:
+        path: /tmp/openshell-extract
+        state: directory
+        mode: "0755"
+
+    - name: Extract .deb payload (non-installing)
+      ansible.builtin.command: "dpkg -x /tmp/{{ openshell_gateway_deb }} /tmp/openshell-extract"
+      changed_when: true
+
+    - name: Install gateway binary
+      ansible.builtin.copy:
+        src: /tmp/openshell-extract/usr/bin/openshell-gateway
+        dest: "{{ openshell_bin_dir }}/openshell-gateway"
+        remote_src: true
+        owner: root
+        group: root
+        mode: "0755"
+      notify: Restart openshell-gateway
+
+    - name: Install driver-vm binary
+      when: openshell_compute_driver == 'vm'
+      ansible.builtin.copy:
+        src: /tmp/openshell-extract/usr/libexec/openshell/openshell-driver-vm
+        dest: "{{ openshell_libexec_dir }}/openshell-driver-vm"
+        remote_src: true
+        owner: root
+        group: root
+        mode: "0755"
+      notify: Restart openshell-gateway

@@ -1,0 +1,87 @@
+---
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - tar
+    state: present
+    update_cache: true
+
+# /dev/kvm + nested-virt only matter for the libkrun vm driver.
+- name: Verify /dev/kvm is present (nested virtualization)
+  when: openshell_compute_driver == 'vm'
+  ansible.builtin.stat:
+    path: /dev/kvm
+  register: kvm_dev
+
+- name: Fail if /dev/kvm is missing
+  when: openshell_compute_driver == 'vm'
+  ansible.builtin.assert:
+    that: kvm_dev.stat.exists
+    fail_msg: >-
+      /dev/kvm is missing. The libkrun vm driver needs nested virtualization.
+      Confirm the Proxmox VM uses CPU type 'host' (Terraform sets this) and that
+      nested virt is enabled on the Proxmox host.
+
+# Useful for both libkrun (guest userns) and rootless podman; best-effort because the sysctl
+# is Ubuntu-24.04-specific (Debian / older Ubuntu just don't have this knob).
+- name: Allow unprivileged user namespaces (Ubuntu 24.04 AppArmor restriction)
+  ansible.posix.sysctl:
+    name: kernel.apparmor_restrict_unprivileged_userns
+    value: "0"
+    sysctl_set: true
+    state: present
+    reload: true
+  failed_when: false
+
+- name: Create openshell group
+  ansible.builtin.group:
+    name: "{{ openshell_group }}"
+    system: true
+
+- name: Create openshell service user
+  ansible.builtin.user:
+    name: "{{ openshell_user }}"
+    group: "{{ openshell_group }}"
+    # Append kvm only for the libkrun vm driver; harmless on Debian/Ubuntu where the group
+    # exists, but irrelevant for podman/docker.
+    groups: "{{ ['kvm'] if openshell_compute_driver == 'vm' else [] }}"
+    append: true
+    home: "{{ openshell_home }}"
+    shell: /usr/sbin/nologin
+    system: true
+    create_home: true
+
+# Resolve the openshell UID once so the systemd unit can template it into XDG_RUNTIME_DIR.
+# We cannot use systemd's %U specifier in a system unit: it resolves to the service manager
+# UID (0), not the User= UID, so XDG_RUNTIME_DIR would point at /run/user/0 instead of
+# /run/user/<openshell-uid>.
+- name: Look up openshell uid
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ openshell_user }}"
+
+- name: Record openshell uid as a fact
+  ansible.builtin.set_fact:
+    openshell_uid: "{{ ansible_facts['getent_passwd'][openshell_user][1] }}"
+
+# Directory list is the same across drivers. Including state/vm unconditionally is harmless
+# (empty dir, 0750) and keeps this task driver-agnostic.
+- name: Create config and state directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ openshell_user }}"
+    group: "{{ openshell_group }}"
+    mode: "0750"
+  loop:
+    - "{{ openshell_config_dir }}"
+    - "{{ openshell_pki_dir }}"
+    - "{{ openshell_pki_dir }}/server"
+    - "{{ openshell_pki_dir }}/client"
+    - "{{ openshell_pki_dir }}/jwt"
+    - "{{ openshell_state_dir }}"
+    - "{{ openshell_state_dir }}/gateway"
+    - "{{ openshell_state_dir }}/vm"
+    - "{{ openshell_home }}/.local/share"

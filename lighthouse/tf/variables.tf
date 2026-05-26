@@ -99,7 +99,7 @@ variable "image_gerbil" {
 variable "image_traefik" {
   description = "Traefik Docker image tag"
   type        = string
-  default     = "v3.6.14"
+  default     = "v3.7.1"
 }
 
 variable "image_crowdsec" {

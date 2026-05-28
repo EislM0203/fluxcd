@@ -9,4 +9,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/nvidia/openshell/helm-chart
   ref:
-    tag: 0.0.47
+    tag: 0.0.50

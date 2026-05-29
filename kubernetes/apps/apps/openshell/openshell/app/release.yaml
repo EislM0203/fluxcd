@@ -49,6 +49,13 @@ spec:
       image:
         repository: ghcr.io/nvidia/openshell/supervisor
         tag: "0.0.50"
+      # Force init-container (emptyDir) delivery of the supervisor instead of the chart's
+      # auto-selected image-volume. On K8s 1.35 the default is image-volume, but RKE2's
+      # containerd 2.1.5 cannot idmap an overlay merged-mount image-volume under
+      # enableUserNamespaces (hostUsers: false), so sandbox pods fail to start. emptyDir
+      # (tmpfs/ext4) IS idmappable, so init-container makes userns work without a
+      # containerd/RKE2 upgrade.
+      sideloadMethod: init-container
 
     serviceAccount:
       create: true

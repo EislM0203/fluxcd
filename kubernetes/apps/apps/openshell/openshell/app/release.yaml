@@ -87,11 +87,15 @@ spec:
       logLevel: info
       # Empty = release namespace ("apps") - Sandbox CRs spawn alongside other workloads.
       sandboxNamespace: ""
-      # Maps sandbox UID 0 to a non-root host UID so SYS_ADMIN (needed by the
-      # base image's `ip netns add`) is scoped to the namespace and useless
-      # against the host. Without this, the runtime's default seccomp blocks
-      # the mount syscall even with SYS_ADMIN granted. Requires K8s >= 1.33.
-      enableUserNamespaces: true
+      # Disabled: the chart default and OpenShell's supported baseline. userns is an
+      # opt-in defense-in-depth layer, NOT the primary boundary (that's the always-on
+      # netns proxy + Landlock + seccomp + privilege-drop jail). On RKE2 it's a dead end
+      # anyway: even with sideloadMethod=init-container (past the image-volume idmap),
+      # hostUsers:false locks /run so the supervisor's `ip netns add` fails
+      # (mount --make-shared /run/netns: Permission denied). The k8s driver omits the
+      # /run/netns tmpfs the podman driver mounts (upstream #899). Fine for trusted/own
+      # code; use the VM driver for untrusted code, not userns here.
+      enableUserNamespaces: false
       # Upstream sandbox base image has no semver tags - only :latest + commit SHAs.
       # Pinned to the current digest for reproducibility. Bump manually after
       # reviewing diffs at https://github.com/NVIDIA/openshell-community.

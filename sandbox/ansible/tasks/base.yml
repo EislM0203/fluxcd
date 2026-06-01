@@ -4,12 +4,13 @@
     name:
       - ca-certificates
       - curl
+      - git
       - tar
     state: present
     update_cache: true
 
-# /dev/kvm + nested-virt only matter for the libkrun vm driver.
-- name: Verify /dev/kvm is present (nested virtualization)
+# vm driver needs nested KVM.
+- name: Verify /dev/kvm is present
   when: openshell_compute_driver == 'vm'
   ansible.builtin.stat:
     path: /dev/kvm
@@ -19,21 +20,18 @@
   when: openshell_compute_driver == 'vm'
   ansible.builtin.assert:
     that: kvm_dev.stat.exists
-    fail_msg: >-
-      /dev/kvm is missing. The libkrun vm driver needs nested virtualization.
-      Confirm the Proxmox VM uses CPU type 'host' (Terraform sets this) and that
-      nested virt is enabled on the Proxmox host.
+    fail_msg: /dev/kvm missing — vm driver needs nested virt (Proxmox CPU type 'host').
 
-# Useful for both libkrun (guest userns) and rootless podman; best-effort because the sysctl
-# is Ubuntu-24.04-specific (Debian / older Ubuntu just don't have this knob).
-- name: Allow unprivileged user namespaces (Ubuntu 24.04 AppArmor restriction)
+# Ubuntu-only: AppArmor blocks unprivileged userns by default; libkrun + rootless podman
+# need it open. Sysctl doesn't exist on Debian — gated to skip cleanly.
+- name: Allow unprivileged user namespaces (Ubuntu only)
+  when: ansible_facts['distribution'] == 'Ubuntu'
   ansible.posix.sysctl:
     name: kernel.apparmor_restrict_unprivileged_userns
     value: "0"
     sysctl_set: true
     state: present
     reload: true
-  failed_when: false
 
 - name: Create openshell group
   ansible.builtin.group:
@@ -44,8 +42,7 @@
   ansible.builtin.user:
     name: "{{ openshell_user }}"
     group: "{{ openshell_group }}"
-    # Append kvm only for the libkrun vm driver; harmless on Debian/Ubuntu where the group
-    # exists, but irrelevant for podman/docker.
+    # kvm only matters for the vm driver.
     groups: "{{ ['kvm'] if openshell_compute_driver == 'vm' else [] }}"
     append: true
     home: "{{ openshell_home }}"
@@ -53,10 +50,8 @@
     system: true
     create_home: true
 
-# Resolve the openshell UID once so the systemd unit can template it into XDG_RUNTIME_DIR.
-# We cannot use systemd's %U specifier in a system unit: it resolves to the service manager
-# UID (0), not the User= UID, so XDG_RUNTIME_DIR would point at /run/user/0 instead of
-# /run/user/<openshell-uid>.
+# Need the literal UID for XDG_RUNTIME_DIR in the systemd unit; systemd's %U resolves to
+# the service manager UID (0) in system units, not User=.
 - name: Look up openshell uid
   ansible.builtin.getent:
     database: passwd
@@ -66,8 +61,7 @@
   ansible.builtin.set_fact:
     openshell_uid: "{{ ansible_facts['getent_passwd'][openshell_user][1] }}"
 
-# Directory list is the same across drivers. Including state/vm unconditionally is harmless
-# (empty dir, 0750) and keeps this task driver-agnostic.
+# Same dir list across drivers; state/vm is harmless when unused.
 - name: Create config and state directories
   ansible.builtin.file:
     path: "{{ item }}"

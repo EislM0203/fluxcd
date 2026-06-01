@@ -1,0 +1,55 @@
+---
+openshell_version: "0.0.51"
+
+# Compute driver: podman (default, rootless), docker (rootful), or vm (libkrun; broken
+# egress since 0.0.43, see README).
+openshell_compute_driver: podman
+
+openshell_user: openshell
+openshell_group: openshell
+openshell_home: /var/lib/openshell
+
+# Binary install locations (system-wide, root-owned)
+openshell_bin_dir: /usr/local/bin
+openshell_libexec_dir: /usr/local/libexec/openshell
+
+# Config / state (XDG under the service user's home)
+openshell_config_dir: "{{ openshell_home }}/.config/openshell"
+openshell_state_dir: "{{ openshell_home }}/.local/state/openshell"
+openshell_pki_dir: "{{ openshell_config_dir }}/pki"
+
+# Gateway networking / identity
+openshell_bind_address: "0.0.0.0:8080"
+openshell_gateway_id: "labvm"
+openshell_default_image: "harbor.cloud.traunseenet.com/library/pi:v0.0.1-dev"
+# Pinned to the gateway version (avoids stale :latest cache). vm driver ignores this.
+openshell_supervisor_image: "ghcr.io/nvidia/openshell/supervisor:{{ openshell_version }}"
+# 'podman' is the auto-created default network. Any name works on 5.x + netavark.
+openshell_podman_network: "podman"
+# host.containers.internal resolves to the host inside the sandbox (gvproxy on vm,
+# netavark+pasta on podman). Gateway must bind 0.0.0.0 — already the case above.
+openshell_grpc_endpoint: "https://host.containers.internal:8080"
+
+# Single .deb covers all drivers since 0.0.48 (gateway + driver-vm binary).
+openshell_release_base: "https://github.com/NVIDIA/OpenShell/releases/download/v{{ openshell_version }}"
+openshell_gateway_deb: "openshell_{{ openshell_version }}-1_amd64.deb"
+openshell_checksums_file: "openshell-checksums-sha256.txt"
+
+# SOPS-encrypted PKI bundle (created out-of-band by the operator)
+openshell_pki_sops_file: "{{ playbook_dir }}/files/openshell-pki.sops.yaml"
+
+# Pi extensions, fed verbatim to `pi install`. Schemes: git:host/user/repo@ref,
+# https://..., ssh://..., npm:@scope/pkg@ver, /abs/path. Public Gitea: use git:.
+openshell_pi_extensions:
+  - "git:gitea.cloud.traunseenet.com/markuseisl/pi@main"
+
+# Host CLI versions (npm -g -> /usr/local/bin). Bump to upgrade.
+openshell_pi_version: "0.78.0"
+openshell_claude_code_version: "2.1.159"
+
+# kubectl from pkgs.k8s.io. Minor track only; apt installs the latest patch. Bump to upgrade.
+openshell_kubectl_minor: "v1.32"
+
+# Optional SOPS env file ({data: {KEY: val}}, encrypted_regex ^(data|stringData)$).
+# Absent file = host-env block no-ops cleanly.
+openshell_host_env_sops_file: "{{ playbook_dir }}/files/host-env.sops.yaml"

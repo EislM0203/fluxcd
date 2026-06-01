@@ -1,6 +1,6 @@
 ---
-- name: Deploy OpenShell vm-driver gateway
-  hosts: sandbox
+- name: Deploy OpenShell sandbox host
+  hosts: sandbox_hosts
   become: true
   gather_facts: true
 
@@ -14,6 +14,8 @@
       ansible.builtin.import_tasks: tasks/install.yml
     - name: Configure gateway
       ansible.builtin.import_tasks: tasks/configure.yml
+    - name: Install host-level developer tooling (pi, claude)
+      ansible.builtin.import_tasks: tasks/host-tools.yml
 
   handlers:
     - name: Reload systemd

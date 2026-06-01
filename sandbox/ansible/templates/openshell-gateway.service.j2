@@ -17,10 +17,8 @@ Environment=XDG_CONFIG_HOME={{ openshell_home }}/.config
 Environment=XDG_STATE_HOME={{ openshell_home }}/.local/state
 Environment=XDG_DATA_HOME={{ openshell_home }}/.local/share
 {% if openshell_compute_driver == 'podman' %}
-# Rootless podman socket lives at $XDG_RUNTIME_DIR/podman/podman.sock — kept alive by
-# linger on the openshell user (see driver-podman.yml). We can't use systemd's %U
-# specifier here: in a system unit, %U is the service-manager UID (0), not the User= UID,
-# so the gateway would look at /run/user/0/podman/podman.sock and fail.
+# Rootless podman socket at $XDG_RUNTIME_DIR/podman/podman.sock. Literal UID — %U resolves
+# to the service manager (0) in system units, not User=.
 Environment=XDG_RUNTIME_DIR=/run/user/{{ openshell_uid }}
 {% else %}
 Environment=XDG_RUNTIME_DIR=/run/openshell
@@ -28,11 +26,16 @@ RuntimeDirectory=openshell
 {% endif %}
 EnvironmentFile={{ openshell_config_dir }}/gateway.env
 ExecStart={{ openshell_bin_dir }}/openshell-gateway --config {{ openshell_config_dir }}/gateway.toml
+{% if openshell_compute_driver == 'podman' %}
+# Reboot recovery: sandboxes are created with restart=no and OpenShell has no `sandbox
+# start`. `sandbox delete` runs `podman rm`, so --all only revives live sandboxes. Gateway
+# re-adopts via supervisor reconnect (verified 2026-05-29).
+ExecStartPost=/usr/bin/podman start --all
+{% endif %}
 Restart=on-failure
 RestartSec=5s
 
-# Modest hardening — kept light because the drivers create user namespaces, mounts, and
-# per-sandbox networking. Tighten only after a working baseline.
+# Light hardening; drivers need userns/mounts/per-sandbox networking. Tighten later.
 ProtectSystem=full
 ProtectHome=false
 PrivateTmp=false

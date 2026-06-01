@@ -89,12 +89,18 @@ spec:
       sandboxNamespace: ""
       # Disabled: the chart default and OpenShell's supported baseline. userns is an
       # opt-in defense-in-depth layer, NOT the primary boundary (that's the always-on
-      # netns proxy + Landlock + seccomp + privilege-drop jail). On RKE2 it's a dead end
-      # anyway: even with sideloadMethod=init-container (past the image-volume idmap),
-      # hostUsers:false locks /run so the supervisor's `ip netns add` fails
-      # (mount --make-shared /run/netns: Permission denied). The k8s driver omits the
-      # /run/netns tmpfs the podman driver mounts (upstream #899). Fine for trusted/own
-      # code; use the VM driver for untrusted code, not userns here.
+      # netns proxy + Landlock + seccomp + privilege-drop jail). Enabling it does NOT fix
+      # sandbox startup here - the real blocker is unrelated to userns. Verified on the
+      # live pod: the spawned sandbox runs as root (runAsUser:0) with CAP_SYS_ADMIN +
+      # CAP_NET_ADMIN and userns OFF, yet the supervisor's `ip netns add` still fails with
+      #   mount --make-shared /run/netns: Permission denied
+      # because containerd hands the pod a mount namespace with LOCKED mount propagation,
+      # and you cannot change a locked mount to shared even with CAP_SYS_ADMIN. Proxy mode
+      # is mandatory (NetworkMode::Proxy, no observation fallback - upstream #1194) and
+      # needs that netns, so the only k8s fix is a PRIVILEGED sandbox pod (or /run/netns
+      # via a volume with mountPropagation: Bidirectional, which k8s only permits on a
+      # privileged container). The VM driver is not an escape hatch either: its egress
+      # enforcement regressed in v0.0.43 (PR #1263) and is still broken through v0.0.51.
       enableUserNamespaces: false
       # Upstream sandbox base image has no semver tags - only :latest + commit SHAs.
       # Pinned to the current digest for reproducibility. Bump manually after

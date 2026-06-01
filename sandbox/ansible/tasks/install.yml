@@ -14,10 +14,8 @@
   changed_when: false
   failed_when: false
 
-# Single-artifact install: the upstream .deb contains both /usr/bin/openshell-gateway and
-# /usr/libexec/openshell/openshell-driver-vm. We don't `dpkg -i` it (we don't want its
-# bundled user/systemd-user-unit/config); we just `dpkg -x` to extract the payload and
-# copy the binaries we want into /usr/local.
+# dpkg -x (not -i) so we skip the upstream bundled user/unit/config and just lift the
+# binaries into /usr/local.
 - name: Install OpenShell gateway (+ vm-driver binary when driver=vm)
   when: openshell_version not in (openshell_installed.stdout | default(''))
   block:
@@ -27,9 +25,7 @@
         dest: "/tmp/{{ openshell_gateway_deb }}"
         mode: "0644"
 
-    # Trust-on-first-use: the checksums file is fetched over HTTPS but is not itself
-    # integrity-verified. It gates the .deb (below). Acceptable on a trusted LAN against
-    # pinned GitHub release artifacts.
+    # TOFU: checksums fetched over HTTPS, not pinned. Gates the .deb below.
     - name: Download combined checksums
       ansible.builtin.get_url:
         url: "{{ openshell_release_base }}/{{ openshell_checksums_file }}"

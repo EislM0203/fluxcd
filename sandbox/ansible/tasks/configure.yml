@@ -52,9 +52,8 @@
     - Reload systemd
     - Restart openshell-gateway
 
-# Flush pending handlers (daemon-reload + restart) here so the service picks up any
-# config/unit/PKI change before the idempotent enable+start below, avoiding a
-# start-then-restart on first run.
+# Flush here so the start below sees fresh config/unit/PKI on first run, avoiding a
+# pointless start-then-restart.
 - name: Apply pending gateway changes
   ansible.builtin.meta: flush_handlers
 

@@ -1,7 +1,5 @@
 ---
-# Rootless podman setup for the openshell service user. The OpenShell gateway runs as a
-# system service with User=openshell + XDG_RUNTIME_DIR=/run/user/<uid>, and reaches the
-# rootless podman socket at $XDG_RUNTIME_DIR/podman/podman.sock (driver auto-detect).
+# Rootless podman for the openshell user. Gateway hits $XDG_RUNTIME_DIR/podman/podman.sock.
 
 - name: Install rootless podman + dependencies
   ansible.builtin.apt:
@@ -14,8 +12,7 @@
     state: present
     update_cache: true
 
-# subuid/subgid: each rootless user needs a non-overlapping range. 100000:65536 is the
-# common default and matches the working pattern from the workstation podman gateway.
+# Standard 100000:65536 subuid/subgid range per rootless user.
 - name: Configure subuid mapping for {{ openshell_user }}
   ansible.builtin.lineinfile:
     path: /etc/subuid
@@ -36,15 +33,13 @@
     group: root
     mode: "0644"
 
-# Linger keeps /run/user/<uid> alive without a login session, which is what the gateway
-# needs since openshell has shell=/usr/sbin/nologin.
+# Linger keeps /run/user/<uid> alive without a login session (openshell shell=nologin).
 - name: Enable lingering for {{ openshell_user }}
   ansible.builtin.command: "loginctl enable-linger {{ openshell_user }}"
   args:
     creates: "/var/lib/systemd/linger/{{ openshell_user }}"
 
-# logind creates /run/user/<uid> when linger is enabled; small wait avoids a race on first
-# enable. openshell_uid was set as a fact in base.yml.
+# Short wait avoids a race with logind on first-enable.
 - name: Wait for /run/user/{{ openshell_uid }} to exist
   ansible.builtin.wait_for:
     path: "/run/user/{{ openshell_uid }}"
@@ -65,10 +60,7 @@
     DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ openshell_uid }}/bus"
   notify: Restart openshell-gateway
 
-# The openshell driver attaches sandboxes to the network configured by
-# openshell_podman_network. We default to 'podman' (the auto-created default network) to
-# dodge a podman 4.x rootless-netns bug where user-created bridge networks aren't visible
-# inside the rootless netns. If a non-default name is set, we create it explicitly here.
+# Create the configured network if missing. 'podman' default exists automatically.
 - name: Check whether the '{{ openshell_podman_network }}' podman network exists
   ansible.builtin.command: "podman network exists {{ openshell_podman_network }}"
   args:

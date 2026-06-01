@@ -5,7 +5,8 @@ vm_id         = 210
 vm_ip         = "10.0.0.210"
 target_node   = "pve-01"
 storage       = "local-zfs"
-template_id   = 999
+# 998 = Debian 13 (trixie) → podman 5.4.x (OpenShell needs 5.x; 999=Ubuntu ships 4.9.3).
+template_id   = 998
 template_node = "pve-01"
 cores         = 8
 memory        = 16384

@@ -1,8 +1,6 @@
 ---
-# Rootful Docker setup for the openshell user. The OpenShell vm/sandbox driver talks to
-# dockerd over the default /var/run/docker.sock; openshell needs docker-group membership
-# and the systemd unit lists 'docker' in SupplementaryGroups so the running process picks
-# this up after the restart handler fires.
+# Rootful Docker for the openshell user. Driver talks to /var/run/docker.sock; openshell
+# joins docker group; systemd unit picks it up via SupplementaryGroups.
 
 - name: Install Docker engine
   ansible.builtin.apt:

@@ -196,3 +196,25 @@ spec:
   type: ExternalName
   externalName: 10.0.0.162
   ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: podman-piclaw-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "claw.internal.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.162
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: podman-dockhand-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "dh.internal.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.162
+  ports: []

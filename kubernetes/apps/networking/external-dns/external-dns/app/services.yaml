@@ -185,3 +185,14 @@ spec:
   type: ExternalName
   externalName: 10.0.0.50
   ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: podman-traefik-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "traefik.internal.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.162
+  ports: []

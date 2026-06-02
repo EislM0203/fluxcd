@@ -68,6 +68,13 @@ spec:
       ports:
         - protocol: TCP
           port: 22
+    # Podman VM (off-cluster)
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.162/32
+      ports:
+        - protocol: TCP
+          port: 3000
     # kube-dns
     - to:
         - namespaceSelector:

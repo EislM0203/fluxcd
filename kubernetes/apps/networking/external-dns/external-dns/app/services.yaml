@@ -229,3 +229,25 @@ spec:
   type: ExternalName
   externalName: 10.0.0.162
   ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: podman-files-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "files.internal.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.162
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: podman-bin-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "bin.cloud.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.162
+  ports: []

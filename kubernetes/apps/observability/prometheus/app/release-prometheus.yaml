@@ -133,7 +133,7 @@ spec:
         storageSpec:
           volumeClaimTemplate:
             spec:
-              storageClassName: tns-csi-nvmeof-retain
+              storageClassName: longhorn-storage
               accessModes: ["ReadWriteOnce"]
               resources:
                 requests:

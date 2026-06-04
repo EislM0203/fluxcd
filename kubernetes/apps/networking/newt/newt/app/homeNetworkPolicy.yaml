@@ -74,7 +74,9 @@ spec:
             cidr: 10.0.0.162/32
       ports:
         - protocol: TCP
-          port: 3000
+          port: 443
+        - protocol: TCP
+          port: 22 
     # kube-dns
     - to:
         - namespaceSelector:

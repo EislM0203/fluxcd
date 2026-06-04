@@ -189,9 +189,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: podman-internal-dns
+  name: podman-traefik-dns
   annotations:
-     external-dns.alpha.kubernetes.io/hostname: "*.internal.traunseenet.com"
+     external-dns.alpha.kubernetes.io/hostname: "traefik.internal.traunseenet.com"
 spec:
   type: ExternalName
   externalName: 10.0.0.162
@@ -200,9 +200,31 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: podman-web-dns
+  name: podman-dockhand-dns
   annotations:
-     external-dns.alpha.kubernetes.io/hostname: "*.web.traunseenet.com"
+     external-dns.alpha.kubernetes.io/hostname: "dh.internal.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.162
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: podman-homepage-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "homepage.internal.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.162
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: podman-ddns-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "ddns.internal.traunseenet.com"
 spec:
   type: ExternalName
   externalName: 10.0.0.162

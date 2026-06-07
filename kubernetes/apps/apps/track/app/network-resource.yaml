@@ -10,4 +10,4 @@ spec:
   serviceRef:
     name: track
   groups:
-    - name: Apps Resources
+    - name: Admin Resources

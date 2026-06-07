@@ -16,4 +16,3 @@ resources:
   - ./jaeger.yaml
   - ./grafana.yaml
   - ./prometheus.yaml
-  - ./netbirdio.yaml

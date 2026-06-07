@@ -6,3 +6,4 @@ namespace: flux-system
 resources:
   - ./tns-csi.yaml
   - ./openshell.yaml
+  - ./netbird-operator.yaml

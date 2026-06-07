@@ -1,0 +1,13 @@
+---
+apiVersion: netbird.io/v1alpha1
+kind: NetworkResource
+metadata:
+  name: pocket-id
+spec:
+  networkRouterRef:
+    name: home-router
+    namespace: networking
+  serviceRef:
+    name: pocket-id
+  groups:
+    - name: Admin Resources

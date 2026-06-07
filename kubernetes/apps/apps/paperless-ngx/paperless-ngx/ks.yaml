@@ -10,6 +10,7 @@ spec:
     - name: traefik-base
     - name: longhorn-addons
     - name: cnpg
+    - name: netbird-app
   path: ./kubernetes/apps/apps/paperless-ngx/paperless-ngx/app
   prune: true
   wait: true

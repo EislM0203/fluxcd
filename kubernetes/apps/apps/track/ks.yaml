@@ -11,6 +11,7 @@ spec:
     - name: longhorn-addons
     - name: cnpg
     - name: harbor-app
+    - name: netbird-app
   path: ./kubernetes/apps/apps/track/app
   prune: true
   wait: true

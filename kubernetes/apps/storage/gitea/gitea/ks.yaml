@@ -9,6 +9,7 @@ spec:
   dependsOn:
     - name: traefik-base
     - name: longhorn-addons
+    - name: netbird-app
   path: ./kubernetes/apps/storage/gitea/gitea/app
   prune: true
   wait: true

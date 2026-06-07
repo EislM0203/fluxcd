@@ -1,0 +1,13 @@
+---
+apiVersion: netbird.io/v1alpha1
+kind: NetworkResource
+metadata:
+  name: track
+spec:
+  networkRouterRef:
+    name: home-router
+    namespace: networking
+  serviceRef:
+    name: track
+  groups:
+    - name: Apps Resources

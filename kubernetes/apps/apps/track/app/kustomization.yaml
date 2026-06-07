@@ -7,3 +7,4 @@ resources:
 - pg.yaml
 - service.yaml
 - deployment.yaml
+- network-resource.yaml

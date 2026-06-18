@@ -1,0 +1,57 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: karakeep-app
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: traefik-base
+    - name: longhorn-addons
+  path: ./kubernetes/apps/apps/karakeep/karakeep/app
+  prune: true
+  wait: true
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: karakeep
+      namespace: apps
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: karakeep-chrome
+      namespace: apps
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: karakeep-meilisearch
+      namespace: apps
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: apps
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: karakeep-backup
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: karakeep-app
+  path: ./kubernetes/apps/apps/karakeep/karakeep/backup
+  prune: true
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: apps

@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: karakeep-config
+data:
+  NEXTAUTH_URL: https://karakeep.cloud.traunseenet.com
+  DATA_DIR: /data
+  MEILI_ADDR: http://karakeep-meilisearch:7700
+  BROWSER_WEB_URL: http://karakeep-chrome:9222
+  OPENAI_BASE_URL: http://10.0.0.59:9000/v1
+  INFERENCE_TEXT_MODEL: Qwen3.6-35B-A3B
+  INFERENCE_IMAGE_MODEL: Qwen3.6-35B-A3B
+  EMBEDDING_TEXT_MODEL: Qwen-Embed-4B
+  INFERENCE_JOB_TIMEOUT_SEC: "300"
+  INFERENCE_FETCH_TIMEOUT_SEC: "600"
+  MEILI_NO_ANALYTICS: "true"
+  OAUTH_WELLKNOWN_URL: https://pocketid.cloud.traunseenet.com/.well-known/openid-configuration
+  OAUTH_SCOPE: openid email profile
+  OAUTH_PROVIDER_NAME: PocketID
+  DISABLE_PASSWORD_AUTH: "true"
+  OAUTH_AUTO_REDIRECT: "true"
+  DISABLE_SIGNUPS: "true"
+  OAUTH_ALLOW_DANGEROUS_EMAIL_ACCOUNT_LINKING: "true"

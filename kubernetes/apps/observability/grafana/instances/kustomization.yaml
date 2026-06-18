@@ -10,4 +10,3 @@ resources:
   - datasource-prometheus.yaml
   - dashboard-prometheus.yaml
   - secret.yaml
-  - network-resource.yaml

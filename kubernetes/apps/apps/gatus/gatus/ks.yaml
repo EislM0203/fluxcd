@@ -10,7 +10,6 @@ spec:
     - name: traefik-base
     - name: harbor-app
     - name: prometheus-app
-    - name: netbird-app
   path: ./kubernetes/apps/apps/gatus/gatus/app
   prune: true
   wait: true

@@ -10,7 +10,6 @@ spec:
     - name: traefik-base
     - name: longhorn-addons
     - name: harbor-app
-    - name: netbird-app
   path: ./kubernetes/apps/auth/pocketid/pocketid/app
   prune: true
   wait: true

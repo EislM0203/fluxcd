@@ -9,7 +9,6 @@ spec:
   dependsOn:
     - name: traefik-base
     - name: harbor-app
-    - name: netbird-app
   path: ./kubernetes/apps/apps/ntfy/ntfy/app
   prune: true
   wait: true

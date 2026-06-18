@@ -30,7 +30,6 @@ spec:
     - name: traefik-base
     - name: grafana-operators
     - name: tns-csi
-    - name: netbird-app
   path: ./kubernetes/apps/observability/grafana/instances
   prune: true
   suspend: false

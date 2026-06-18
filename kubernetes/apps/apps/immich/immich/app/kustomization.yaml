@@ -9,4 +9,3 @@ resources:
   - redis.yaml
   - server.yaml
   - machine-learning.yaml
-  - network-resource.yaml

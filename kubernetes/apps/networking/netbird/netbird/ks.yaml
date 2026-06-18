@@ -9,7 +9,7 @@ spec:
   path: ./kubernetes/apps/networking/netbird/netbird/operator
   prune: true
   wait: true
-  suspend: false
+  suspend: true
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes
@@ -36,7 +36,7 @@ spec:
   path: ./kubernetes/apps/networking/netbird/netbird/app
   prune: true
   wait: true
-  suspend: false
+  suspend: true
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes

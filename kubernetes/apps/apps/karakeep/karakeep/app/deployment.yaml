@@ -42,6 +42,16 @@ spec:
                 secretKeyRef:
                   name: karakeep
                   key: OPENAI_API_KEY
+            - name: OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: karakeep
+                  key: OAUTH_CLIENT_ID
+            - name: OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: karakeep
+                  key: OAUTH_CLIENT_SECRET
           volumeMounts:
             - name: karakeep-data
               mountPath: /data

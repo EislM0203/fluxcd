@@ -20,6 +20,11 @@ spec:
         app: fin
         component: api
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: api
           image: harbor.cloud.traunseenet.com/library/fin-api:latest
@@ -85,6 +90,9 @@ spec:
         - name: web
           image: harbor.cloud.traunseenet.com/library/fin-web:latest
           imagePullPolicy: Always
+          env:
+            - name: API_UPSTREAM
+              value: fin-api:8000
           ports:
             - name: http
               containerPort: 80

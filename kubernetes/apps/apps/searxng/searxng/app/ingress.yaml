@@ -20,6 +20,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: searxng
+                name: searxng-web
                 port:
                   name: http

@@ -87,7 +87,7 @@ spec:
               protocol: TCP
           env:
             - name: SEARXNG_URL
-              value: "http://searxng:8080"
+              value: "http://searxng-web:8080"
             - name: MCP_HTTP_PORT
               value: "3000"
           livenessProbe:

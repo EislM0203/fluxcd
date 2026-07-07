@@ -5,3 +5,5 @@ metadata:
 data:
   GITHUB_PORT: "8082"
   GITHUB_TOOLSETS: "context,repos,issues,pull_requests,users"
+  # Strips all write tools server-wide; per-request paths/headers can only narrow further
+  GITHUB_READ_ONLY: "true"

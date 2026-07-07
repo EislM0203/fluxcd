@@ -90,6 +90,9 @@ spec:
               value: "http://searxng-web:8080"
             - name: MCP_HTTP_PORT
               value: "3000"
+            - name: MCP_HTTP_HOST
+              # default is 127.0.0.1 — unreachable for probes and other pods
+              value: "0.0.0.0"
           livenessProbe:
             httpGet:
               path: /health

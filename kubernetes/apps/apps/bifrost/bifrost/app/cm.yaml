@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bifrost-env
+data:
+  APP_HOST: "0.0.0.0"
+  APP_PORT: "8080"
+  LOG_LEVEL: "info"
+  LOG_STYLE: "json"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bifrost-config
+data:
+  config.json: |
+    {
+      "$schema": "https://www.getbifrost.ai/schema",
+      "encryption_key": "env.BIFROST_ENCRYPTION_KEY",
+      "source_of_truth": "split",
+      "client": {
+        "drop_excess_requests": false,
+        "enable_logging": true,
+        "log_retention_days": 30,
+        "prometheus_labels": ["cluster=fluxcd"],
+        "allowed_origins": ["https://bifrost.cloud.traunseenet.com"]
+      },
+      "providers": {
+        "openai": {
+          "keys": [
+            { "name": "openai-primary", "value": "env.OPENAI_API_KEY", "models": ["*"], "weight": 1.0 }
+          ]
+        },
+        "local-qwen": {
+          "keys": [
+            { "name": "qwen-local", "value": "", "models": ["Qwen3.6-35B-A3B", "Qwen-Embed-4B"], "weight": 1.0 }
+          ],
+          "custom_provider_config": {
+            "base_provider_type": "openai",
+            "is_key_less": true,
+            "allowed_requests": {
+              "chat_completion": true,
+              "chat_completion_stream": true,
+              "embedding": true
+            }
+          },
+          "network_config": {
+            "base_url": "http://10.0.0.59:9000/v1",
+            "default_request_timeout_in_seconds": 300,
+            "max_retries": 1
+          }
+        }
+      },
+      "mcp": {
+        "client_configs": [
+          {
+            "name": "searxng",
+            "connection_type": "http",
+            "connection_string": "http://searxng-mcp.apps.svc.cluster.local:3000/mcp",
+            "auth_type": "none",
+            "is_ping_available": false,
+            "tools_to_execute": ["*"]
+          },
+          {
+            "name": "github",
+            "connection_type": "http",
+            "connection_string": "http://github-mcp.apps.svc.cluster.local:8082/readonly",
+            "auth_type": "none",
+            "is_ping_available": false,
+            "tools_to_execute": ["*"]
+          },
+          {
+            "name": "grafana",
+            "connection_type": "http",
+            "connection_string": "http://grafana-mcp.observability.svc.cluster.local:8000/mcp",
+            "auth_type": "none",
+            "is_ping_available": false,
+            "tools_to_execute": ["*"]
+          },
+          {
+            "name": "kubernetes",
+            "connection_type": "http",
+            "connection_string": "http://kubernetes-mcp.apps.svc.cluster.local:8080/mcp",
+            "auth_type": "none",
+            "is_ping_available": false,
+            "tools_to_execute": ["*"]
+          }
+        ]
+      }
+    }

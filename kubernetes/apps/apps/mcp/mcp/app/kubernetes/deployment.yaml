@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubernetes-mcp
+  labels:
+    app: kubernetes-mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubernetes-mcp
+  template:
+    metadata:
+      labels:
+        app: kubernetes-mcp
+    spec:
+      serviceAccountName: kubernetes-mcp
+      containers:
+        - name: kubernetes-mcp
+          image: ghcr.io/containers/kubernetes-mcp-server:v0.0.63
+          args:
+            - --config
+            - /etc/kubernetes-mcp-server/config.toml
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/kubernetes-mcp-server
+              readOnly: true
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: kubernetes-mcp-config

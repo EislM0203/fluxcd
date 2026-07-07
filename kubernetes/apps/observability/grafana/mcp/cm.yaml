@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-mcp-env
+data:
+  GRAFANA_URL: "http://grafana-service.observability.svc.cluster.local:3000"
+  # Read fresh on every request, so operator-rotated tokens (stateless Grafana
+  # restarts) are picked up without a pod restart.
+  GRAFANA_SERVICE_ACCOUNT_TOKEN_FILE: /var/run/secrets/grafana/token

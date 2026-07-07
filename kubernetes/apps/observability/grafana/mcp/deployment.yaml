@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-mcp
+  labels:
+    app: grafana-mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana-mcp
+  template:
+    metadata:
+      labels:
+        app: grafana-mcp
+    spec:
+      containers:
+        - name: grafana-mcp
+          image: docker.io/grafana/mcp-grafana:v0.17.1
+          args:
+            - -t
+            - streamable-http
+            - --address
+            - 0.0.0.0:8000
+            - --allowed-hosts
+            - "*"
+            - --disable-write
+            - --disable-incident
+            - --disable-oncall
+            - --disable-sift
+            - --disable-asserts
+            - --disable-rendering
+            - --disable-snapshot
+            - --disable-folder
+            - --disable-proxied
+            - --disable-pyroscope
+            - --disable-annotations
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: grafana-mcp-env
+          volumeMounts:
+            - name: grafana-token
+              mountPath: /var/run/secrets/grafana
+              readOnly: true
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      volumes:
+        - name: grafana-token
+          secret:
+            # Created by the GrafanaServiceAccount CR (mcp-grafana-viewer)
+            secretName: grafana-mcp-viewer-token

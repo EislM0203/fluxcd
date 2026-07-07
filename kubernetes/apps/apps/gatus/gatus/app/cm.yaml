@@ -61,33 +61,8 @@ data:
             description: "healthcheck failed"
             failure-threshold: 5
             send-on-resolved: true
-      - name: Open-Webui
-        url: "http://open-webui.apps.svc.cluster.local:8080/health"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[BODY].status == true"
-          - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
       - name: Paperless NGX
         url: "http://paperless.apps.svc.cluster.local/accounts/login/?next=/"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
-      - name: Track
-        url: "http://track.apps.svc.cluster.local/health"
         interval: 1m
         conditions:
           - "[STATUS] == 200"

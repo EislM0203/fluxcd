@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bifrost
+  labels:
+    app: bifrost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bifrost
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: bifrost
+    spec:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+      containers:
+        - name: bifrost
+          image: maximhq/bifrost:v1.6.3
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+          envFrom:
+            - configMapRef:
+                name: bifrost-env
+            - secretRef:
+                name: bifrost
+          volumeMounts:
+            - name: bifrost-data
+              mountPath: /app/data
+            - name: bifrost-config
+              mountPath: /app/data/config.json
+              subPath: config.json
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+      volumes:
+        - name: bifrost-data
+          persistentVolumeClaim:
+            claimName: bifrost-data
+        - name: bifrost-config
+          configMap:
+            name: bifrost-config

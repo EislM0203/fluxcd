@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: searxng
+  labels:
+    app: searxng
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: searxng
+  template:
+    metadata:
+      labels:
+        app: searxng
+    spec:
+      containers:
+        - name: searxng
+          image: ghcr.io/searxng/searxng:2026.7.6-556d08c39
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: searxng-env
+          env:
+            - name: SEARXNG_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: searxng
+                  key: SEARXNG_SECRET
+          volumeMounts:
+            - name: searxng-config
+              mountPath: /etc/searxng/settings.yml
+              subPath: settings.yml
+            - name: searxng-cache
+              mountPath: /var/cache/searxng
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: searxng-config
+          configMap:
+            name: searxng-config
+        - name: searxng-cache
+          emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: searxng-mcp
+  labels:
+    app: searxng-mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: searxng-mcp
+  template:
+    metadata:
+      labels:
+        app: searxng-mcp
+    spec:
+      containers:
+        - name: searxng-mcp
+          image: isokoliuk/mcp-searxng:1.10.1
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: SEARXNG_URL
+              value: "http://searxng:8080"
+            - name: MCP_HTTP_PORT
+              value: "3000"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

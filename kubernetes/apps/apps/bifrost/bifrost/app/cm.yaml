@@ -66,7 +66,10 @@ data:
             "name": "github",
             "connection_type": "http",
             "connection_string": "http://github-mcp.apps.svc.cluster.local:8082/readonly",
-            "auth_type": "none",
+            "auth_type": "headers",
+            "headers": {
+              "Authorization": "env.GITHUB_AUTH_HEADER"
+            },
             "is_ping_available": false,
             "tools_to_execute": ["*"]
           },

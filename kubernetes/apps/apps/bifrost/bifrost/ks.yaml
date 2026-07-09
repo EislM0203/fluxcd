@@ -12,6 +12,7 @@ spec:
     - name: searxng-app
     - name: mcp-app
     - name: grafana-mcp
+    - name: prometheus-app
   path: ./kubernetes/apps/apps/bifrost/bifrost/app
   prune: true
   wait: true

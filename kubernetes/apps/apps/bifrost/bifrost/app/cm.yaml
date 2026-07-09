@@ -40,6 +40,18 @@ data:
           }
         }
       },
+      "plugins": [
+        {
+          "enabled": true,
+          "name": "otel",
+          "config": {
+            "service_name": "bifrost",
+            "collector_url": "http://opentelemetry-collector.observability.svc.cluster.local:4318/v1/traces",
+            "trace_type": "genai_extension",
+            "protocol": "http"
+          }
+        }
+      ],
       "mcp": {
         "client_configs": [
           {

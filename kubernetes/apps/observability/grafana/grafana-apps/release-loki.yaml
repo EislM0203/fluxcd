@@ -70,8 +70,8 @@ spec:
       replicas: 1
       persistence:
         enabled: true
-        storageClass: tns-csi-nvmeof-retain
-        size: 100Gi
+        storageClass: longhorn-storage
+        size: 50Gi
     # ingress:
     #   enabled: true
     #   ingressClassName: "traefik"

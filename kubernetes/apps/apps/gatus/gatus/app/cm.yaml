@@ -73,19 +73,6 @@ data:
             description: "healthcheck failed"
             failure-threshold: 5
             send-on-resolved: true
-      - name: N8N
-        url: "http://n8n.apps.svc.cluster.local:5678/healthz/readiness"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[BODY].status == ok"
-          - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
       ###########################
       # Storage
       ###########################

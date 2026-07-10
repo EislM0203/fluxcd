@@ -60,6 +60,7 @@ data:
             "connection_string": "http://searxng-mcp.apps.svc.cluster.local:3000/mcp",
             "auth_type": "none",
             "is_ping_available": false,
+            "is_code_mode_client": true,
             "tools_to_execute": ["*"]
           },
           {
@@ -71,6 +72,7 @@ data:
               "Authorization": "env.GITHUB_AUTH_HEADER"
             },
             "is_ping_available": false,
+            "is_code_mode_client": true,
             "tools_to_execute": ["*"]
           },
           {
@@ -79,6 +81,7 @@ data:
             "connection_string": "http://grafana-mcp.observability.svc.cluster.local:8000/mcp",
             "auth_type": "none",
             "is_ping_available": false,
+            "is_code_mode_client": true,
             "tools_to_execute": ["*"]
           },
           {
@@ -87,6 +90,7 @@ data:
             "connection_string": "http://kubernetes-mcp.apps.svc.cluster.local:8080/mcp",
             "auth_type": "none",
             "is_ping_available": false,
+            "is_code_mode_client": true,
             "tools_to_execute": ["*"]
           }
         ]

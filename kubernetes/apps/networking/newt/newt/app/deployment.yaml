@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: k8s-newt
-          image: fosrl/newt:1.12.5
+          image: fosrl/newt:1.14.0
           args:
             - --blueprint-file
             - /etc/newt/blueprint.yaml
@@ -72,7 +72,7 @@ spec:
     spec:
       containers:
         - name: homelab-newt
-          image: fosrl/newt:1.12.5
+          image: fosrl/newt:1.14.0
           args:
             - --blueprint-file
             - /etc/newt/blueprint.yaml

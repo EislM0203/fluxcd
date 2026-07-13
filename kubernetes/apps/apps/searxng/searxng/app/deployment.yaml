@@ -80,7 +80,7 @@ spec:
     spec:
       containers:
         - name: searxng-mcp
-          image: isokoliuk/mcp-searxng:1.10.1
+          image: isokoliuk/mcp-searxng:1.11.0
           ports:
             - name: http
               containerPort: 3000

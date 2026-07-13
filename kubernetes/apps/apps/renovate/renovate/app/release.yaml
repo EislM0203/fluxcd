@@ -34,10 +34,13 @@ spec:
         {
           "platform": "github",
           "endpoint": "https://api.github.com",
-          "autodiscover": "false",
+          "autodiscover": false,
           "dryRun": null,
           "printConfig": true,
           "dependencyDashboard": true,
+          "gitAuthor": "Renovate Bot <markuseisl2000@gmail.com>",
+          "prConcurrentLimit": 20,
+          "prHourlyLimit": 0,
           "repositories": ["EislM0203/fluxcd"],
           "flux": {
             "managerFilePatterns": ["/\\.yaml$/"]

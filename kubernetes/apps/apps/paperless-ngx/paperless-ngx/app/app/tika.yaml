@@ -16,7 +16,7 @@ spec:
         app: paperless-tika
     spec:
       containers:
-        - image: harbor.cloud.traunseenet.com/docker.io/apache/tika:3.3.1
+        - image: harbor.cloud.traunseenet.com/docker.io/apache/tika:3.3.1.0
           name: tika
           ports:
             - containerPort: 9998

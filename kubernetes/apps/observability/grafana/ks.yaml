@@ -29,7 +29,7 @@ spec:
   dependsOn:
     - name: traefik-base
     - name: grafana-operators
-    - name: tns-csi
+    - name: longhorn-addons
   path: ./kubernetes/apps/observability/grafana/instances
   prune: true
   suspend: false
@@ -80,7 +80,7 @@ spec:
   dependsOn:
     - name: traefik-base
     - name: grafana-operators
-    - name: tns-csi
+    - name: longhorn-addons
   path: ./kubernetes/apps/observability/grafana/grafana-apps
   prune: true
   suspend: false

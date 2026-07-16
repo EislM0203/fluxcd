@@ -9,7 +9,7 @@
       ansible.builtin.import_tasks: tasks/base.yml
     - name: Driver-specific setup ({{ openshell_compute_driver }})
       ansible.builtin.include_tasks: "tasks/driver-{{ openshell_compute_driver }}.yml"
-      when: openshell_compute_driver in ['podman', 'docker']
+      when: openshell_compute_driver in ['podman', 'docker', 'vm']
     - name: Install OpenShell binaries
       ansible.builtin.import_tasks: tasks/install.yml
     - name: Configure gateway

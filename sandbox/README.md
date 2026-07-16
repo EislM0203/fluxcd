@@ -4,8 +4,8 @@ Proxmox VM (Debian 13) that runs `openshell-gateway` for the LAN and doubles as 
 with `pi` + `claude` installed for the `ansible` user.
 
 Driver via `openshell_compute_driver` in `ansible/group_vars/sandbox.yml`:
-`podman` (default, rootless) · `docker` (rootful) · `vm` (libkrun; egress broken since
-0.0.43, see *Known limitations*).
+`podman` (default, rootless) · `docker` (rootful) · `vm` (libkrun; egress regression fixed
+upstream but not yet in a published release — see *Known limitations*).
 
 > Concrete values live in `tf/terraform.tfvars` and `ansible/group_vars/sandbox.yml`.
 
@@ -86,8 +86,16 @@ first use), with any Pi extensions in `~/.pi/agent/` and host env vars from `hos
 
 ## Known limitations
 
-- **vm-driver egress broken from 0.0.43 onward** — regression in PR #1263 (`procfs.rs`
-  ancestor-walk vs. chroot boot layering `/init.krun` above the supervisor). Reason the
-  default is podman, not vm.
+- **vm-driver egress broken in ≤0.0.83** — regression introduced by PR #1263 (ext4-root-disk
+  boot layering placed `/init.krun` above the supervisor, breaking outbound guest traffic;
+  issue #1998). Fixed upstream by PR #2299 ("run sandbox supervisor as guest pid 1"), which
+  ships in v0.0.84 (tag exists, release not published as of 2026-07-16). Reason podman is the
+  default for now. To switch once 0.0.84 is out:
+  ```yaml
+  openshell_compute_driver: vm
+  openshell_version: "0.0.84"
+  ```
+  The vm host prerequisites (nftables, e2fsprogs, kvm group) are already handled by
+  `tasks/driver-vm.yml` and will run automatically when the driver is set to `vm`.
 - Gateway misbehaving as a system service: fallback is a rootless `--user` unit for the
   `openshell` user with `loginctl enable-linger`.

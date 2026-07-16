@@ -16,13 +16,16 @@ ttl_secs         = 3600
 
 {% if openshell_compute_driver == 'vm' %}
 [openshell.drivers.vm]
-grpc_endpoint  = "{{ openshell_grpc_endpoint }}"
-driver_dir     = "{{ openshell_libexec_dir }}"
-state_dir      = "{{ openshell_state_dir }}/vm"
-default_image  = "{{ openshell_default_image }}"
-guest_tls_ca   = "{{ openshell_pki_dir }}/ca.crt"
-guest_tls_cert = "{{ openshell_pki_dir }}/client/tls.crt"
-guest_tls_key  = "{{ openshell_pki_dir }}/client/tls.key"
+grpc_endpoint       = "{{ openshell_grpc_endpoint }}"
+driver_dir          = "{{ openshell_libexec_dir }}"
+state_dir           = "{{ openshell_state_dir }}/vm"
+default_image       = "{{ openshell_default_image }}"
+guest_tls_ca        = "{{ openshell_pki_dir }}/ca.crt"
+guest_tls_cert      = "{{ openshell_pki_dir }}/client/tls.crt"
+guest_tls_key       = "{{ openshell_pki_dir }}/client/tls.key"
+vcpus               = {{ openshell_vm_vcpus }}
+mem_mib             = {{ openshell_vm_mem_mib }}
+overlay_disk_mib    = {{ openshell_vm_overlay_disk_mib }}
 {% elif openshell_compute_driver == 'podman' %}
 [openshell.drivers.podman]
 grpc_endpoint    = "{{ openshell_grpc_endpoint }}"

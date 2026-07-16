@@ -1,0 +1,86 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: &name openshell-pg
+  annotations:
+    cnpg.io/skipEmptyWalArchiveCheck: "enabled"
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.6-system-trixie
+  primaryUpdateStrategy: unsupervised
+  enableSuperuserAccess: true
+  externalClusters:
+    - name: *name
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: *name
+          serverName: *name
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: *name
+        serverName: *name
+  bootstrap:
+    # Fresh cluster: initdb. For disaster recovery flip to the recovery block
+    # (restores from the barman object store via externalClusters).
+    initdb:
+      database: openshell
+      owner: app
+    # recovery:
+    #   source: *name
+    #   database: openshell
+    #   owner: app
+  storage:
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: longhorn-storage
+      volumeMode: Filesystem
+  monitoring:
+    enablePodMonitor: true
+  managed:
+    services:
+      disabledDefaultServices: ["ro", "r"]
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: openshell-pg
+spec:
+  retentionPolicy: 20d
+  configuration:
+    destinationPath: s3://cnpg-backups/openshell
+    endpointURL: http://10.0.0.154:9000
+    s3Credentials:
+      accessKeyId:
+        # Defined in secret-pg-backup.yaml — dummy values, must be filled with the
+        # real MinIO credentials and sops-encrypted before pushing.
+        name: s3-openshell-pg-backup
+        key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        name: s3-openshell-pg-backup
+        key: AWS_SECRET_ACCESS_KEY
+    data:
+      compression: bzip2
+    wal:
+      compression: bzip2
+      maxParallel: 8
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: openshell-pg-backup
+spec:
+  schedule: "0 0 */6 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: openshell-pg
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io

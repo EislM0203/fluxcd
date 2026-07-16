@@ -3,7 +3,8 @@ kind: StorageClass
 metadata:
   name: tns-csi-nvmeof-retain
   annotations:
-    storageclass.kubernetes.io/is-default-class: "true"
+    # tns-csi is being deprecated; longhorn-storage is the cluster default now.
+    storageclass.kubernetes.io/is-default-class: "false"
 provisioner: tns.csi.io
 parameters:
   protocol: nvmeof

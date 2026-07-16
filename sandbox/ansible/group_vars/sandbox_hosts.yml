@@ -1,8 +1,11 @@
 ---
-openshell_version: "0.0.51"
+openshell_version: "0.0.83"
 
-# Compute driver: podman (default, rootless), docker (rootful), or vm (libkrun; broken
-# egress since 0.0.43, see README).
+# Compute driver: podman (default, rootless), docker (rootful), or vm (libkrun).
+# The vm-driver egress regression (issue #1998, introduced by PR #1263) is fixed upstream
+# by PR #2299 ("run sandbox supervisor as guest pid 1"), which ships in v0.0.84 (tag exists,
+# release not yet published as of 2026-07-16). Podman stays the default until 0.0.84 is out;
+# switching later is: openshell_compute_driver: vm + openshell_version: "0.0.84".
 openshell_compute_driver: podman
 
 openshell_user: openshell
@@ -34,6 +37,13 @@ openshell_grpc_endpoint: "https://host.containers.internal:8080"
 openshell_release_base: "https://github.com/NVIDIA/OpenShell/releases/download/v{{ openshell_version }}"
 openshell_gateway_deb: "openshell_{{ openshell_version }}-1_amd64.deb"
 openshell_checksums_file: "openshell-checksums-sha256.txt"
+
+# vm-driver tunables (openshell_compute_driver: vm only). Defaults match upstream 0.0.83.
+# Optional keys bootstrap_image/krun_log_level/sandbox_uid are intentionally omitted;
+# upstream defaults are fine and the gateway hard-rejects unknown TOML keys since 0.0.54.
+openshell_vm_vcpus: 2
+openshell_vm_mem_mib: 2048
+openshell_vm_overlay_disk_mib: 4096
 
 # SOPS-encrypted PKI bundle (created out-of-band by the operator)
 openshell_pki_sops_file: "{{ playbook_dir }}/files/openshell-pki.sops.yaml"

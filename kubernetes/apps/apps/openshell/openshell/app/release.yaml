@@ -116,12 +116,11 @@ spec:
       # these PVCs — they use the cluster default SC (longhorn-storage).
       workspaceDefaultStorageSize: "5Gi"
 
-      # Gateway serves TLS directly using the Let's Encrypt cert (TCP passthrough
-      # via Traefik). CLI trusts the LE cert via system CA — no internal CA
-      # pinning. No client cert (mTLS); OIDC handles user identity.
-      disableTls: false
-      tls:
-        certSecretName: openshell-tls
+      # Gateway runs plaintext gRPC (h2c). Traefik terminates external TLS with
+      # the LE cert (IngressRoute, scheme: h2c). certManager is disabled so the
+      # gateway API returns no internal CA — CLI uses system trust store and
+      # trusts the LE cert. OIDC handles user identity; no mTLS needed.
+      disableTls: true
       enableLoopbackServiceHttp: true
 
       oidc:
@@ -138,11 +137,11 @@ spec:
     networkPolicy:
       enabled: true
 
-    # cert-manager manages supervisor mTLS PKI and the JWT signing secret.
-    # The external server TLS cert (Let's Encrypt, for Traefik) lives in
-    # ingressroute.yaml and is separate from this internal PKI.
+    # certManager disabled: the gateway API returns no internal CA, so the CLI
+    # uses the system trust store and trusts Traefik's LE cert. Supervisor auth
+    # uses the gateway JWT signing key (gateway_jwt) — no mTLS PKI needed.
     certManager:
-      enabled: true
+      enabled: false
     pkiInitJob:
       enabled: false
 

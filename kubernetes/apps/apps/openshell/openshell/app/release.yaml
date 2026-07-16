@@ -121,6 +121,8 @@ spec:
       # flow. TCP passthrough at Traefik so the gateway handles TLS end-to-end.
       disableTls: false
       enableLoopbackServiceHttp: true
+      auth:
+        allowUnauthenticatedUsers: true
       tls:
         certSecretName: openshell-server-tls
         clientCaSecretName: openshell-server-client-ca

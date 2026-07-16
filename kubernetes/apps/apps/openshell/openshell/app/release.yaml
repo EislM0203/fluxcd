@@ -116,17 +116,11 @@ spec:
       # these PVCs — they use the cluster default SC (longhorn-storage).
       workspaceDefaultStorageSize: "5Gi"
 
-      # End-to-end mTLS: Traefik TLS-passthroughs the connection so the
-      # chart-issued server cert is what the CLI sees. Combined with OIDC,
-      # this gives two-factor auth (client cert + JWT) and preserves the
-      # supervisor's sandbox-class identity for in-cluster callbacks.
-      disableTls: false
+      # Traefik terminates external TLS with a Let's Encrypt cert (see
+      # ingressroute.yaml). The gateway runs plaintext gRPC (h2c) internally.
+      # User auth is OIDC; supervisor mTLS is handled by chart certManager.
+      disableTls: true
       enableLoopbackServiceHttp: true
-
-      tls:
-        certSecretName: openshell-server-tls
-        clientCaSecretName: openshell-server-client-ca
-        clientTlsSecretName: openshell-client-tls
 
       oidc:
         issuer: "https://pocketid.cloud.traunseenet.com"
@@ -142,29 +136,13 @@ spec:
     networkPolicy:
       enabled: true
 
-    # cert-manager issues an internal CA + server cert + client cert for mTLS.
-    # SANs include the external hostname (Traefik passthrough preserves SNI),
-    # the in-cluster service names (supervisor callbacks), and localhost
-    # (kubectl port-forward fallback).
-    pkiInitJob:
-      enabled: false
+    # cert-manager manages supervisor mTLS PKI and the JWT signing secret.
+    # The external server TLS cert (Let's Encrypt, for Traefik) lives in
+    # ingressroute.yaml and is separate from this internal PKI.
     certManager:
       enabled: true
-      caSecretName: openshell-ca-tls
-      clientCaFromServerTlsSecret: true
-      certificateDuration: 8760h
-      certificateRenewBefore: 720h
-      serverDnsNames:
-        - openshell.cloud.traunseenet.com
-        - openshell
-        - openshell.apps.svc
-        - openshell.apps.svc.cluster.local
-        - localhost
-        - openshell.localhost
-        - "*.openshell.localhost"
-        - host.docker.internal
-      serverIpAddresses:
-        - 127.0.0.1
+    pkiInitJob:
+      enabled: false
 
     grpcRoute:
       enabled: false

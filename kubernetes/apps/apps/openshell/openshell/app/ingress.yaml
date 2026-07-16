@@ -1,0 +1,25 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openshell
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/service.serversscheme: h2c
+spec:
+  tls:
+    - hosts:
+        - openshell.cloud.traunseenet.com
+      secretName: openshell-tls
+  rules:
+    - host: openshell.cloud.traunseenet.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: openshell
+                port:
+                  number: 8080

@@ -5,4 +5,4 @@ resources:
   - secret.yaml
   - pg.yaml
   - release.yaml
-  - ingressroute.yaml
+  - ingress.yaml

@@ -116,32 +116,37 @@ spec:
       # these PVCs — they use the cluster default SC (longhorn-storage).
       workspaceDefaultStorageSize: "5Gi"
 
-      # Gateway runs plaintext gRPC (h2c). Traefik terminates external TLS with
-      # the LE cert (IngressRoute, scheme: h2c). certManager is disabled so the
-      # gateway API returns no internal CA — CLI uses system trust store and
-      # trusts the LE cert. OIDC handles user identity; no mTLS needed.
-      disableTls: true
+      # mTLS: gateway serves its own TLS cert (signed by internal CA). CLI pins
+      # the CA and presents a client cert on every connection. No OIDC/browser
+      # flow. TCP passthrough at Traefik so the gateway handles TLS end-to-end.
+      disableTls: false
       enableLoopbackServiceHttp: true
-
-      oidc:
-        issuer: "https://pocketid.cloud.traunseenet.com"
-        # PocketID emits the OIDC client UUID as the `aud` claim, not a human
-        # name. This must match the client created in PocketID admin UI.
-        audience: "b1a99173-a4e5-4034-a6cf-9dd3b520c222"
-        jwksTtl: 3600
-        rolesClaim: "amr"
-        adminRole: "phr"
-        userRole: "phr"
+      tls:
+        certSecretName: openshell-server-tls
+        clientCaSecretName: openshell-server-client-ca
+        clientTlsSecretName: openshell-client-tls
 
     # Chart's NetworkPolicy locks sandbox SSH (port 2222) to the gateway only.
     networkPolicy:
       enabled: true
 
-    # certManager disabled: the gateway API returns no internal CA, so the CLI
-    # uses the system trust store and trusts Traefik's LE cert. Supervisor auth
-    # uses the gateway JWT signing key (gateway_jwt) — no mTLS PKI needed.
+    # cert-manager issues internal PKI: CA, server cert (with external + internal
+    # SANs), and client cert for the CLI. CLI fetches CA + client cert during
+    # gateway add and uses them for all subsequent mTLS connections.
     certManager:
-      enabled: false
+      enabled: true
+      caSecretName: openshell-ca-tls
+      certificateDuration: 8760h
+      certificateRenewBefore: 720h
+      clientCaFromServerTlsSecret: true
+      serverDnsNames:
+        - openshell.cloud.traunseenet.com
+        - openshell
+        - openshell.apps.svc
+        - openshell.apps.svc.cluster.local
+        - localhost
+      serverIpAddresses:
+        - 127.0.0.1
     pkiInitJob:
       enabled: false
 

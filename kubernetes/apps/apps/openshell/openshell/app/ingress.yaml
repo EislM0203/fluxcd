@@ -1,34 +1,18 @@
 ---
-# LE cert for Traefik TLS termination. Gateway runs plaintext h2c internally
-# (disableTls: true). certManager is disabled on the gateway so no internal CA
-# is advertised to the CLI — it uses the system trust store for the LE cert.
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: openshell-tls
-spec:
-  secretName: openshell-tls
-  dnsNames:
-    - openshell.cloud.traunseenet.com
-  duration: 2160h
-  renewBefore: 360h
-  issuerRef:
-    kind: ClusterIssuer
-    name: letsencrypt-prod
----
+# TCP passthrough: Traefik forwards raw TLS to the gateway, which serves its
+# own cert (signed by the internal CA that cert-manager issues). CLI pins the
+# CA during gateway add and uses a client cert for mTLS on every connection.
 apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
+kind: IngressRouteTCP
 metadata:
   name: openshell
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`openshell.cloud.traunseenet.com`)
-      kind: Rule
+    - match: HostSNI(`openshell.cloud.traunseenet.com`)
       services:
         - name: openshell
           port: 8080
-          scheme: h2c
   tls:
-    secretName: openshell-tls
+    passthrough: true

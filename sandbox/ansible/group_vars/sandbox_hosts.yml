@@ -1,12 +1,9 @@
 ---
-openshell_version: "0.0.83"
+openshell_version: "0.0.85"
 
 # Compute driver: podman (default, rootless), docker (rootful), or vm (libkrun).
-# The vm-driver egress regression (issue #1998, introduced by PR #1263) is fixed upstream
-# by PR #2299 ("run sandbox supervisor as guest pid 1"), which ships in v0.0.84 (tag exists,
-# release not yet published as of 2026-07-16). Podman stays the default until 0.0.84 is out;
-# switching later is: openshell_compute_driver: vm + openshell_version: "0.0.84".
-openshell_compute_driver: podman
+# vm-driver egress fix (PR #2299) shipped in 0.0.85 (skipped 0.0.84).
+openshell_compute_driver: vm
 
 openshell_user: openshell
 openshell_group: openshell

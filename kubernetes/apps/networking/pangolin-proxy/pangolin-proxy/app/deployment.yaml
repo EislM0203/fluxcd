@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: olm
-          image: fosrl/olm:1.5.0
+          image: fosrl/olm:1.8.0@sha256:3e58a0c7b36a66265e09485d1789365337c5457847f34f414fa95073b26d2e2c
           command: ["/bin/sh", "-c", "ulimit -n 65536 && exec olm"]
           env:
             - name: PANGOLIN_ENDPOINT

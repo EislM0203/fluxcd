@@ -8,4 +8,4 @@ spec:
   interval: 10m
   url: oci://registry-1.docker.io/bfenski/tns-csi-driver
   ref:
-    tag: 0.17.4
+    tag: 0.17.4@sha256:0d1a66554da6fbca0ef6afe4f5af312606ef1187f72f7b65bab8a6c763a40fb6

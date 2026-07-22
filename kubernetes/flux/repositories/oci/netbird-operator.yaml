@@ -11,5 +11,5 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 0.6.0
+    tag: 0.6.0@sha256:3bb169ec20fb17d1b6bf7308e2508a5f95292b39b4c189648153d31a1eccfb4b
   url: oci://ghcr.io/netbirdio/helm-charts/netbird-operator

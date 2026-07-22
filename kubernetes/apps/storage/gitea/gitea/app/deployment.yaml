@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: gitea
-          image: docker.gitea.com/gitea:1.26.4
+          image: docker.gitea.com/gitea:1.26.4@sha256:8e25c717b8f748445e15ec46e0390f577cb628101184cb0a150d1dae126c1f39
           ports:
             - containerPort: 3000
             - containerPort: 22

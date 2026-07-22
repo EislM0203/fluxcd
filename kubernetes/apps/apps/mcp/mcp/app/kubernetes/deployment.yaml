@@ -17,7 +17,7 @@ spec:
       serviceAccountName: kubernetes-mcp
       containers:
         - name: kubernetes-mcp
-          image: ghcr.io/containers/kubernetes-mcp-server:v0.0.63
+          image: ghcr.io/containers/kubernetes-mcp-server:v0.0.63@sha256:9317449ed47916a297f71b955eab57402064de852bf1fb007c4e0705754de2b3
           args:
             - --config
             - /etc/kubernetes-mcp-server/config.toml

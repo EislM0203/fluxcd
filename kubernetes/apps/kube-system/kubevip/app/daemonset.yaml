@@ -29,7 +29,7 @@ spec:
                     operator: Exists
       containers:
         - name: kube-vip
-          image: ghcr.io/kube-vip/kube-vip:v1.1.2
+          image: ghcr.io/kube-vip/kube-vip:v1.1.2@sha256:840305b94ef2a89abb3b7fd2b09edfbde690d90052020da4dff90679fe892da2
           imagePullPolicy: IfNotPresent
           args:
             - manager

@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: minio
-        image: minio/minio:RELEASE.2025-02-07T23-21-09Z
+        image: minio/minio:RELEASE.2025-02-07T23-21-09Z@sha256:640c22768ed5dbc92eacc14502a1b06a1c708fa60431345c78dfc22917062e93
         args:
           - server
           - --console-address

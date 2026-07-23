@@ -40,7 +40,7 @@ spec:
         repository: ghcr.io/nvidia/openshell/supervisor
         # Pinned to the gateway version; since 0.0.82 the gateway auto-pins anyway
         # (PR #2070), the explicit tag just keeps the deployment reproducible.
-        tag: "0.0.85"
+        tag: "0.0.90"
       # Force init-container (emptyDir) delivery of the supervisor instead of the chart's
       # auto-selected image-volume. On K8s 1.35 the default is image-volume, but RKE2's
       # containerd 2.1.5 cannot idmap an overlay merged-mount image-volume under

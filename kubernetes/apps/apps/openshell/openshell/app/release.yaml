@@ -110,7 +110,7 @@ spec:
       # Upstream sandbox base image has no semver tags - only :latest + commit SHAs.
       # Pinned to the current digest for reproducibility. Bump manually after
       # reviewing diffs at https://github.com/NVIDIA/openshell-community.
-      sandboxImage: "ghcr.io/nvidia/openshell-community/sandboxes/base@sha256:e29a8e98c1399aa08a8c624d758d1814b6edbe0302eb570c0468a6d3e811d167"
+      sandboxImage: "ghcr.io/nvidia/openshell-community/sandboxes/base@sha256:aeef1c63f00e2913ea002ccb3aaf925f338b5c5d70e63576f0d95c16a138044e"
       sandboxImagePullPolicy: "IfNotPresent"
       # Persistent sandbox workspaces. The chart exposes no storageClassName for
       # these PVCs — they use the cluster default SC (longhorn-storage).

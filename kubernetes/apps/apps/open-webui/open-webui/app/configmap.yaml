@@ -11,6 +11,7 @@ data:
   ENABLE_OPENAI_API: "true"
   ENABLE_OLLAMA_API: "false"
   ENABLE_LOGIN_FORM: "false"
+  ENABLE_SUBAGENTS: "true"
   OAUTH_MERGE_ACCOUNTS_BY_EMAIL: "true"
   # LLM traffic is routed through the Bifrost AI gateway (OpenAI-compatible /v1).
   # Bifrost fronts llama-swap (10.0.0.59:9000) and applies OTel + MCP server-side.

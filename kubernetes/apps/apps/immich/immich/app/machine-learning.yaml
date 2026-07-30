@@ -54,7 +54,7 @@ spec:
     spec:
       containers:
         - name: immich-machine-learning
-          image: ghcr.io/immich-app/immich-machine-learning:v2.7.4
+          image: ghcr.io/immich-app/immich-machine-learning:v2.7.4@sha256:e25a410b99567c369da14508c7e874dfbeee1bcf06adda2c4148ab2f32f9463d
           imagePullPolicy: IfNotPresent
           env:
             - name: DB_HOSTNAME

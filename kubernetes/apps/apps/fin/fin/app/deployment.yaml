@@ -27,7 +27,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: api
-          image: harbor.cloud.traunseenet.com/library/fin-api:latest
+          image: harbor.cloud.traunseenet.com/library/fin-api:latest@sha256:e6412676c8aba5f0eb2c1d9e140010d8a2f09bb2ef0d8dff5d989cebf5274f46
           imagePullPolicy: Always
           ports:
             - name: http

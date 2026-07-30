@@ -101,7 +101,7 @@ spec:
         <<: *tolerations-and-nodelectors
         extrInitContainers: 
           - name: init-chmod-data
-            image: docker.io/bitnami/os-shell:latest
+            image: docker.io/bitnami/os-shell:latest@sha256:d04e870ded6c79c1703165f14f741a346c164fcd3e01f1100373ec60c9ac6bd8
             imagePullPolicy: "IfNotPresent"
             resources:
               limits:

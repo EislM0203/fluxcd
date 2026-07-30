@@ -50,7 +50,7 @@ spec:
               cpu: "250m"
           imagePullPolicy: IfNotPresent
         - name: haproxy
-          image: haproxy:lts-alpine
+          image: haproxy:lts-alpine@sha256:fb87fc81943143b9acaea7442973e6ba654035fff76ffe7af6829dd1bcb0f7a5
           ports:
             - containerPort: 6060
               name: csm-metrics

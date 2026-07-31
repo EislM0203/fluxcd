@@ -1,0 +1,55 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: traefik
+spec:
+  gatewayClassName: traefik
+  listeners:
+    # port MUST be the websecure entrypoint CONTAINER port (8443), not the
+    # Service port (443) — otherwise Traefik silently ignores the listener
+    - name: websecure-cloud
+      port: 8443
+      protocol: HTTPS
+      hostname: "*.cloud.traunseenet.com"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: wildcard-cloud-traunseenet-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: websecure-web
+      port: 8443
+      protocol: HTTPS
+      hostname: "*.web.traunseenet.com"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: wildcard-web-traunseenet-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: websecure-local
+      port: 8443
+      protocol: HTTPS
+      hostname: "*.local.traunseenet.com"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: wildcard-local-traunseenet-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    # dedicated listener: the *.cloud wildcard cert cannot cover api.s3.cloud
+    - name: websecure-s3
+      port: 8443
+      protocol: HTTPS
+      hostname: "api.s3.cloud.traunseenet.com"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: s3-api-cloud-traunseenet-tls
+      allowedRoutes:
+        namespaces:
+          from: All

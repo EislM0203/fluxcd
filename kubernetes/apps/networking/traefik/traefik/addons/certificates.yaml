@@ -1,0 +1,49 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-cloud-traunseenet
+spec:
+  secretName: wildcard-cloud-traunseenet-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - "*.cloud.traunseenet.com"
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-web-traunseenet
+spec:
+  secretName: wildcard-web-traunseenet-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - "*.web.traunseenet.com"
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-local-traunseenet
+spec:
+  secretName: wildcard-local-traunseenet-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - "*.local.traunseenet.com"
+---
+# an X.509 wildcard only covers ONE label: *.cloud does not match api.s3.cloud
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: s3-api-cloud-traunseenet
+spec:
+  secretName: s3-api-cloud-traunseenet-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - "api.s3.cloud.traunseenet.com"

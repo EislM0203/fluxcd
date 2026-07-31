@@ -138,6 +138,17 @@ spec:
         publishedService:
           enabled: true
           pathOverride: "networking/traefik"
+      kubernetesGateway:
+        enabled: true
+        # statusAddress defaults to this chart's Service (networking/traefik),
+        # which publishes the LB IP into Gateway status → external-dns target
+        experimentalChannel: false
+    gateway:
+      # the shared Gateway is managed in traefik/addons/gateway.yaml
+      enabled: false
+    gatewayClass:
+      enabled: true
+      name: traefik
     rbac:
       enabled: true
     metrics:

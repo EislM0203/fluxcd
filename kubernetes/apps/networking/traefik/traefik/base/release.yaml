@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: traefik
-      version: 39.0.9
+      version: 41.1.0
       sourceRef:
         kind: HelmRepository
         name: traefik
@@ -16,10 +16,14 @@ spec:
       interval: 15m
   install:
     createNamespace: true
+    crds: CreateReplace
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
+    # traefik.io CRDs get v3.7 updates; helm skips CRDs on upgrade by default.
+    # Safe since chart v41 no longer bundles Gateway API CRDs (those are Flux-managed).
+    crds: CreateReplace
     remediation:
       retries: 3
   uninstall:
@@ -142,8 +146,9 @@ spec:
           enabled: true
     service:
       enabled: true
-      type: LoadBalancer
       spec:
+        # chart v40+: type lives under spec (kubernetes-aligned syntax)
+        type: LoadBalancer
         # Use DHCP to obtain LoadBalancer IP from network DHCP server
         loadBalancerIP: "0.0.0.0"
       annotations:

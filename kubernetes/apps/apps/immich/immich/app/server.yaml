@@ -116,30 +116,3 @@ spec:
   selector:
     app: immich-server
   type: ClusterIP
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: &name immich-server
-  labels:
-    app: *name
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-spec:
-  ingressClassName: traefik
-  tls:
-    - hosts:
-        - immich.cloud.traunseenet.com
-      secretName: immich-cert
-  rules:
-  - host: immich.cloud.traunseenet.com
-    http:
-      paths:
-      - backend:
-          service:
-            name: immich-server
-            port:
-              name: http
-        path: /
-        pathType: Prefix

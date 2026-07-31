@@ -1,0 +1,85 @@
+---
+# Rootless podman for the openshell user. Gateway hits $XDG_RUNTIME_DIR/podman/podman.sock.
+
+- name: Install rootless podman + dependencies
+  ansible.builtin.apt:
+    name:
+      - podman
+      - uidmap
+      - slirp4netns
+      - passt
+      - fuse-overlayfs
+    state: present
+    update_cache: true
+
+# Standard 100000:65536 subuid/subgid range per rootless user.
+- name: Configure subuid mapping for {{ openshell_user }}
+  ansible.builtin.lineinfile:
+    path: /etc/subuid
+    regexp: "^{{ openshell_user }}:"
+    line: "{{ openshell_user }}:100000:65536"
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Configure subgid mapping for {{ openshell_user }}
+  ansible.builtin.lineinfile:
+    path: /etc/subgid
+    regexp: "^{{ openshell_user }}:"
+    line: "{{ openshell_user }}:100000:65536"
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+
+# Linger keeps /run/user/<uid> alive without a login session (openshell shell=nologin).
+- name: Enable lingering for {{ openshell_user }}
+  ansible.builtin.command: "loginctl enable-linger {{ openshell_user }}"
+  args:
+    creates: "/var/lib/systemd/linger/{{ openshell_user }}"
+
+# Short wait avoids a race with logind on first-enable.
+- name: Wait for /run/user/{{ openshell_uid }} to exist
+  ansible.builtin.wait_for:
+    path: "/run/user/{{ openshell_uid }}"
+    state: present
+    timeout: 15
+
+- name: Enable + start podman.socket as the openshell user (rootless)
+  ansible.builtin.systemd_service:
+    name: podman.socket
+    scope: user
+    enabled: true
+    state: started
+    daemon_reload: true
+  become: true
+  become_user: "{{ openshell_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ openshell_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ openshell_uid }}/bus"
+  notify: Restart openshell-gateway
+
+# Create the configured network if missing. 'podman' default exists automatically.
+- name: Check whether the '{{ openshell_podman_network }}' podman network exists
+  ansible.builtin.command: "podman network exists {{ openshell_podman_network }}"
+  args:
+    chdir: /tmp
+  become: true
+  become_user: "{{ openshell_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ openshell_uid }}"
+  register: openshell_podman_net
+  failed_when: false
+  changed_when: false
+
+- name: Create the '{{ openshell_podman_network }}' podman network if missing
+  ansible.builtin.command: "podman network create {{ openshell_podman_network }}"
+  args:
+    chdir: /tmp
+  when: openshell_podman_net.rc != 0
+  become: true
+  become_user: "{{ openshell_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ openshell_uid }}"
+  notify: Restart openshell-gateway

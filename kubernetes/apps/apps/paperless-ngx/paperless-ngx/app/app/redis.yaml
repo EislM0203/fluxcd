@@ -16,7 +16,7 @@ spec:
         app: paperless-redis
     spec:
       containers:
-        - image: redis:8
+        - image: redis:8.8.0
           name: redis
           ports:
             - containerPort: 6379

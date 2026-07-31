@@ -1,0 +1,22 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationsource_v1alpha1.json
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: fin-backup
+spec:
+  sourcePVC: fin-sqlite-data
+  trigger:
+    schedule: "0 */6 * * *"
+  restic:
+    pruneIntervalDays: 1
+    repository: restic-fin
+    retain:
+      hourly: 5
+      daily: 4
+      weekly: 3
+      monthly: 2
+      yearly: 1
+    copyMethod: Snapshot
+    storageClassName: longhorn-storage
+    unlock: "something"

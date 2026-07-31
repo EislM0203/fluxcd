@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bifrost-env
+data:
+  APP_HOST: "0.0.0.0"
+  APP_PORT: "8080"
+  LOG_LEVEL: "info"
+  LOG_STYLE: "json"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bifrost-config
+data:
+  config.json: |
+    {
+      "$schema": "https://www.getbifrost.ai/schema",
+      "encryption_key": "env.BIFROST_ENCRYPTION_KEY",
+      "source_of_truth": "split",
+      "client": {
+        "drop_excess_requests": false,
+        "enable_logging": true,
+        "log_retention_days": 30,
+        "prometheus_labels": ["cluster=fluxcd"],
+        "allowed_origins": ["https://bifrost.cloud.traunseenet.com"]
+      },
+      "providers": {
+        "llamaswap": {
+          "custom_provider_config": {
+            "base_provider_type": "openai",
+            "is_key_less": true
+          },
+          "network_config": {
+            "base_url": "http://10.0.0.59:9000",
+            "allow_private_network": true,
+            "default_request_timeout_in_seconds": 300,
+            "stream_idle_timeout_in_seconds": 300,
+            "max_retries": 1
+          }
+        }
+      },
+      "plugins": [
+        {
+          "enabled": true,
+          "name": "otel",
+          "config": {
+            "service_name": "bifrost",
+            "collector_url": "http://opentelemetry-collector.observability.svc.cluster.local:4318/v1/traces",
+            "trace_type": "genai_extension",
+            "protocol": "http"
+          }
+        }
+      ],
+      "mcp": {
+        "tool_manager_config": {
+          "code_mode_binding_level": "tool"
+        },
+        "client_configs": [
+          {
+            "name": "searxng",
+            "connection_type": "http",
+            "connection_string": "http://searxng-mcp.apps.svc.cluster.local:3000/mcp",
+            "auth_type": "none",
+            "is_ping_available": false,
+            "is_code_mode_client": true,
+            "tools_to_execute": ["*"]
+          },
+          {
+            "name": "github",
+            "connection_type": "http",
+            "connection_string": "http://github-mcp.apps.svc.cluster.local:8082/readonly",
+            "auth_type": "headers",
+            "headers": {
+              "Authorization": "env.GITHUB_AUTH_HEADER"
+            },
+            "is_ping_available": false,
+            "is_code_mode_client": true,
+            "tools_to_execute": ["*"]
+          },
+          {
+            "name": "grafana",
+            "connection_type": "http",
+            "connection_string": "http://grafana-mcp.observability.svc.cluster.local:8000/mcp",
+            "auth_type": "none",
+            "is_ping_available": false,
+            "is_code_mode_client": true,
+            "tools_to_execute": ["*"]
+          },
+          {
+            "name": "kubernetes",
+            "connection_type": "http",
+            "connection_string": "http://kubernetes-mcp.apps.svc.cluster.local:8080/mcp",
+            "auth_type": "none",
+            "is_ping_available": false,
+            "is_code_mode_client": true,
+            "tools_to_execute": ["*"]
+          }
+        ]
+      }
+    }

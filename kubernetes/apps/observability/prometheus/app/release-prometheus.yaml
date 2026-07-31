@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: kube-prometheus-stack
-      version: 82.18.0
+      version: 87.21.0
       sourceRef:
         kind: HelmRepository
         name: prometheus-community
@@ -31,6 +31,9 @@ spec:
   values:
     crds:
       enabled: true
+      upgradeJob:
+        enabled: true
+        forceConflicts: true
     defaultRules:
       create: false   #this creates alert manager rules
       rules:
@@ -102,18 +105,9 @@ spec:
     #     type: "LoadBalancer"
     prometheus:
       enabled: true
+      # migrated to Gateway API — see app/httproute.yaml
       ingress:
-        enabled: true
-        ingressClassName: traefik
-        hosts:
-          - prometheus.cloud.traunseenet.com
-        annotations:
-          traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          cert-manager.io/cluster-issuer: "letsencrypt-prod"
-        tls:
-          - secretName: prometheus-cert
-            hosts:
-              - prometheus.cloud.traunseenet.com
+        enabled: false
       prometheusSpec:
         enableRemoteWriteReceiver: true
         podMonitorSelectorNilUsesHelmValues: false
@@ -133,7 +127,7 @@ spec:
         storageSpec:
           volumeClaimTemplate:
             spec:
-              storageClassName: tns-csi-nvmeof-retain
+              storageClassName: longhorn-storage
               accessModes: ["ReadWriteOnce"]
               resources:
                 requests:
@@ -180,18 +174,9 @@ spec:
         annotations: {}
         labels: {}
         type: ClusterIP
+      # migrated to Gateway API — see app/httproute.yaml
       ingress:
-        enabled: true
-        className: traefik
-        hosts:
-          - &host alertmanager.cloud.traunseenet.com
-        annotations:
-          traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          cert-manager.io/cluster-issuer: "letsencrypt-prod"
-        tls:
-          - secretName: alertmanager-cert
-            hosts:
-              - *host
+        enabled: false
       resources:
         cpu: 10m
         memory: 32Mi

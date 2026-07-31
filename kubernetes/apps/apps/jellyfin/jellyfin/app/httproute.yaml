@@ -1,0 +1,21 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: jellyfin
+spec:
+  parentRefs:
+    - name: traefik
+      namespace: networking
+      sectionName: websecure-cloud
+  hostnames:
+    # .web endpoint intentionally dropped (was jellyfin.web.traunseenet.com)
+    - jellyfin.cloud.traunseenet.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: jellyfin
+          port: 8096

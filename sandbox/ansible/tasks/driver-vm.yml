@@ -1,0 +1,37 @@
+---
+# vm (libkrun) driver for the openshell user. gvproxy, libkrun, and umoci are bundled
+# inside the openshell-driver-vm binary — no host packages for those. Host requirements:
+# nftables (network policy, replaced iptables in PR #1401) and e2fsprogs (ext4 root/overlay
+# disk images). Gateway needs /dev/kvm: the system unit grants it via SupplementaryGroups=kvm;
+# actual kvm group membership additionally covers the rootless --user fallback (see README).
+
+- name: Install vm-driver host dependencies (nftables, e2fsprogs)
+  ansible.builtin.apt:
+    name:
+      - nftables
+      - e2fsprogs
+    state: present
+    update_cache: true
+
+# Debian udev ships /dev/kvm root:kvm 0660; group membership lets the service user open it.
+- name: Add {{ openshell_user }} to the kvm group
+  ansible.builtin.user:
+    name: "{{ openshell_user }}"
+    groups: kvm
+    append: true
+  notify: Restart openshell-gateway
+
+# Fail fast if KVM is absent rather than getting a cryptic driver error at runtime.
+# Proxmox: set cpu type "host" on the VM (or any type that exposes vmx/svm) to enable
+# nested virtualisation — /dev/kvm should then exist on the guest.
+- name: Check whether /dev/kvm exists
+  ansible.builtin.stat:
+    path: /dev/kvm
+  register: openshell_dev_kvm
+
+- name: Fail if /dev/kvm is missing
+  ansible.builtin.fail:
+    msg: >-
+      /dev/kvm not found. Enable nested virtualisation on the Proxmox VM:
+      set cpu type "host" (or ensure vmx/svm is exposed to the guest).
+  when: not openshell_dev_kvm.stat.exists

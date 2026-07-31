@@ -3,6 +3,5 @@ kind: Kustomization
 resources:
 - secret.yaml
 - deployment.yaml
-- ingress-public.yaml
-- ingress-api.yaml
+- httproute.yaml
 - service.yaml

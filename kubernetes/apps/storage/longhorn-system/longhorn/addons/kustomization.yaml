@@ -4,5 +4,5 @@ kind: Kustomization
 resources:
   - secret.yaml
   - storage-classes.yaml
-  - ingress.yaml
+  - httproute.yaml
   - volumesnapshotclass.yaml

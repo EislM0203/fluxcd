@@ -1,0 +1,20 @@
+---
+# TCP passthrough: Traefik forwards raw TLS to the gateway, which serves its
+# own cert (signed by the internal CA that cert-manager issues). CLI pins the
+# CA during gateway add and uses a client cert for mTLS on every connection.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: openshell
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: HostSNI(`openshell.cloud.traunseenet.com`)
+      services:
+        - name: openshell
+          port: 8080
+  tls:
+    passthrough: true

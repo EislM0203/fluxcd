@@ -1,0 +1,28 @@
+---
+- name: Deploy OpenShell sandbox host
+  hosts: sandbox_hosts
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Base setup
+      ansible.builtin.import_tasks: tasks/base.yml
+    - name: Driver-specific setup ({{ openshell_compute_driver }})
+      ansible.builtin.include_tasks: "tasks/driver-{{ openshell_compute_driver }}.yml"
+      when: openshell_compute_driver in ['podman', 'docker', 'vm']
+    - name: Install OpenShell binaries
+      ansible.builtin.import_tasks: tasks/install.yml
+    - name: Configure gateway
+      ansible.builtin.import_tasks: tasks/configure.yml
+    - name: Install host-level developer tooling (pi, claude)
+      ansible.builtin.import_tasks: tasks/host-tools.yml
+
+  handlers:
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Restart openshell-gateway
+      ansible.builtin.systemd:
+        name: openshell-gateway.service
+        state: restarted

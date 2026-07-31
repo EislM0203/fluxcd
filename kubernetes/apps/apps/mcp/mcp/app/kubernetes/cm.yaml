@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubernetes-mcp-config
+data:
+  config.toml: |
+    read_only   = true
+    stateless   = true
+    port        = "8080"
+    list_output = "yaml"
+
+    toolsets = ["core", "config"]
+
+    # Defense in depth: RBAC (view role) already excludes Secrets
+    [[denied_resources]]
+    group   = ""
+    version = "v1"
+    kind    = "Secret"

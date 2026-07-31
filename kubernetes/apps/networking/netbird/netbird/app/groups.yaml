@@ -1,6 +1,28 @@
+---
 apiVersion: netbird.io/v1alpha1
 kind: Group
 metadata:
   name: apps-resources
 spec:
   name: Apps Resources
+---
+apiVersion: netbird.io/v1alpha1
+kind: Group
+metadata:
+  name: apps-users
+spec:
+  name: Apps Users
+---
+apiVersion: netbird.io/v1alpha1
+kind: Group
+metadata:
+  name: admin-resources
+spec:
+  name: Admin Resources
+---
+apiVersion: netbird.io/v1alpha1
+kind: Group
+metadata:
+  name: admin-users
+spec:
+  name: Admin Users

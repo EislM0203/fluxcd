@@ -1,0 +1,56 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: fin-app
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: cert-manager-addons
+    - name: traefik-base
+    - name: longhorn-addons
+    - name: volsync
+    - name: harbor-app
+  path: ./kubernetes/apps/apps/fin/fin/app
+  prune: true
+  wait: true
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: fin-api
+      namespace: apps
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: fin-web
+      namespace: apps
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: apps
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: fin-backup
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: fin-app
+  path: ./kubernetes/apps/apps/fin/fin/backup
+  prune: true
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: apps

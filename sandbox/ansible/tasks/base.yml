@@ -1,0 +1,81 @@
+---
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - git
+      - tar
+    state: present
+    update_cache: true
+
+# vm driver needs nested KVM.
+- name: Verify /dev/kvm is present
+  when: openshell_compute_driver == 'vm'
+  ansible.builtin.stat:
+    path: /dev/kvm
+  register: kvm_dev
+
+- name: Fail if /dev/kvm is missing
+  when: openshell_compute_driver == 'vm'
+  ansible.builtin.assert:
+    that: kvm_dev.stat.exists
+    fail_msg: /dev/kvm missing — vm driver needs nested virt (Proxmox CPU type 'host').
+
+# Ubuntu-only: AppArmor blocks unprivileged userns by default; libkrun + rootless podman
+# need it open. Sysctl doesn't exist on Debian — gated to skip cleanly.
+- name: Allow unprivileged user namespaces (Ubuntu only)
+  when: ansible_facts['distribution'] == 'Ubuntu'
+  ansible.posix.sysctl:
+    name: kernel.apparmor_restrict_unprivileged_userns
+    value: "0"
+    sysctl_set: true
+    state: present
+    reload: true
+
+- name: Create openshell group
+  ansible.builtin.group:
+    name: "{{ openshell_group }}"
+    system: true
+
+- name: Create openshell service user
+  ansible.builtin.user:
+    name: "{{ openshell_user }}"
+    group: "{{ openshell_group }}"
+    # kvm only matters for the vm driver.
+    groups: "{{ ['kvm'] if openshell_compute_driver == 'vm' else [] }}"
+    append: true
+    home: "{{ openshell_home }}"
+    shell: /usr/sbin/nologin
+    system: true
+    create_home: true
+
+# Need the literal UID for XDG_RUNTIME_DIR in the systemd unit; systemd's %U resolves to
+# the service manager UID (0) in system units, not User=.
+- name: Look up openshell uid
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ openshell_user }}"
+
+- name: Record openshell uid as a fact
+  ansible.builtin.set_fact:
+    openshell_uid: "{{ ansible_facts['getent_passwd'][openshell_user][1] }}"
+
+# Same dir list across drivers; state/vm is harmless when unused.
+- name: Create config and state directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ openshell_user }}"
+    group: "{{ openshell_group }}"
+    mode: "0750"
+  loop:
+    - "{{ openshell_config_dir }}"
+    - "{{ openshell_pki_dir }}"
+    - "{{ openshell_pki_dir }}/server"
+    - "{{ openshell_pki_dir }}/client"
+    - "{{ openshell_pki_dir }}/jwt"
+    - "{{ openshell_state_dir }}"
+    - "{{ openshell_state_dir }}/gateway"
+    - "{{ openshell_state_dir }}/vm"
+    - "{{ openshell_home }}/.local/share"

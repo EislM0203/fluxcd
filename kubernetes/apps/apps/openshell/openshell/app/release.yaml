@@ -23,32 +23,45 @@ spec:
       retries: 3
   uninstall:
     keepHistory: false
-  # The chart hardcodes the StatefulSet's volumeClaimTemplate without a
-  # storageClassName, so it would otherwise use the cluster default. Pin it
-  # to tns-csi-nvmeof-retain via a Kustomize JSON patch (retain reclaim policy
-  # so the gateway's sqlite state survives a HelmRelease delete/reinstall).
-  postRenderers:
-    - kustomize:
-        patches:
-          - target:
-              kind: StatefulSet
-              name: openshell
-            patch: |
-              - op: add
-                path: /spec/volumeClaimTemplates/0/spec/storageClassName
-                value: tns-csi-nvmeof-retain
   values:
     replicaCount: 1
 
+    workload:
+      # Use Deployment (not StatefulSet) — no sqlite PVC needed with external Postgres.
+      kind: deployment
+
     image:
       repository: ghcr.io/nvidia/openshell/gateway
-      tag: "0.0.42"
+      tag: "0.0.85"
       pullPolicy: IfNotPresent
 
     supervisor:
       image:
         repository: ghcr.io/nvidia/openshell/supervisor
-        tag: "0.0.42"
+        # Pinned to the gateway version; since 0.0.82 the gateway auto-pins anyway
+        # (PR #2070), the explicit tag just keeps the deployment reproducible.
+        tag: "0.0.85"
+      # Force init-container (emptyDir) delivery of the supervisor instead of the chart's
+      # auto-selected image-volume. On K8s 1.35 the default is image-volume, but RKE2's
+      # containerd 2.1.5 cannot idmap an overlay merged-mount image-volume under
+      # enableUserNamespaces (hostUsers: false), so sandbox pods fail to start. emptyDir
+      # (tmpfs/ext4) IS idmappable, so init-container makes userns work without a
+      # containerd/RKE2 upgrade.
+      sideloadMethod: init-container
+      # Sidecar topology (PR #2076, 0.0.82) instead of the default "combined": a network
+      # init container (UID 0, NET_ADMIN/NET_RAW/CHOWN/FOWNER) installs nftables rules in
+      # the pod's existing netns, so the supervisor never runs `ip netns add` — which is
+      # what made combined topology unfixable here (containerd hands the pod LOCKED mount
+      # propagation; `mount --make-shared /run/netns` fails even with CAP_SYS_ADMIN, and
+      # proxy mode is mandatory). No privileged containers needed.
+      topology: sidecar
+      # Defaults spelled out: binary-aware policy runs the long-lived network sidecar as
+      # UID 0 with SYS_PTRACE+DAC_READ_SEARCH (needs PSA baseline, not restricted, in the
+      # apps namespace). Set processBinaryAwareNetworkPolicy: false to run it as proxyUid
+      # at the cost of binary-identity network policy.
+      sidecar:
+        proxyUid: 1337
+        processBinaryAwareNetworkPolicy: true
 
     serviceAccount:
       create: true
@@ -78,69 +91,66 @@ spec:
 
     server:
       logLevel: info
+      # CNPG auto-generates <cluster>-app secret with key "uri" (postgresql://...).
+      # The chart reads OPENSHELL_DB_URL from that key — no bridge secret needed.
+      externalDbSecret: openshell-pg-app
       # Empty = release namespace ("apps") - Sandbox CRs spawn alongside other workloads.
       sandboxNamespace: ""
-      # Maps sandbox UID 0 to a non-root host UID so SYS_ADMIN (needed by the
-      # base image's `ip netns add`) is scoped to the namespace and useless
-      # against the host. Without this, the runtime's default seccomp blocks
-      # the mount syscall even with SYS_ADMIN granted. Requires K8s >= 1.33.
-      enableUserNamespaces: true
+      # Disabled: the chart default and OpenShell's supported baseline. userns is an
+      # opt-in defense-in-depth layer, NOT the primary boundary (that's the always-on
+      # network proxy + Landlock + seccomp + privilege-drop jail). History: with the old
+      # "combined" topology (≤0.0.81 the only option) sandbox startup was broken here
+      # regardless of userns — the supervisor's `ip netns add` failed with
+      #   mount --make-shared /run/netns: Permission denied
+      # (containerd hands the pod LOCKED mount propagation; unfixable without a
+      # privileged pod). supervisor.topology: sidecar above avoids the netns entirely,
+      # which is what made this deployment viable. Enabling userns additionally requires
+      # sideloadMethod: init-container (see above) on this containerd.
+      enableUserNamespaces: false
       # Upstream sandbox base image has no semver tags - only :latest + commit SHAs.
       # Pinned to the current digest for reproducibility. Bump manually after
       # reviewing diffs at https://github.com/NVIDIA/openshell-community.
       sandboxImage: "ghcr.io/nvidia/openshell-community/sandboxes/base@sha256:e29a8e98c1399aa08a8c624d758d1814b6edbe0302eb570c0468a6d3e811d167"
       sandboxImagePullPolicy: "IfNotPresent"
+      # Persistent sandbox workspaces. The chart exposes no storageClassName for
+      # these PVCs — they use the cluster default SC (longhorn-storage).
+      workspaceDefaultStorageSize: "5Gi"
 
-      # End-to-end mTLS: Traefik TLS-passthroughs the connection so the
-      # chart-issued server cert is what the CLI sees. Combined with OIDC,
-      # this gives two-factor auth (client cert + JWT) and preserves the
-      # supervisor's sandbox-class identity for in-cluster callbacks.
+      # mTLS: gateway serves its own TLS cert (signed by internal CA). CLI pins
+      # the CA and presents a client cert on every connection. No OIDC/browser
+      # flow. TCP passthrough at Traefik so the gateway handles TLS end-to-end.
       disableTls: false
-      disableGatewayAuth: false
       enableLoopbackServiceHttp: true
-
+      auth:
+        allowUnauthenticatedUsers: true
       tls:
         certSecretName: openshell-server-tls
         clientCaSecretName: openshell-server-client-ca
         clientTlsSecretName: openshell-client-tls
 
-      oidc:
-        issuer: "https://pocketid.cloud.traunseenet.com"
-        # PocketID emits the OIDC client UUID as the `aud` claim, not a human
-        # name. This must match the client created in PocketID admin UI.
-        audience: "b1a99173-a4e5-4034-a6cf-9dd3b520c222"
-        jwksTtl: 3600
-        rolesClaim: "amr"
-        adminRole: "phr"
-        userRole: "phr"
-
     # Chart's NetworkPolicy locks sandbox SSH (port 2222) to the gateway only.
     networkPolicy:
       enabled: true
 
-    # cert-manager issues an internal CA + server cert + client cert for mTLS.
-    # SANs include the external hostname (Traefik passthrough preserves SNI),
-    # the in-cluster service names (supervisor callbacks), and localhost
-    # (kubectl port-forward fallback).
-    pkiInitJob:
-      enabled: false
+    # cert-manager issues internal PKI: CA, server cert (with external + internal
+    # SANs), and client cert for the CLI. CLI fetches CA + client cert during
+    # gateway add and uses them for all subsequent mTLS connections.
     certManager:
       enabled: true
       caSecretName: openshell-ca-tls
-      clientCaFromServerTlsSecret: true
       certificateDuration: 8760h
       certificateRenewBefore: 720h
+      clientCaFromServerTlsSecret: true
       serverDnsNames:
         - openshell.cloud.traunseenet.com
         - openshell
         - openshell.apps.svc
         - openshell.apps.svc.cluster.local
         - localhost
-        - openshell.localhost
-        - "*.openshell.localhost"
-        - host.docker.internal
       serverIpAddresses:
         - 127.0.0.1
+    pkiInitJob:
+      enabled: false
 
     grpcRoute:
       enabled: false

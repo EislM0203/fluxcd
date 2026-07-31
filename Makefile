@@ -3,6 +3,9 @@ MAINTENANCE_DIR = cluster/ansible/infra/maintenance
 BOOTSTRAP_DIR = cluster/ansible/infra/bootstrap
 CLUSTER_DIR = cluster/ansible
 LIGHTHOUSE_ANSIBLE_DIR = lighthouse/ansible
+SANDBOX_TF_DIR = sandbox/tf
+SANDBOX_ANSIBLE_DIR = sandbox/ansible
+SANDBOX_INVENTORY = sandbox/ansible/inventory.ini
 
 SECRETS_FILE = secrets.yaml
 TFVARS_FILE = cluster/tf/terraform.tfvars
@@ -10,7 +13,8 @@ SOPS_AGE_KEY_FILE = $(HOME)/.config/sops/age/keys.txt
 
 .PHONY: bootstrap-infra plan-tf apply-tf destroy-tf wait-for-nodes update-packages \
 	install-longhorn-dependencies install-tns-csi-dependencies reboot-if-required install-rke2-server install-rke2-agent cluster-readiness-check \
-	lighthouse-init lighthouse-plan lighthouse-apply lighthouse-bootstrap lighthouse-setup lighthouse-configure lighthouse-redeploy lighthouse-destroy
+	lighthouse-init lighthouse-plan lighthouse-apply lighthouse-bootstrap lighthouse-setup lighthouse-configure lighthouse-redeploy lighthouse-destroy \
+	sandbox-init sandbox-plan sandbox-apply sandbox-destroy sandbox-deploy sandbox-up
 
 bootstrap-infra: apply-tf \
 	wait-for-nodes \
@@ -83,3 +87,27 @@ lighthouse-configure:
 
 lighthouse-destroy:
 	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="lighthouse/tf" destroy -auto-approve
+
+# ==========================================
+# Sandbox (OpenShell vm-driver gateway)
+# ==========================================
+
+sandbox-init:
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="$(SANDBOX_TF_DIR)" init
+
+sandbox-plan:
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="$(SANDBOX_TF_DIR)" plan
+
+sandbox-apply:
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="$(SANDBOX_TF_DIR)" apply -auto-approve
+
+sandbox-destroy:
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="$(SANDBOX_TF_DIR)" destroy -auto-approve
+
+# No .env sourcing here: Ansible needs no Proxmox creds (the SSH key path is already
+# baked into inventory.ini by TF); only the age key is needed to decrypt the PKI bundle.
+sandbox-deploy:
+	@ansible-galaxy collection install -r "$(SANDBOX_ANSIBLE_DIR)/requirements.yml" >/dev/null
+	@SOPS_AGE_KEY_FILE="$(SOPS_AGE_KEY_FILE)" ansible-playbook -i "$(SANDBOX_INVENTORY)" "$(SANDBOX_ANSIBLE_DIR)/site.yml"
+
+sandbox-up: sandbox-apply sandbox-deploy

@@ -1,0 +1,139 @@
+---
+# Host-level tooling: pi + claude as system-wide CLIs for the `ansible` SSH user.
+# pi extensions land in /home/ansible/.pi/agent/. Host env vars (if a SOPS file is present)
+# land in /etc/profile.d/host-env.sh.
+
+# Debian 13's nodejs is 20.x; pi's bundled undici needs a Node 22+ API
+# (webidl.util.markAsUncloneable). Pull Node 22 from NodeSource instead.
+- name: Add NodeSource signing key
+  ansible.builtin.get_url:
+    url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
+    dest: /etc/apt/keyrings/nodesource.asc
+    mode: "0644"
+
+- name: Add NodeSource APT repo (Node 22)
+  ansible.builtin.deb822_repository:
+    name: nodesource
+    types: deb
+    uris: https://deb.nodesource.com/node_22.x
+    suites: nodistro
+    components: main
+    signed_by: /etc/apt/keyrings/nodesource.asc
+    state: present
+
+# Remove any Debian-provided nodejs/npm so the NodeSource package installs cleanly.
+- name: Remove Debian nodejs/npm (NodeSource will replace)
+  ansible.builtin.apt:
+    name:
+      - npm
+    state: absent
+    purge: true
+
+- name: Install Node.js 22 (NodeSource; npm bundled)
+  ansible.builtin.apt:
+    name: nodejs
+    state: present
+    update_cache: true
+
+# pi — pinned. First-run binary is missing, so --version fails; failed_when:false lets the
+# version-match guard trigger the install.
+- name: Get installed pi version
+  ansible.builtin.command: pi --version
+  register: pi_installed
+  failed_when: false
+  changed_when: false
+
+- name: Install pi {{ openshell_pi_version }} globally
+  ansible.builtin.command: >-
+    npm install -g
+    @earendil-works/pi-coding-agent@{{ openshell_pi_version }}
+  when: openshell_pi_version not in (pi_installed.stdout | default(''))
+  changed_when: true
+
+- name: Get installed claude version
+  ansible.builtin.command: claude --version
+  register: claude_installed
+  failed_when: false
+  changed_when: false
+
+- name: Install Claude Code {{ openshell_claude_code_version }} globally
+  ansible.builtin.command: >-
+    npm install -g
+    @anthropic-ai/claude-code@{{ openshell_claude_code_version }}
+  when: openshell_claude_code_version not in (claude_installed.stdout | default(''))
+  changed_when: true
+
+# Pi extensions — installed as `ansible` so they land in /home/ansible/.pi/agent/. pi
+# auto-discovers them at startup. Entries passed verbatim to `pi install`.
+- name: Ensure ~/.pi/agent exists for ansible user
+  ansible.builtin.file:
+    path: /home/ansible/.pi/agent
+    state: directory
+    owner: ansible
+    group: ansible
+    mode: "0750"
+  when: openshell_pi_extensions | length > 0
+
+- name: Install Pi extensions
+  ansible.builtin.command: "pi install {{ item }}"
+  args:
+    chdir: /home/ansible
+  become: true
+  become_user: ansible
+  environment:
+    HOME: /home/ansible
+  loop: "{{ openshell_pi_extensions }}"
+  loop_control:
+    label: "{{ item }}"
+  changed_when: true
+
+# kubectl from the Kubernetes community apt repo (pkgs.k8s.io), pinned to a minor track.
+- name: Add Kubernetes signing key
+  ansible.builtin.get_url:
+    url: "https://pkgs.k8s.io/core:/stable:/{{ openshell_kubectl_minor }}/deb/Release.key"
+    dest: /etc/apt/keyrings/kubernetes.asc
+    mode: "0644"
+
+- name: Add Kubernetes APT repo
+  ansible.builtin.deb822_repository:
+    name: kubernetes
+    types: deb
+    uris: "https://pkgs.k8s.io/core:/stable:/{{ openshell_kubectl_minor }}/deb/"
+    suites: /
+    signed_by: /etc/apt/keyrings/kubernetes.asc
+    state: present
+
+- name: Install kubectl
+  ansible.builtin.apt:
+    name: kubectl
+    state: present
+    update_cache: true
+
+# Host env vars from optional SOPS file. Whole block skipped cleanly if file absent.
+- name: Check for SOPS-encrypted host env file
+  ansible.builtin.stat:
+    path: "{{ openshell_host_env_sops_file }}"
+  register: host_env_sops_stat
+  delegate_to: localhost
+  become: false
+
+- name: Load SOPS-encrypted host env vars
+  community.sops.load_vars:
+    file: "{{ openshell_host_env_sops_file }}"
+    name: openshell_host_env
+  when: host_env_sops_stat.stat.exists
+  no_log: true
+
+- name: Render host env into /etc/profile.d/host-env.sh
+  ansible.builtin.copy:
+    dest: /etc/profile.d/host-env.sh
+    owner: root
+    group: ansible
+    mode: "0640"
+    content: |
+      # Managed by Ansible — do not edit. Sourced by login shells via /etc/profile.
+      {% for k, v in openshell_host_env.data.items() %}
+      export {{ k }}={{ v | quote }}
+      {% endfor %}
+  when: host_env_sops_stat.stat.exists
+  no_log: true

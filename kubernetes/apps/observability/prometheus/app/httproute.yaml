@@ -1,0 +1,40 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: prometheus
+spec:
+  parentRefs:
+    - name: traefik
+      namespace: networking
+      sectionName: websecure-cloud
+  hostnames:
+    - prometheus.cloud.traunseenet.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: prometheus-stack-kube-prom-prometheus
+          port: 9090
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: alertmanager
+spec:
+  parentRefs:
+    - name: traefik
+      namespace: networking
+      sectionName: websecure-cloud
+  hostnames:
+    - alertmanager.cloud.traunseenet.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: prometheus-stack-kube-prom-alertmanager
+          port: 9093

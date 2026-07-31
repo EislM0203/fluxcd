@@ -1,0 +1,22 @@
+data:
+    PI_AWS_ACCESS_KEY_ID: ENC[AES256_GCM,data:WbNO562FV7gZrkSzINi8x/vJQh8=,iv:g7gcPUV2jOOhcXtfY8+p+73qEkS08Lcrxr6ak02LpGw=,tag:DO3VSVuI3WU6wDY9glyXZw==,type:str]
+    PI_AWS_SECRET_ACCESS_KEY: ENC[AES256_GCM,data:kfUfN/YOt4oPUtH4AunnXgGIUl1W9LMOR+Iz44xHb9y+Wf1OTEOXSQ==,iv:j4RGwXTXDladaDeMXhkmxIP9yIIK8jA82/Pdw8LnZUI=,tag:fu4XkpFGSdXQHuvSegA3nA==,type:str]
+    PI_AWS_ENDPOINT_URL_S3: ENC[AES256_GCM,data:yokBJ2voD71Sduive6mkxRHXpNJl5g==,iv:mgdKpJN9owX1UceFFUKC5EzOGA7WYVPJ+A6zY+AUAVg=,tag:ibh2ItIE4dkWR/JH13a4Gw==,type:str]
+    PI_AWS_BUCKET: ENC[AES256_GCM,data:zz6U86/Q+KE=,iv:NNlP8U4+xEdZIAB3fNEnkGLLVm7UB2waqTa6oj/v1wM=,tag:u5KvSAQzhWFQeqDjMxydqQ==,type:str]
+    PI_AWS_REGION: ENC[AES256_GCM,data:Av00pl53fsE2,iv:TM35FKtrCAAdYO24sP2boOiQPoITzeVp2noIsf2zVAg=,tag:afKkbs5La9+/1ffNONkwfQ==,type:str]
+    PI_K8S_INSECURE_SKIP_TLS: ENC[AES256_GCM,data:0fBI4A==,iv:BrYwHtFY/vzxfCqyasZ9WwVp/1iDcOjSb/9k29jWUfQ=,tag:g0AR3gvH8yHPcljO6+QfNA==,type:bool]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSArRXc1NXoyZkZXaWdrZUxB
+            LzBHWGtxNkJDYUNxZkgzeGZjd3dBejc5T1V3CjF4dEFLVERaUFBqTVhqUkFldjZK
+            ZmxkMzdpYTA4YmdGM2h5akRyWnVmeFEKLS0tIHE2bDUvWk44b3cxSW9sbzNVNmQx
+            OW83NVo0cWxQZVQ4K0Y5VE90VElNaVUKLwdc+5OhQ02XYtJO/4Ya2cksj1BD8XP9
+            xFT6FGCQ9UeKKlN/wQqVhgTpj+SrsPaVazK5WnI3wJNP/7z/sbd1bQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1q3mu6g0l3kr7spszks69yqrvlxvlgfrqgw9r00qqt8cj9xpjd9mqdkd7um
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-06-01T09:04:11Z"
+    mac: ENC[AES256_GCM,data:HRuw6Yzgf5POkK+2hedI+OCsmrwGkR5yWlOCyvoaRsaTzNlh0fqqIZRpR+/zYOlMn4FsjW3uK++nsjKQSsXZtdjLdkRUr2CzX9qq0GAr/0Z0ErgIeh1uDRE0GBVzXw7derE+HjegtGTiQeu5WO6wAQ++5aPXjkejlybGNGw3QZc=,iv:mggpGRUb4lpJeUIbG4jMhPIssXL3+rhVyxQeKWuIBGY=,tag:FHA/HVeQxdqgjrgTsVmZBQ==,type:str]
+    version: 3.13.1

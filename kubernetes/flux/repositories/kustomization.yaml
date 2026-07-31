@@ -6,3 +6,4 @@ namespace: flux-system
 resources:
   - ./helm
   - ./oci
+  - ./git

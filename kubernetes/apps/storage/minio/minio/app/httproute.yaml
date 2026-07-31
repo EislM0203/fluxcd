@@ -1,0 +1,43 @@
+---
+# S3 API — dedicated listener: api.s3.cloud is two labels deep, not covered
+# by the *.cloud wildcard cert, so it uses websecure-s3 + its own cert
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: minio-api
+spec:
+  parentRefs:
+    - name: traefik
+      namespace: networking
+      sectionName: websecure-s3
+  hostnames:
+    - api.s3.cloud.traunseenet.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: minio-service
+          port: 9000
+---
+# MinIO console — s3.cloud is one label, covered by the *.cloud wildcard
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: minio-public
+spec:
+  parentRefs:
+    - name: traefik
+      namespace: networking
+      sectionName: websecure-cloud
+  hostnames:
+    - s3.cloud.traunseenet.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: minio-service
+          port: 9001

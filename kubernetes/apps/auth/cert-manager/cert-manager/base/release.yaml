@@ -14,7 +14,7 @@ spec:
       # cert-manager-addons blocked -> cascades to traefik-base, immich, karakeep.
       # Controller + cainjector (same build/node) are fine, so it's webhook-specific.
       # TODO: retry a newer patch (>=v1.21.2) once available and confirm webhook stays up.
-      version: v1.20.2
+      version: v1.21.1
       sourceRef:
         kind: HelmRepository
         name: cert-manager

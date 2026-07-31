@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.6.0"
+  required_version = ">= 1.7.0" # import{} blocks with for_each (cloudflare v5 migration) need TF/tofu 1.7+
 
   required_providers {
     hcloud = {
@@ -16,7 +16,7 @@ terraform {
     }
     cloudflare = {
       source  = "cloudflare/cloudflare"
-      version = "~> 4.0"
+      version = "~> 5.0"
     }
   }
 
@@ -67,9 +67,7 @@ locals {
 }
 
 data "cloudflare_zones" "main" {
-  filter {
-    name = var.cloudflare_zone_domain
-  }
+  name = var.cloudflare_zone_domain
 }
 
 resource "random_password" "pangolin_secret" {
@@ -137,18 +135,18 @@ resource "hcloud_server" "pangolin" {
 }
 
 # Dashboard: pg.traunseenet.com
-resource "cloudflare_record" "pangolin_dashboard" {
-  zone_id = data.cloudflare_zones.main.zones[0].id
-  name    = local.pangolin_dns_name
+resource "cloudflare_dns_record" "pangolin_dashboard" {
+  zone_id = data.cloudflare_zones.main.result[0].id
+  name    = var.pangolin_base_domain # v5 requires the full FQDN
   content = hcloud_server.pangolin.ipv4_address
   type    = "A"
   ttl     = 60
   proxied = false
 }
 
-resource "cloudflare_record" "crowdsec_manager" {
-  zone_id = data.cloudflare_zones.main.zones[0].id
-  name    = "csm.${local.pangolin_dns_name}"
+resource "cloudflare_dns_record" "crowdsec_manager" {
+  zone_id = data.cloudflare_zones.main.result[0].id
+  name    = "csm.${var.pangolin_base_domain}" # v5 requires the full FQDN
   content = var.pangolin_base_domain
   type    = "CNAME"
   ttl     = 60
@@ -158,10 +156,10 @@ resource "cloudflare_record" "crowdsec_manager" {
 # Per-resource CNAMEs to the Pangolin dashboard record.
 # Adding/removing a service only requires a blueprint change --
 # the VPS IP is resolved via the CNAME chain (pg.traunseenet.com → A → VPS IP).
-resource "cloudflare_record" "k8s_public" {
+resource "cloudflare_dns_record" "k8s_public" {
   for_each = local.k8s_public_dns_names
-  zone_id  = data.cloudflare_zones.main.zones[0].id
-  name     = each.value
+  zone_id  = data.cloudflare_zones.main.result[0].id
+  name     = "${each.value}.${var.cloudflare_zone_domain}" # v5 requires the full FQDN
   content  = var.pangolin_base_domain
   type     = "CNAME"
   ttl      = 60

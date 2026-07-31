@@ -32,7 +32,7 @@ spec:
 
     image:
       repository: ghcr.io/nvidia/openshell/gateway
-      tag: "0.0.85"
+      tag: "0.0.92"
       pullPolicy: IfNotPresent
 
     supervisor:
@@ -40,7 +40,7 @@ spec:
         repository: ghcr.io/nvidia/openshell/supervisor
         # Pinned to the gateway version; since 0.0.82 the gateway auto-pins anyway
         # (PR #2070), the explicit tag just keeps the deployment reproducible.
-        tag: "0.0.85"
+        tag: "0.0.92"
       # Force init-container (emptyDir) delivery of the supervisor instead of the chart's
       # auto-selected image-volume. On K8s 1.35 the default is image-volume, but RKE2's
       # containerd 2.1.5 cannot idmap an overlay merged-mount image-volume under
@@ -110,7 +110,7 @@ spec:
       # Upstream sandbox base image has no semver tags - only :latest + commit SHAs.
       # Pinned to the current digest for reproducibility. Bump manually after
       # reviewing diffs at https://github.com/NVIDIA/openshell-community.
-      sandboxImage: "ghcr.io/nvidia/openshell-community/sandboxes/base@sha256:e29a8e98c1399aa08a8c624d758d1814b6edbe0302eb570c0468a6d3e811d167"
+      sandboxImage: "ghcr.io/nvidia/openshell-community/sandboxes/base@sha256:aeef1c63f00e2913ea002ccb3aaf925f338b5c5d70e63576f0d95c16a138044e"
       sandboxImagePullPolicy: "IfNotPresent"
       # Persistent sandbox workspaces. The chart exposes no storageClassName for
       # these PVCs — they use the cluster default SC (longhorn-storage).

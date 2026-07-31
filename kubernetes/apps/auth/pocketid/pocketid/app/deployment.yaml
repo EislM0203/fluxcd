@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: pocket-id
-          image: harbor.cloud.traunseenet.com/ghcr.io/pocket-id/pocket-id:v2.10
+          image: harbor.cloud.traunseenet.com/ghcr.io/pocket-id/pocket-id:v2.12@sha256:4a277d141d6069fd9a7b321a9aca80f4b9812b8fa122ee566d2f15900e3d8448
           env:
             - name: APP_URL
               value: "https://pocketid.cloud.traunseenet.com"

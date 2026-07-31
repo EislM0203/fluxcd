@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
       - name: ntfy
-        image: harbor.cloud.traunseenet.com/docker.io/binwiederhier/ntfy:v2.26.0
+        image: harbor.cloud.traunseenet.com/docker.io/binwiederhier/ntfy:v2.26.3@sha256:081b53dbb20674fcfe05fdb4eb8af9036a2645ef979543d16f7f80803af467b1
         args: ["serve"]
         envFrom:
         - configMapRef:

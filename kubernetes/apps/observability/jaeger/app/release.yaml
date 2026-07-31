@@ -25,33 +25,19 @@ spec:
   uninstall:
     keepHistory: false
   values:
-    provisionDataStore:
-      cassandra: false
-    storage:
-      type: memory
-    agent:
-      enabled: false
-    collector:
-      enabled: false
-    query:
-      enabled: false
-    allInOne:
+    # Jaeger v2 unified all-in-one deployment (chart 4.x / appVersion 2.x).
+    # Memory storage is the built-in default — no external datastore needed.
+    jaeger:
       enabled: true
-      ingress:
+      # native Gateway API route (stable in v2) → jaeger query UI on :16686
+      httproute:
         enabled: true
-        ingressClassName: traefik
-        hosts:
+        parentRefs:
+          - name: traefik
+            namespace: networking
+            sectionName: websecure-cloud
+        hostnames:
           - jaeger.cloud.traunseenet.com
-        annotations:
-          traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          cert-manager.io/cluster-issuer: "letsencrypt-prod"
-        labels:
-          app: jaeger
-        tls:
-          - secretName: jaeger-cert
-            hosts:
-              - jaeger.cloud.traunseenet.com
-      handleGrafanaManagedAlerts: "true"
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1

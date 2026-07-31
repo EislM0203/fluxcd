@@ -6,4 +6,5 @@ resources:
   - secret.yaml
   - deployment.yaml
   - service.yaml
-  - ingress.yaml
+  - ingress.yaml # TODO remove after HTTPRoute verified (gateway-api migration phase 2)
+  - httproute.yaml

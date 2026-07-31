@@ -8,4 +8,5 @@ resources:
   - pg-immich.yaml
   - redis.yaml
   - server.yaml
+  - httproute.yaml
   - machine-learning.yaml

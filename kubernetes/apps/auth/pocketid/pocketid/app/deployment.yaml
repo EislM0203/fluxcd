@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: pocket-id
-          image: ghcr.io/pocket-id/pocket-id:v2.10
+          image: harbor.cloud.traunseenet.com/ghcr.io/pocket-id/pocket-id:v2.10
           env:
             - name: APP_URL
               value: "https://pocketid.cloud.traunseenet.com"
@@ -56,4 +56,3 @@ spec:
         - name: pocketid-data
           persistentVolumeClaim:
             claimName: pocketid-data
-

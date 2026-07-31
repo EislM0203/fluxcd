@@ -16,7 +16,7 @@ spec:
         app: paperless-redis
     spec:
       containers:
-        - image: redis:8.8.0
+        - image: harbor.cloud.traunseenet.com/docker.io/library/redis:8.8.0
           name: redis
           ports:
             - containerPort: 6379

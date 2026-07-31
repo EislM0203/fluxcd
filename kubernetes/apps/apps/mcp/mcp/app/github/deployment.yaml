@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: github-mcp
-          image: ghcr.io/github/github-mcp-server:v1.5.0
+          image: harbor.cloud.traunseenet.com/ghcr.io/github/github-mcp-server:v1.5.0
           args:
             - http
           ports:

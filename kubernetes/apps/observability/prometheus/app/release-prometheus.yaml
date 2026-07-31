@@ -31,6 +31,9 @@ spec:
   values:
     crds:
       enabled: true
+      upgradeJob:
+        enabled: true
+        forceConflicts: true
     defaultRules:
       create: false   #this creates alert manager rules
       rules:

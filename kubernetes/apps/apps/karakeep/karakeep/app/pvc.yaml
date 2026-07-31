@@ -7,10 +7,10 @@ metadata:
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: longhorn-storage
-  # dataSourceRef:
-  #   kind: ReplicationDestination
-  #   apiGroup: volsync.backube
-  #   name: karakeep-restore
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: karakeep-restore
   resources:
     requests:
       storage: 5Gi
@@ -42,28 +42,6 @@ metadata:
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: longhorn-storage
-  # dataSourceRef:
-  #   kind: ReplicationDestination
-  #   apiGroup: volsync.backube
-  #   name: karakeep-meilisearch-restore
   resources:
     requests:
       storage: 2Gi
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: karakeep-meilisearch-restore
-spec:
-  trigger:
-    manual: restore-once
-  restic:
-    repository: restic-karakeep-meilisearch
-    storageClassName: longhorn-storage
-    accessModes: ["ReadWriteOnce"]
-    copyMethod: Snapshot
-    capacity: 2Gi
-    enableFileDeletion: false
-    cleanupCachePVC: false
-    cleanupTempPVC: false

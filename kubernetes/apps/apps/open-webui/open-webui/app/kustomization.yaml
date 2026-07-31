@@ -6,5 +6,5 @@ resources:
   - configmap.yaml
   - svc.yaml
   - secret.yaml
-  - ingress.yaml
+  - httproute.yaml
   - pvc.yaml

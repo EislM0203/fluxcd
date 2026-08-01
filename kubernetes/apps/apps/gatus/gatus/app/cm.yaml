@@ -142,7 +142,7 @@ data:
             failure-threshold: 5
             send-on-resolved: true
       - name: Loki
-        url: "http://loki-headless.observability.svc.cluster.local:3100/ready"
+        url: "http://grafana-loki-headless.observability.svc.cluster.local:3100/ready"
         interval: 1m
         conditions:
           - "[STATUS] == 200"

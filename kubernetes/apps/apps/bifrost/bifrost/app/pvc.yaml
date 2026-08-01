@@ -22,7 +22,7 @@ metadata:
   name: bifrost-restore
 spec:
   trigger:
-    manual: restore-once
+    manual: restore-vkeys-20260731
   restic:
     repository: restic-bifrost
     storageClassName: longhorn-storage

@@ -9,10 +9,10 @@ spec:
   chart:
     spec:
       chart: loki
-      version: 6.55.0
+      version: 18.7.1
       sourceRef:
         kind: HelmRepository
-        name: grafana
+        name: grafana-community
         namespace: flux-system
   maxHistory: 2
   install:

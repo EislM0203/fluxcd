@@ -80,7 +80,7 @@ spec:
     spec:
       containers:
         - name: searxng-mcp
-          image: harbor.cloud.traunseenet.com/docker.io/isokoliuk/mcp-searxng:1.11.0
+          image: harbor.cloud.traunseenet.com/docker.io/isokoliuk/mcp-searxng:1.13.0@sha256:696343e80c8b3507a4c99d6389f967bbf470946ce9c415f0f9d81df2a35459f1
           ports:
             - name: http
               containerPort: 3000

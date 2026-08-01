@@ -4,6 +4,8 @@ metadata:
   name: gitea
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: gitea

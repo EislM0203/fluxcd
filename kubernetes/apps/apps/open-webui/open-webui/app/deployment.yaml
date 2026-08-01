@@ -12,7 +12,7 @@ spec:
     matchLabels:
       app: openwebui
   strategy:
-    type: RollingUpdate
+    type: Recreate
   template:
     metadata:
       labels:

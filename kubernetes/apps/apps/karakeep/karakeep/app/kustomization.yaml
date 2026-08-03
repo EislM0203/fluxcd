@@ -8,3 +8,6 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  - mcp-secret.yaml
+  - mcp-deployment.yaml
+  - mcp-service.yaml

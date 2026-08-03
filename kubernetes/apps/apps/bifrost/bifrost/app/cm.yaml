@@ -95,6 +95,15 @@ data:
             "is_ping_available": false,
             "is_code_mode_client": true,
             "tools_to_execute": ["*"]
+          },
+          {
+            "name": "karakeep",
+            "connection_type": "http",
+            "connection_string": "http://karakeep-mcp.apps.svc.cluster.local:8000/mcp",
+            "auth_type": "none",
+            "is_ping_available": false,
+            "is_code_mode_client": true,
+            "tools_to_execute": ["*"]
           }
         ]
       }

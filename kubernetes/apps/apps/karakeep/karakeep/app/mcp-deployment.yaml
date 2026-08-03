@@ -25,11 +25,18 @@ spec:
           env:
             - name: NPM_CONFIG_CACHE
               value: /npm-cache
+            - name: KARAKEEP_API_ADDR
+              value: placeholder
+            - name: KARAKEEP_API_KEY
+              value: placeholder
           command:
-            - npm
-            - install
-            - "--prefix=/tmp/prefetch"
-            - "@karakeep/mcp@0.33.0"
+            - sh
+            - -c
+            # Run the MCP server via npx with stdin closed so it exits immediately
+            # after startup. This populates $NPM_CONFIG_CACHE/_npx/<hash>/ so that
+            # every subsequent spawn in the main container is a direct node exec
+            # (~0.5s) rather than a tarball extraction (several seconds).
+            - timeout 60 npx -y @karakeep/mcp@0.33.0 </dev/null; exit 0
           volumeMounts:
             - name: npm-cache
               mountPath: /npm-cache

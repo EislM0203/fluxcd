@@ -60,6 +60,20 @@ spec:
             - /mcp
             - --healthEndpoint
             - /healthz
+            # Stateless mode (supergateway's default for streamableHttp) spawns
+            # a fresh `npx @karakeep/mcp` child per HTTP request and never reaps
+            # them. Measured on the 1Gi pod: container_processes climbed
+            # 1 -> 9 -> 15 -> 19 -> 24 -> 33 -> 38 while working-set memory went
+            # 25MB -> 962MB in three minutes, OOMKilling the container. No memory
+            # limit fixes that. Stateful mode spawns one child per MCP *session*
+            # (only on isInitializeRequest) and kills it on transport close, so
+            # Beyla instruments a single long-lived process instead of dozens.
+            - --stateful
+            # Without this a session is only torn down when the client sends an
+            # explicit DELETE, so every Bifrost reconnect would strand another
+            # child. Bifrost re-initializes on its next request after a reap.
+            - --sessionTimeout
+            - "1800000"
           ports:
             - name: http
               containerPort: 8000
@@ -99,13 +113,10 @@ spec:
               memory: 128Mi
             limits:
               cpu: 500m
-              # supergateway runs stateless streamableHttp: it spawns a fresh
-              # npx @karakeep/mcp Node child per request, and Beyla injects into
-              # each via the Node inspector. During Bifrost's registration storm
-              # (5 retries x initialize + tools/list) these children accumulate
-              # faster than they are reaped, so working-set memory ramps ~450MB
-              # in ~90s. 512Mi OOM-looped; 1Gi gives headroom to survive one
-              # registration burst so the crashloop breaks and traffic quiets.
+              # With --stateful there is a single long-lived MCP child (~150MB)
+              # plus supergateway itself, so this is generous headroom rather
+              # than a workaround. Kept at 1Gi while the fix is validated; it can
+              # be tightened once the memory curve is confirmed flat.
               memory: 1Gi
       volumes:
         - name: npm-cache

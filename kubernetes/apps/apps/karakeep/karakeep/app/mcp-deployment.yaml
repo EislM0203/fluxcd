@@ -99,7 +99,14 @@ spec:
               memory: 128Mi
             limits:
               cpu: 500m
-              memory: 512Mi
+              # supergateway runs stateless streamableHttp: it spawns a fresh
+              # npx @karakeep/mcp Node child per request, and Beyla injects into
+              # each via the Node inspector. During Bifrost's registration storm
+              # (5 retries x initialize + tools/list) these children accumulate
+              # faster than they are reaped, so working-set memory ramps ~450MB
+              # in ~90s. 512Mi OOM-looped; 1Gi gives headroom to survive one
+              # registration burst so the crashloop breaks and traffic quiets.
+              memory: 1Gi
       volumes:
         - name: npm-cache
           emptyDir: {}

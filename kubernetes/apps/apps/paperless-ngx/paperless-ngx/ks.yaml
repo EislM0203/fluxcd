@@ -48,6 +48,33 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: paperless-mcp
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: paperless-app
+  path: ./kubernetes/apps/apps/paperless-ngx/paperless-ngx/app/mcp
+  prune: true
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  wait: true # no dependents: bifrost-app deliberately does not depend on this
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: paperless-mcp
+      namespace: apps
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: apps
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: paperless-backup
   namespace: flux-system
 spec:

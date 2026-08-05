@@ -32,7 +32,7 @@ spec:
 
     image:
       repository: ghcr.io/nvidia/openshell/gateway
-      tag: "0.0.96"
+      tag: "0.0.99"
       pullPolicy: IfNotPresent
 
     supervisor:

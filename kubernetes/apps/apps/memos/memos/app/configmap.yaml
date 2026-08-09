@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: memos-config
+data:
+  TZ: "Europe/Vienna"
+  MEMOS_MODE: "prod"
+  MEMOS_DRIVER: "sqlite" 
+  MEMOS_DATA: "/var/opt/memos"
+  MEMOS_INSTANCE_URL: "https://memos.cloud.traunseenet.com"

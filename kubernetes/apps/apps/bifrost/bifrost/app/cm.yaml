@@ -152,6 +152,19 @@ data:
               "paperless_custom_fields_delete",
               "paperless_custom_fields_assign"
             ]
+          },
+          {
+            "name": "memos",
+            "connection_type": "http",
+            "connection_string": "http://memos-web.apps.svc.cluster.local:5230/mcp",
+            "auth_type": "headers",
+            "headers": {
+              "Authorization": "env.MEMOS_AUTH_HEADER"
+            },
+            "is_ping_available": false,
+            "is_code_mode_client": true,
+            "_comment": "In-process MCP endpoint shipped with Memos itself (stateless, tools-only, POST /mcp since v0.30) - there is no separate memos-mcp deployment, so bifrost talks straight to the app Service. Reuses the public API's auth, so MEMOS_AUTH_HEADER must be 'Bearer <PAT>'. A Memos PAT carries full account scope and cannot be narrowed, so '*' also grants memo/attachment deletion; tighten to an allow-list like paperless above once the service-prefixed tool names can be enumerated from a running instance.",
+            "tools_to_execute": ["*"]
           }
         ]
       }

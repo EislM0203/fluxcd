@@ -1,0 +1,20 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: memos
+spec:
+  parentRefs:
+    - name: traefik
+      namespace: networking
+      sectionName: websecure-cloud
+  hostnames:
+    - memos.cloud.traunseenet.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: memos-web
+          port: 5230

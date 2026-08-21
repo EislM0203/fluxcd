@@ -10,31 +10,28 @@ metadata:
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: longhorn-storage
-  # Fresh install: no restic snapshot exists yet, so the PVC starts empty.
-  # To RESTORE from a volsync backup later, uncomment the dataSourceRef below
-  # together with the ReplicationDestination block, then reconcile.
-  # dataSourceRef:
-  #   kind: ReplicationDestination
-  #   apiGroup: volsync.backube
-  #   name: memos-restore
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: memos-restore
   resources:
     requests:
       storage: 5Gi
-# ---
-# # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
-# apiVersion: volsync.backube/v1alpha1
-# kind: ReplicationDestination
-# metadata:
-#   name: memos-restore
-# spec:
-#   trigger:
-#     manual: restore-once
-#   restic:
-#     repository: restic-memos
-#     storageClassName: longhorn-storage
-#     accessModes: ["ReadWriteOnce"]
-#     copyMethod: Snapshot
-#     capacity: 5Gi
-#     enableFileDeletion: false
-#     cleanupCachePVC: false
-#     cleanupTempPVC: false
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: memos-restore
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: restic-memos
+    storageClassName: longhorn-storage
+    accessModes: ["ReadWriteOnce"]
+    copyMethod: Snapshot
+    capacity: 5Gi
+    enableFileDeletion: false
+    cleanupCachePVC: false
+    cleanupTempPVC: false

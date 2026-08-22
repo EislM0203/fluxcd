@@ -54,7 +54,7 @@ variable "vm_gateway" {
 variable "vm_dns_servers" {
   description = "List of DNS servers for the VMs"
   type        = list(string)
-  default     = ["10.0.0.102", "8.8.8.8", "1.1.1.1"]
+  default     = ["10.0.0.99"]
 }
 
 variable "start_vm_on_boot" {

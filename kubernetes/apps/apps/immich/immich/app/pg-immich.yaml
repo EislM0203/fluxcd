@@ -36,13 +36,13 @@ spec:
         passwordSecret:
           name: immich-pg-app
   bootstrap:
-    # initdb:
-    #  database: immich
-    #  owner: immich
-    recovery:
-      source: immich-pg
+    initdb:
       database: immich
       owner: immich
+    # recovery:
+    #   source: immich-pg
+    #   database: immich
+    #   owner: immich
   storage:
     pvcTemplate:
       accessModes:

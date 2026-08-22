@@ -96,7 +96,7 @@ metadata:
   labels:
     app: *name
 spec:
-  storageClassName: tns-csi-nvmeof-retain
+  storageClassName: longhorn-storage
   accessModes:
     - "ReadWriteOnce"
   resources:

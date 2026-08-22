@@ -15,7 +15,7 @@ spec:
   type: LoadBalancer
   selector:
     app.kubernetes.io/name: prometheus
-    operator.prometheus.io/name: prometheus-stack-prometheus
+    operator.prometheus.io/name: prometheus-stack-kube-prom
   ports:
     - name: http
       port: 9090

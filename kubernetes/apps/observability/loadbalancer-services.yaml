@@ -9,10 +9,10 @@ metadata:
   namespace: observability
   annotations:
     kube-vip.io/loadbalancerHostname: prometheus-obs
+    kube-vip.io/loadbalancerIPs: "10.0.0.41"
     external-dns.alpha.kubernetes.io/hostname: prometheus-obs.internal
 spec:
   type: LoadBalancer
-  loadBalancerIP: "0.0.0.0"
   selector:
     app.kubernetes.io/name: prometheus
     operator.prometheus.io/name: prometheus-stack-prometheus
@@ -29,10 +29,10 @@ metadata:
   namespace: observability
   annotations:
     kube-vip.io/loadbalancerHostname: loki-obs
+    kube-vip.io/loadbalancerIPs: "10.0.0.42"
     external-dns.alpha.kubernetes.io/hostname: loki-obs.internal
 spec:
   type: LoadBalancer
-  loadBalancerIP: "0.0.0.0"
   selector:
     app.kubernetes.io/name: loki
     app.kubernetes.io/instance: grafana-loki
@@ -49,10 +49,10 @@ metadata:
   namespace: observability
   annotations:
     kube-vip.io/loadbalancerHostname: otelcol-obs
+    kube-vip.io/loadbalancerIPs: "10.0.0.43"
     external-dns.alpha.kubernetes.io/hostname: otelcol-obs.internal
 spec:
   type: LoadBalancer
-  loadBalancerIP: "0.0.0.0"
   selector:
     app.kubernetes.io/name: opentelemetry-collector
     app.kubernetes.io/instance: observability.opentelemetry

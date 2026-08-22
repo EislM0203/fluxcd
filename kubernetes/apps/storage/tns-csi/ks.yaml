@@ -7,7 +7,7 @@ metadata:
   namespace: flux-system
 spec:
   path: ./kubernetes/apps/storage/tns-csi/app
-  suspend: false
+  suspend: true
   prune: true
   wait: true
   sourceRef:
@@ -31,7 +31,7 @@ spec:
     - name: prometheus-app
     - name: grafana-operators
   path: ./kubernetes/apps/storage/tns-csi/obs
-  suspend: false
+  suspend: true
   prune: true
   wait: true
   sourceRef:

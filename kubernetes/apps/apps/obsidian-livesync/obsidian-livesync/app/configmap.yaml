@@ -15,6 +15,12 @@ data:
     [couchdb]
     single_node = true
     max_document_size = 50000000
+    ; Pinned on purpose. CouchDB generates a server uuid on first start and
+    ; appends it to whichever local.d file it can write, which here is a
+    ; tombstone: local.d is an emptyDir, so the uuid would change on every pod
+    ; restart. Replication checkpoints are keyed on the target uuid, so LiveSync
+    ; would stop recognising the server and re-scan the whole vault each time.
+    uuid = 585ef0ee31e54b81bed0817de43cce69
 
     [chttpd]
     require_valid_user = true

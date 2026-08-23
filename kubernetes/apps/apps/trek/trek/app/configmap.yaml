@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trek-config
+  labels:
+    app: trek
+data:
+  NODE_ENV: production
+  PORT: "3000"
+  TZ: Europe/Vienna
+  LOG_LEVEL: info
+
+  APP_URL: https://trek.cloud.traunseenet.com
+  ALLOWED_ORIGINS: https://trek.cloud.traunseenet.com
+  FORCE_HTTPS: "true"
+  TRUST_PROXY: "1"
+  HSTS_INCLUDE_SUBDOMAINS: "false"
+
+  # Required for the Immich integration: TREK blocks RFC-1918 targets by default,
+  # and Immich lives in this cluster at immich-server.apps.svc.cluster.local:2283.
+  # Without this the integration fails silently. Loopback and link-local stay
+  # blocked regardless.
+  ALLOW_INTERNAL_NETWORK: "true"
+
+  # --- SSO (PocketID) -- deliberately disabled for now -----------------------
+  # TREK only enables OIDC when OIDC_ISSUER and OIDC_CLIENT_ID are both set, so
+  # leaving these commented keeps password login active. To turn SSO on: register
+  # the client in PocketID first (redirect URI must equal APP_URL above), fill
+  # OIDC_CLIENT_SECRET in secret.yaml, then uncomment. PocketID serves discovery
+  # at the standard path, so OIDC_DISCOVERY_URL is not needed.
+  #
+  # OIDC_ISSUER: https://pocketid.cloud.traunseenet.com
+  # OIDC_CLIENT_ID: trek
+  # OIDC_DISPLAY_NAME: PocketID
+  # OIDC_SCOPE: openid email profile groups
+  # OIDC_ADMIN_CLAIM: groups
+  # OIDC_ADMIN_VALUE: app-trek-admins
+  # OIDC_ONLY: "false"

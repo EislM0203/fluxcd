@@ -167,6 +167,19 @@ data:
             "tools_to_execute": ["*"]
           },
           {
+            "name": "trek",
+            "connection_type": "http",
+            "connection_string": "http://trek.apps.svc.cluster.local:3000/mcp",
+            "auth_type": "headers",
+            "headers": {
+              "Authorization": "env.TREK_AUTH_HEADER"
+            },
+            "is_ping_available": false,
+            "is_code_mode_client": true,
+            "_comment": "In-process MCP endpoint shipped with TREK itself (POST /mcp on the app Service) - there is no separate trek-mcp deployment. Two prerequisites: an admin must switch on the MCP addon under Admin Panel > Addons (until then /mcp returns 404), and TREK_AUTH_HEADER must be 'Bearer trek_<token>' from Settings > Integrations > MCP. Upstream prefers OAuth 2.1 ('trekoa_' tokens, 1h TTL with rolling refresh), but Bifrost sends one fixed header and cannot run the refresh flow, so the deprecated static token is the only workable option here - it is slated for removal upstream and emits deprecation warnings into tool results. A static token also carries full account scope with no per-tool restriction, so '*' includes delete_trip/delete_place/delete_transport/delete_reservation; sessions are scoped to the token owner, so the blast radius is that one user's trips. Narrow to an allow-list like paperless above once the tool names can be enumerated from a running instance.",
+            "tools_to_execute": ["*"]
+          },
+          {
             "name": "fin",
             "connection_type": "http",
             "connection_string": "http://fin-mcp.apps.svc.cluster.local:8000/mcp",

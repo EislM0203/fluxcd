@@ -37,6 +37,21 @@ data:
             description: "healthcheck failed"
             failure-threshold: 5
             send-on-resolved: true
+      - name: TREK
+        # /api/health is unauthenticated and is what upstream's own container
+        # healthcheck polls. SQLite means the check also fails if the data PVC
+        # goes read-only, which a bare TCP probe would miss.
+        url: "http://trek.apps.svc.cluster.local:3000/api/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 700"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
       - name: Jellyfin
         url: "http://jellyfin.apps.svc.cluster.local:8096/health"
         interval: 1m

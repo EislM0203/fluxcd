@@ -1,0 +1,21 @@
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: trek-backup
+spec:
+  sourcePVC: trek-data
+  trigger:
+    schedule: "0 */6 * * *"
+  restic:
+    pruneIntervalDays: 1
+    repository: restic-trek
+    retain:
+      hourly: 5
+      daily: 4
+      weekly: 3
+      monthly: 2
+      yearly: 1
+    copyMethod: Snapshot
+    storageClassName: longhorn-storage
+    unlock: "something"

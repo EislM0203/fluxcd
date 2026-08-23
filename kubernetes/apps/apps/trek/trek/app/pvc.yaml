@@ -1,0 +1,34 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: trek
+  name: trek-data
+  annotations:
+    numberOfReplicas: '1'
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: longhorn-storage
+  resources:
+    requests:
+      storage: 5Gi
+# One volume rather than upstream's data/uploads split, mounted twice with
+# subPath in deployment.yaml.
+#
+# The split isolates a full-disk failure -- uploads filling up cannot wedge the
+# SQLite writer. The cost is that two PVCs mean two restic repositories on two
+# independent snapshot timelines (VolSync prunes per repository, so they cannot
+# share one without fighting over the prune lock). A restore then hands back a
+# database and an uploads directory captured minutes apart: anything uploaded in
+# that window returns as a broken reference in a trip or an orphaned file, and
+# you find out during the restore.
+#
+# A full volume is preventable -- size generously and alert on Longhorn capacity,
+# which Prometheus already scrapes. A skewed restore is not detectable until it
+# matters, so consistency wins here.
+#
+# NOTE: no dataSourceRef, matching obsidian-livesync. Pointing a PVC at a
+# ReplicationDestination makes it a VolSync volume-populator target, so it only
+# binds once that reports a latestImage -- on a first deploy the restic repo is
+# empty, the PVC stays Pending forever and the Deployment never starts.

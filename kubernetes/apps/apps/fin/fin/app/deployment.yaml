@@ -120,3 +120,68 @@ spec:
             limits:
               cpu: 250m
               memory: 256Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fin-mcp
+  labels:
+    app: fin
+    component: mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fin
+      component: mcp
+  template:
+    metadata:
+      labels:
+        app: fin
+        component: mcp
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: mcp
+          image: harbor.cloud.traunseenet.com/library/fin-mcp:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: FIN_API_URL
+              value: http://fin-api.apps.svc.cluster.local:8000
+            - name: FIN_MCP_TRANSPORT
+              value: streamable-http
+            - name: FIN_MCP_HOST
+              value: 0.0.0.0
+            - name: FIN_MCP_PORT
+              value: "8000"
+            - name: FIN_MCP_PATH
+              value: /mcp
+            - name: FIN_MCP_ALLOW_WRITES
+              value: "1"
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi

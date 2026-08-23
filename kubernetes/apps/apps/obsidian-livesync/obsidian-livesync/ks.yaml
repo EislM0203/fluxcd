@@ -3,7 +3,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: fin-app
+  name: obsidian-livesync-app
   namespace: flux-system
 spec:
   dependsOn:
@@ -12,7 +12,7 @@ spec:
     - name: longhorn-addons
     - name: volsync
     - name: harbor-app
-  path: ./kubernetes/apps/apps/fin/fin/app
+  path: ./kubernetes/apps/apps/obsidian-livesync/obsidian-livesync/app
   prune: true
   wait: true
   suspend: false
@@ -23,15 +23,7 @@ spec:
   healthChecks:
     - apiVersion: apps/v1
       kind: Deployment
-      name: fin-api
-      namespace: apps
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: fin-web
-      namespace: apps
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: fin-mcp
+      name: obsidian-livesync
       namespace: apps
   interval: 15m
   retryInterval: 15m
@@ -42,12 +34,13 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: fin-backup
+  name: obsidian-livesync-backup
   namespace: flux-system
 spec:
   dependsOn:
-    - name: fin-app
-  path: ./kubernetes/apps/apps/fin/fin/backup
+    - name: obsidian-livesync-app
+    - name: volsync
+  path: ./kubernetes/apps/apps/obsidian-livesync/obsidian-livesync/backup
   prune: true
   suspend: false
   sourceRef:

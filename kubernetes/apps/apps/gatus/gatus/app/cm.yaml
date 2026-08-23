@@ -23,6 +23,20 @@ data:
       ###########################
       # Apps
       ###########################
+      - name: Homepage
+        # Server-side renders every tile on request, so it is meaningfully
+        # slower than a bare health endpoint -- 1s rather than the usual 500ms.
+        url: "http://homepage.apps.svc.cluster.local:3000"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 1000"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
       - name: Jellyfin
         url: "http://jellyfin.apps.svc.cluster.local:8096/health"
         interval: 1m
@@ -54,6 +68,21 @@ data:
         conditions:
           - "[STATUS] == 200"
           - "[BODY].healthy == true"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      - name: Obsidian LiveSync
+        # /_up is the only unauthenticated route (require_valid_user_except_for_up),
+        # and it reports the node's own health rather than just TCP reachability.
+        url: "http://obsidian-livesync.apps.svc.cluster.local:5984/_up"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].status == ok"
           - "[RESPONSE_TIME] < 500"
         alerts:
           - type: "ntfy"
@@ -180,9 +209,69 @@ data:
             description: "healthcheck failed"
             failure-threshold: 5
             send-on-resolved: true
+      - name: oCIS
+        # End-to-end through nginx-proxy-manager, i.e. what a user actually
+        # hits. Catches both oCIS being down and NPM/openresty being stopped.
+        url: "https://ocis.local.traunseenet.com"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 1000"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      - name: oCIS Certificate
+        # Deliberately hits the LXC directly rather than the hostname: NPM
+        # terminates TLS with its own Let's Encrypt cert, so checking
+        # ocis.local.traunseenet.com would watch the wrong certificate and never
+        # see this expire. oCIS generates its own self-signed certs with exactly
+        # one year validity and silently breaks login (HTTP 500, idp cannot bind
+        # to idm over LDAPS) the moment they lapse -- insecure skips
+        # verification while Gatus still reads the presented chain, so the
+        # warning arrives 10 days before rather than on the morning it breaks.
+        url: "https://10.0.0.114:9200/"
+        interval: 1h
+        client:
+          insecure: true
+        conditions:
+          - "[STATUS] == 200"
+          - "[CERTIFICATE_EXPIRATION] > 240h"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "24h"
+            description: "oCIS TLS certificate expires in under 10 days"
+            failure-threshold: 2
+            send-on-resolved: true
       ###########################
       # Networking
       ###########################
+      - name: Technitium DNS
+        # A real DNS query against the server itself (LXC at 10.0.0.99), not the
+        # admin UI -- technitium.local.traunseenet.com resolves to NPM on
+        # 10.0.0.103, so an HTTP check there would pass while DNS was down.
+        # Querying the zone apex proves Technitium is answering AND is
+        # authoritative for traunseenet.com without depending on any individual
+        # record: an apex with no A record still returns NOERROR, while a missing
+        # or broken zone returns NXDOMAIN or REFUSED and fails the check.
+        # external-dns writes every cluster record here over RFC2136, so this
+        # failing means new ingress hostnames stop resolving cluster-wide.
+        url: "10.0.0.99"
+        interval: 1m
+        dns:
+          query-name: "traunseenet.com"
+          query-type: "A"
+        conditions:
+          - "[DNS_RCODE] == NOERROR"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
       - name: Traefik
         url: "http://traefik-api.networking.svc.cluster.local:8080/ping"
         interval: 1m

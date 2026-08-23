@@ -1,0 +1,40 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: obsidian-livesync-config
+  labels:
+    app: obsidian-livesync
+data:
+  # CouchDB settings required by the Obsidian Self-hosted LiveSync plugin.
+  # Admin credentials are NOT set here -- the container entrypoint writes them
+  # into docker.ini from COUCHDB_USER / COUCHDB_PASSWORD. This file is mounted
+  # with subPath so the entrypoint can still create docker.ini beside it; a
+  # whole-directory ConfigMap mount would be read-only and break startup.
+  local.ini: |
+    [couchdb]
+    single_node = true
+    max_document_size = 50000000
+
+    [chttpd]
+    require_valid_user = true
+    ; Still require auth everywhere EXCEPT /_up, so health checks (Gatus and the
+    ; kubelet probes) work without credentials while the rest of the API stays
+    ; locked down.
+    require_valid_user_except_for_up = true
+    max_http_request_size = 4294967296
+    ; CouchDB 3.x reads the CORS toggle from [chttpd], not [httpd].
+    enable_cors = true
+
+    [chttpd_auth]
+    require_valid_user = true
+
+    [httpd]
+    WWW-Authenticate = Basic realm="couchdb"
+
+    [cors]
+    origins = app://obsidian.md,capacitor://localhost,http://localhost
+    credentials = true
+    headers = accept, authorization, content-type, origin, referer
+    methods = GET, PUT, POST, HEAD, DELETE
+    max_age = 3600

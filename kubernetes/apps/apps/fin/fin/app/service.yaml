@@ -34,3 +34,21 @@ spec:
       port: 80
       targetPort: http
       protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fin-mcp
+  labels:
+    app: fin
+    component: mcp
+spec:
+  type: ClusterIP
+  selector:
+    app: fin
+    component: mcp
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP

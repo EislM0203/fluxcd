@@ -29,4 +29,4 @@ data:
   OIDC_SCOPE: openid email profile groups
   OIDC_ADMIN_CLAIM: groups
   OIDC_ADMIN_VALUE: trek_admins
-  OIDC_ONLY: "false"
+  OIDC_ONLY: "true"

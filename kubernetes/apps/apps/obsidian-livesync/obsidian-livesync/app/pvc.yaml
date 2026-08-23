@@ -10,22 +10,28 @@ metadata:
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: longhorn-storage
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: obsidian-livesync-restore
   resources:
     requests:
       storage: 5Gi
-# NOTE: unlike the other apps, this PVC intentionally has no
-#   dataSourceRef:
-#     kind: ReplicationDestination
-#     apiGroup: volsync.backube
-#     name: obsidian-livesync-restore
-#
-# That field makes the PVC a VolSync volume-populator target, so it only binds
-# once the ReplicationDestination reports a latestImage. On a first deploy the
-# restic repo is empty, so the PVC would stay Pending forever and the Deployment
-# would never start.
-#
-# Once the restic secret is filled in and the first ReplicationSource backup has
-# completed, add the dataSourceRef above together with a ReplicationDestination
-# (copy the shape from memos) to get the same restore-on-PVC-delete behaviour.
-# Remember: restoring replays the RD's frozen latestImage, so bump the trigger
-# before relying on it.
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: obsidian-livesync-restore
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: restic-obsidian-livesync
+    storageClassName: longhorn-storage
+    accessModes: ["ReadWriteOnce"]
+    copyMethod: Snapshot
+    capacity: 5Gi
+    enableFileDeletion: false
+    cleanupCachePVC: false
+    cleanupTempPVC: false

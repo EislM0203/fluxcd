@@ -22,6 +22,27 @@ spec:
         # root-owned otherwise and CouchDB cannot write its data dir.
         fsGroup: 5984
         fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        # local.ini cannot be mounted into /opt/couchdb/etc/local.d directly.
+        # The CouchDB entrypoint runs
+        #   find /opt/couchdb ! \( -user couchdb -group couchdb \) -exec chown -f couchdb:couchdb {} +
+        # and a ConfigMap mount is read-only and root-owned, so that chown fails,
+        # find exits non-zero, and `set -e` kills the entrypoint with status 1 and
+        # no output at all. Copying the file into a writable emptyDir instead lets
+        # the entrypoint chown it and drop its own docker.ini beside it.
+        - name: seed-config
+          image: harbor.cloud.traunseenet.com/docker.io/library/couchdb:3.5@sha256:b80216f643e99d31df318c740dbc556ac08b56444030ed1d5e6d7b0d4e625213
+          command:
+            - sh
+            - -c
+            - |
+              cp /tmp/config/local.ini /opt/couchdb/etc/local.d/local.ini
+              chown 5984:5984 /opt/couchdb/etc/local.d/local.ini
+          volumeMounts:
+            - name: config-src
+              mountPath: /tmp/config
+            - name: config
+              mountPath: /opt/couchdb/etc/local.d
       containers:
         - name: couchdb
           image: harbor.cloud.traunseenet.com/docker.io/library/couchdb:3.5@sha256:b80216f643e99d31df318c740dbc556ac08b56444030ed1d5e6d7b0d4e625213
@@ -59,12 +80,13 @@ spec:
             - name: data
               mountPath: /opt/couchdb/data
             - name: config
-              mountPath: /opt/couchdb/etc/local.d/local.ini
-              subPath: local.ini
+              mountPath: /opt/couchdb/etc/local.d
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: obsidian-livesync-data
-        - name: config
+        - name: config-src
           configMap:
             name: obsidian-livesync-config
+        - name: config
+          emptyDir: {}

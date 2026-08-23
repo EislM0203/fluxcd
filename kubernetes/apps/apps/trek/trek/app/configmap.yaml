@@ -23,17 +23,10 @@ data:
   # blocked regardless.
   ALLOW_INTERNAL_NETWORK: "true"
 
-  # --- SSO (PocketID) -- deliberately disabled for now -----------------------
-  # TREK only enables OIDC when OIDC_ISSUER and OIDC_CLIENT_ID are both set, so
-  # leaving these commented keeps password login active. To turn SSO on: register
-  # the client in PocketID first (redirect URI must equal APP_URL above), fill
-  # OIDC_CLIENT_SECRET in secret.yaml, then uncomment. PocketID serves discovery
-  # at the standard path, so OIDC_DISCOVERY_URL is not needed.
-  #
-  # OIDC_ISSUER: https://pocketid.cloud.traunseenet.com
-  # OIDC_CLIENT_ID: trek
-  # OIDC_DISPLAY_NAME: PocketID
-  # OIDC_SCOPE: openid email profile groups
-  # OIDC_ADMIN_CLAIM: groups
-  # OIDC_ADMIN_VALUE: app-trek-admins
-  # OIDC_ONLY: "false"
+  OIDC_ISSUER: https://pocketid.cloud.traunseenet.com
+  OIDC_CLIENT_ID: 146d9ab6-8762-4087-91ce-26135cff777a
+  OIDC_DISPLAY_NAME: PocketID
+  OIDC_SCOPE: openid email profile groups
+  OIDC_ADMIN_CLAIM: groups
+  OIDC_ADMIN_VALUE: trek_admins
+  OIDC_ONLY: "false"

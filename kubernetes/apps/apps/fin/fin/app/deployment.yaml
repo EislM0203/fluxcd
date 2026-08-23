@@ -164,6 +164,10 @@ spec:
               value: /mcp
             - name: FIN_MCP_ALLOW_WRITES
               value: "1"
+            # FastMCP answers 421 to any Host it was not told to trust, and
+            # bifrost reaches this through the Service DNS name.
+            - name: FIN_MCP_ALLOWED_HOSTS
+              value: "fin-mcp.apps.svc.cluster.local:*,fin-mcp:*"
           livenessProbe:
             tcpSocket:
               port: http

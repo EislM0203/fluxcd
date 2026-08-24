@@ -13,7 +13,22 @@ data:
 
   APP_URL: https://trek.cloud.traunseenet.com
   ALLOWED_ORIGINS: https://trek.cloud.traunseenet.com
-  FORCE_HTTPS: "true"
+  # FORCE_HTTPS is deliberately NOT set. Its middleware 301-redirects any request
+  # without X-Forwarded-Proto: https, exempting only /api/health. In-cluster
+  # callers hit the Service directly over plain HTTP and never pass through
+  # Traefik, so they get redirected to https:// on port 3000 -- a port that only
+  # speaks plain HTTP. The TLS handshake never completes and the caller hangs
+  # until its deadline. That is what broke Bifrost's MCP client ("context
+  # deadline exceeded" on POST /mcp) while the probes stayed green, /api/health
+  # being the one exempted path.
+  #
+  # Nothing is lost: Traefik redirects HTTP->HTTPS at the edge, and the app sets
+  # hstsActive = FORCE_HTTPS || NODE_ENV === "production", so HSTS and secure
+  # cookies stay on via NODE_ENV above. Upstream documents this as the expected
+  # setup behind Traefik/Caddy/Cloudflare Tunnel.
+  #
+  # TRUST_PROXY stays -- it is what makes the app read the real client IP and
+  # protocol from Traefik's X-Forwarded-* headers.
   TRUST_PROXY: "1"
   HSTS_INCLUDE_SUBDOMAINS: "false"
 

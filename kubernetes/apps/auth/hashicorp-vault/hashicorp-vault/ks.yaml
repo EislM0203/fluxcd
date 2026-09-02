@@ -1,0 +1,74 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: hashicorp-vault-app
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: traefik-base
+    - name: longhorn-addons
+    - name: harbor-app
+  path: ./kubernetes/apps/auth/hashicorp-vault/hashicorp-vault/app
+  prune: true
+  # NOT wait/healthChecks: a sealed Vault reports NotReady, and Vault is sealed
+  # on every pod restart until the postStart unseal hook runs. Waiting here
+  # would flap this Kustomization on every restart and block a cold bootstrap.
+  wait: false
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: auth
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: hashicorp-vault-store
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: external-secrets-app
+    - name: hashicorp-vault-app
+  path: ./kubernetes/apps/auth/hashicorp-vault/hashicorp-vault/store
+  prune: true
+  # the stores only turn Ready once Vault is initialized, unsealed and has the
+  # kubernetes auth role configured — don't let that block reconciliation
+  wait: false
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: auth
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: hashicorp-vault-backup
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: hashicorp-vault-app
+    - name: volsync
+  path: ./kubernetes/apps/auth/hashicorp-vault/hashicorp-vault/backup
+  prune: true
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: auth

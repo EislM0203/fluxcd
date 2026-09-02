@@ -1,0 +1,51 @@
+# Auth here is Vault's Kubernetes auth method, NOT a static token: ESO exchanges
+# its ServiceAccount JWT for a short-lived Vault token on every request, so
+# nothing expires and no Vault token has to live in git. It does require the
+# one-time `vault auth enable kubernetes` setup from BOOTSTRAP.md — until that
+# is done these stores report NotReady, which is harmless.
+---
+# in-namespace store: ExternalSecrets in `auth` reference this one
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: vault-backend
+spec:
+  provider:
+    vault:
+      server: http://hashicorp-vault-internal:8200
+      path: secret
+      version: v2
+      auth:
+        kubernetes:
+          mountPath: kubernetes
+          role: external-secrets
+          serviceAccountRef:
+            name: external-secrets
+---
+# cluster-wide store: ExternalSecrets in apps/, storage/, networking/, ...
+# reference this one with `kind: ClusterSecretStore`
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: vault-backend
+spec:
+  provider:
+    vault:
+      server: http://hashicorp-vault-internal.auth.svc.cluster.local:8200
+      path: secret
+      version: v2
+      auth:
+        kubernetes:
+          mountPath: kubernetes
+          role: external-secrets
+          serviceAccountRef:
+            name: external-secrets
+            namespace: auth
+# Fallback if you ever need static-token auth instead (e.g. from outside the
+# cluster). Note ESO does NOT renew such tokens — a periodic token dies at the
+# end of its period and every ExternalSecret stops refreshing:
+#      auth:
+#        tokenSecretRef:
+#          name: vault-token
+#          key: token
+#          namespace: auth   # ClusterSecretStore only

@@ -16,3 +16,5 @@ resources:
   - ./jaeger.yaml
   - ./grafana.yaml
   - ./prometheus.yaml
+  - ./external-secrets.yaml
+  - ./hashicorp.yaml

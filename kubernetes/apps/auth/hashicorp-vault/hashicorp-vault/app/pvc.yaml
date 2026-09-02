@@ -1,0 +1,41 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: hashicorp-vault
+  name: hashicorp-vault-data
+  annotations:
+    numberOfReplicas: '2'
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: longhorn-storage
+  # Disaster recovery only: uncomment together with the ReplicationDestination
+  # below to restore the Vault storage from restic. Leave it out on a first
+  # deploy — a dataSourceRef with no restic snapshot leaves the PVC Pending.
+  # dataSourceRef:
+  #   kind: ReplicationDestination
+  #   apiGroup: volsync.backube
+  #   name: hashicorp-vault-restore
+  resources:
+    requests:
+      storage: 4Gi
+status: {}
+# ---
+# # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
+# apiVersion: volsync.backube/v1alpha1
+# kind: ReplicationDestination
+# metadata:
+#   name: hashicorp-vault-restore
+# spec:
+#   trigger:
+#     manual: restore-once
+#   restic:
+#     repository: restic-hashicorp-vault
+#     storageClassName: longhorn-storage
+#     accessModes: ["ReadWriteOnce"]
+#     copyMethod: Snapshot
+#     capacity: 4Gi
+#     enableFileDeletion: false
+#     cleanupCachePVC: false
+#     cleanupTempPVC: false

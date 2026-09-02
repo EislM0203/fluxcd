@@ -1,0 +1,67 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: hashicorp-vault
+spec:
+  interval: 30m
+  timeout: 10m
+  chart:
+    spec:
+      chart: vault
+      version: 0.34.1
+      sourceRef:
+        kind: HelmRepository
+        name: hashicorp
+        namespace: flux-system
+  maxHistory: 2
+  install:
+    # a fresh Vault is uninitialized -> sealed -> readiness probe fails forever.
+    # Without disableWait the very first install would time out and remediate
+    # before you ever get the chance to run `vault operator init`.
+    disableWait: true
+    remediation:
+      retries: 3
+  upgrade:
+    # same reason: Vault is NotReady during every seal/unseal window
+    disableWait: true
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    # the agent injector is the alternative to external-secrets; we use ESO
+    injector:
+      enabled: false
+    server:
+      image:
+        repository: harbor.cloud.traunseenet.com/docker.io/hashicorp/vault
+      # the chart's own PVC is replaced by pvc.yaml so volsync can back it up
+      dataStorage:
+        enabled: false
+      # auto-unseal: key comes from the SOPS-encrypted vault-token secret.
+      # `|| true` is deliberate — a failing postStart hook makes the kubelet
+      # kill the container, which would crash-loop an uninitialized Vault and
+      # make it impossible to run `vault operator init` in the first place.
+      postStart:
+        - /bin/sh
+        - -c
+        - sleep 10; vault operator unseal "$VAULT_AUTO_UNSEAL_KEY_0" || true
+      extraSecretEnvironmentVars:
+        - envName: VAULT_AUTO_UNSEAL_KEY_0
+          secretName: vault-token
+          secretKey: VAULT_AUTO_UNSEAL_KEY_0
+      volumes:
+        - name: &data-pvc vault-data
+          persistentVolumeClaim:
+            claimName: hashicorp-vault-data
+      volumeMounts:
+        - name: *data-pvc
+          mountPath: /vault/data
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 512Mi

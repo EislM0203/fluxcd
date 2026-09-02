@@ -21,7 +21,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: bifrost
-          image: harbor.cloud.traunseenet.com/docker.io/maximhq/bifrost:v1.6.9@sha256:fafe3d2029af07c889404f561839f3ac6ff95c1848f679679d219c0dc7f72de8
+          image: harbor.cloud.traunseenet.com/docker.io/maximhq/bifrost:v1.6.11@sha256:ef8e686b3588884066ec3d0e57f3fc15136b11047ad94678adefe5a9573539af
           ports:
             - name: http
               containerPort: 8080

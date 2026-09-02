@@ -5,3 +5,6 @@
 **/inventory.ini
 lighthouse/credentials-*.yml
 compose/**
+# sops leaves plaintext decrypted copies behind; never commit them
+.decrypted~*
+**/.decrypted~*

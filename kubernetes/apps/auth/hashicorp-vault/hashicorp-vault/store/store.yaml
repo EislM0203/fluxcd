@@ -42,8 +42,10 @@ spec:
             name: external-secrets
             namespace: auth
 # Fallback if you ever need static-token auth instead (e.g. from outside the
-# cluster). Note ESO does NOT renew such tokens — a periodic token dies at the
-# end of its period and every ExternalSecret stops refreshing:
+# cluster). Requires adding a `token` key to the vault-token secret holding a
+# Vault token bound to the external-secrets policy. Note ESO does NOT renew such
+# tokens — a periodic token dies at the end of its period and every
+# ExternalSecret stops refreshing:
 #      auth:
 #        tokenSecretRef:
 #          name: vault-token

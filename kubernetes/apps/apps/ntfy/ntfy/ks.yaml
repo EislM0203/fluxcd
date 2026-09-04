@@ -9,6 +9,8 @@ spec:
   dependsOn:
     - name: traefik-base
     - name: harbor-app
+    - name: hashicorp-vault-app
+    - name: external-secrets-app
   path: ./kubernetes/apps/apps/ntfy/ntfy/app
   prune: true
   wait: true

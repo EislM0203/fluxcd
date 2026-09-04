@@ -18,6 +18,8 @@ spec:
         envFrom:
         - configMapRef:
             name: ntfy
+        - secretRef:
+            name: ntfy-secrets
         resources:
           limits:
             memory: "128Mi"

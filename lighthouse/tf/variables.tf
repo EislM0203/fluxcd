@@ -71,7 +71,7 @@ variable "pangolin_admin_password" {
 variable "image_pangolin" {
   description = "Pangolin Docker image tag"
   type        = string
-  default     = "1.20.0"
+  default     = "1.22.2"
 }
 
 variable "pocketid_base_url" {
@@ -93,19 +93,19 @@ variable "pocketid_client_secret" {
 variable "image_gerbil" {
   description = "Gerbil Docker image tag"
   type        = string
-  default     = "1.4.3"
+  default     = "1.5.1"
 }
 
 variable "image_traefik" {
   description = "Traefik Docker image tag"
   type        = string
-  default     = "v3.7.7"
+  default     = "v3.7.12"
 }
 
 variable "image_crowdsec" {
   description = "CrowdSec Docker image tag"
   type        = string
-  default     = "v1.7.8"
+  default     = "v1.8.1"
 }
 
 variable "crowdsec_console_enroll_key" {

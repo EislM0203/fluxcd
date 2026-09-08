@@ -2,7 +2,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - cm.yaml
   - secret.yaml
   - pvc.yaml
   - valkey.yaml
@@ -10,3 +9,27 @@ resources:
   - service.yaml
   - httproute.yaml
   - servicemonitor.yaml
+
+# Both ConfigMaps are GENERATED, not plain manifests, so their names carry a
+# content hash (bifrost-config-<hash>). That hash is what makes config changes
+# actually take effect: kustomize rewrites the Deployment's references to the
+# hashed names, so editing config.json changes the pod template and Kubernetes
+# rolls the Deployment on its own.
+#
+# Do not switch these to plain ConfigMaps or set disableNameSuffixHash. With a
+# static name the pod template is byte-identical after an edit, so nothing rolls
+# - Flux still reports ReconciliationSucceeded and health checks still pass while
+# bifrost quietly keeps serving the old config. config.json is additionally
+# mounted with subPath, and subPath mounts never receive ConfigMap updates, so
+# not even the file inside the running container refreshes. That combination
+# silently swallowed the semantic_cache rollout on 2026-09-08.
+configMapGenerator:
+  - name: bifrost-env
+    literals:
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8080
+      - LOG_LEVEL=info
+      - LOG_STYLE=json
+  - name: bifrost-config
+    files:
+      - config.json

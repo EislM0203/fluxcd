@@ -1,0 +1,202 @@
+{
+  "$schema": "https://www.getbifrost.ai/schema",
+  "encryption_key": "env.BIFROST_ENCRYPTION_KEY",
+  "source_of_truth": "split",
+  "client": {
+    "drop_excess_requests": false,
+    "enable_logging": true,
+    "log_retention_days": 30,
+    "prometheus_labels": ["cluster=fluxcd"],
+    "allowed_origins": ["https://bifrost.cloud.traunseenet.com"]
+  },
+  "providers": {
+    "llamaswap": {
+      "custom_provider_config": {
+        "base_provider_type": "openai",
+        "is_key_less": true
+      },
+      "network_config": {
+        "base_url": "http://10.0.0.59:9000",
+        "allow_private_network": true,
+        "default_request_timeout_in_seconds": 300,
+        "stream_idle_timeout_in_seconds": 300,
+        "max_retries": 1
+      }
+    }
+  },
+  "vector_store": {
+    "enabled": true,
+    "type": "redis",
+    "config": {
+      "addr": "bifrost-valkey:6379",
+      "db": 0,
+      "use_tls": false
+    }
+  },
+  "plugins": [
+    {
+      "enabled": true,
+      "name": "semantic_cache",
+      "config": {
+        "dimension": 1,
+        "ttl": "24h",
+        "threshold": 0.92,
+        "conversation_history_threshold": 20,
+        "exclude_system_prompt": false,
+        "cache_by_model": true,
+        "cache_by_provider": true,
+        "vector_store_namespace": "BifrostSemanticCachePlugin",
+        "default_cache_key": "fluxcd-default"
+      }
+    },
+    {
+      "enabled": true,
+      "name": "otel",
+      "config": {
+        "service_name": "bifrost",
+        "collector_url": "http://opentelemetry-collector.observability.svc.cluster.local:4318/v1/traces",
+        "trace_type": "genai_extension",
+        "protocol": "http"
+      }
+    }
+  ],
+  "mcp": {
+    "tool_manager_config": {
+      "code_mode_binding_level": "tool"
+    },
+    "client_configs": [
+      {
+        "name": "searxng",
+        "connection_type": "http",
+        "connection_string": "http://searxng-mcp.apps.svc.cluster.local:3000/mcp",
+        "auth_type": "none",
+        "is_ping_available": false,
+        "is_code_mode_client": true,
+        "tools_to_execute": ["*"]
+      },
+      {
+        "name": "github",
+        "connection_type": "http",
+        "connection_string": "http://github-mcp.apps.svc.cluster.local:8082/readonly",
+        "auth_type": "headers",
+        "headers": {
+          "Authorization": "env.GITHUB_AUTH_HEADER"
+        },
+        "is_ping_available": false,
+        "is_code_mode_client": true,
+        "tools_to_execute": ["*"]
+      },
+      {
+        "name": "grafana",
+        "connection_type": "http",
+        "connection_string": "http://grafana-mcp.observability.svc.cluster.local:8000/mcp",
+        "auth_type": "none",
+        "is_ping_available": false,
+        "is_code_mode_client": true,
+        "tools_to_execute": ["*"]
+      },
+      {
+        "name": "kubernetes",
+        "connection_type": "http",
+        "connection_string": "http://kubernetes-mcp.apps.svc.cluster.local:8080/mcp",
+        "auth_type": "none",
+        "is_ping_available": false,
+        "is_code_mode_client": true,
+        "tools_to_execute": ["*"]
+      },
+      {
+        "name": "karakeep",
+        "connection_type": "http",
+        "connection_string": "http://karakeep-mcp.apps.svc.cluster.local:8000/mcp",
+        "auth_type": "none",
+        "is_ping_available": false,
+        "is_code_mode_client": true,
+        "tools_to_execute": ["*"]
+      },
+      {
+        "name": "paperless",
+        "connection_type": "http",
+        "connection_string": "http://paperless-mcp.apps.svc.cluster.local:5000/mcp",
+        "auth_type": "none",
+        "is_ping_available": false,
+        "is_code_mode_client": true,
+        "_comment": "Paperless API tokens cannot be scoped, so destructive tools are withheld here instead: documents_upload_from_path (reads any local path, e.g. /proc/self/environ), documents_delete, documents_bulk_update (accepts operation=delete), and the four *_bulk_delete. Bifrost has no exclusion field, so this is an allow-list and new upstream tools stay hidden until added by hand.",
+        "tools_to_execute": [
+          "paperless_ping",
+          "paperless_capabilities",
+          "paperless_documents_search",
+          "paperless_documents_get",
+          "paperless_documents_download",
+          "paperless_documents_export_to_outbox",
+          "paperless_documents_preview",
+          "paperless_documents_thumbnail",
+          "paperless_documents_upload",
+          "paperless_documents_update",
+          "paperless_documents_reprocess",
+          "paperless_tags_list",
+          "paperless_tags_get",
+          "paperless_tags_create",
+          "paperless_tags_update",
+          "paperless_tags_delete",
+          "paperless_correspondents_list",
+          "paperless_correspondents_get",
+          "paperless_correspondents_create",
+          "paperless_correspondents_update",
+          "paperless_correspondents_delete",
+          "paperless_document_types_list",
+          "paperless_document_types_get",
+          "paperless_document_types_create",
+          "paperless_document_types_update",
+          "paperless_document_types_delete",
+          "paperless_storage_paths_list",
+          "paperless_storage_paths_get",
+          "paperless_storage_paths_create",
+          "paperless_storage_paths_update",
+          "paperless_storage_paths_delete",
+          "paperless_custom_fields_list",
+          "paperless_custom_fields_get",
+          "paperless_custom_fields_create",
+          "paperless_custom_fields_update",
+          "paperless_custom_fields_delete",
+          "paperless_custom_fields_assign"
+        ]
+      },
+      {
+        "name": "memos",
+        "connection_type": "http",
+        "connection_string": "http://memos-web.apps.svc.cluster.local:5230/mcp",
+        "auth_type": "headers",
+        "headers": {
+          "Authorization": "env.MEMOS_AUTH_HEADER"
+        },
+        "is_ping_available": false,
+        "is_code_mode_client": true,
+        "_comment": "In-process MCP endpoint shipped with Memos itself (stateless, tools-only, POST /mcp since v0.30) - there is no separate memos-mcp deployment, so bifrost talks straight to the app Service. Reuses the public API's auth, so MEMOS_AUTH_HEADER must be 'Bearer <PAT>'. A Memos PAT carries full account scope and cannot be narrowed, so '*' also grants memo/attachment deletion; tighten to an allow-list like paperless above once the service-prefixed tool names can be enumerated from a running instance.",
+        "tools_to_execute": ["*"]
+      },
+      {
+        "name": "trek",
+        "connection_type": "http",
+        "connection_string": "http://trek.apps.svc.cluster.local:3000/mcp",
+        "auth_type": "headers",
+        "headers": {
+          "Authorization": "env.TREK_AUTH_HEADER"
+        },
+        "is_ping_available": false,
+        "is_code_mode_client": true,
+        "_comment": "In-process MCP endpoint shipped with TREK itself (POST /mcp on the app Service) - there is no separate trek-mcp deployment. Two prerequisites: an admin must switch on the MCP addon under Admin Panel > Addons (until then /mcp returns 404), and TREK_AUTH_HEADER must be 'Bearer trek_<token>' from Settings > Integrations > MCP. Upstream prefers OAuth 2.1 ('trekoa_' tokens, 1h TTL with rolling refresh), but Bifrost sends one fixed header and cannot run the refresh flow, so the deprecated static token is the only workable option here - it is slated for removal upstream and emits deprecation warnings into tool results. A static token also carries full account scope with no per-tool restriction, so '*' includes delete_trip/delete_place/delete_transport/delete_reservation; sessions are scoped to the token owner, so the blast radius is that one user's trips. Narrow to an allow-list like paperless above once the tool names can be enumerated from a running instance.",
+        "tools_to_execute": ["*"]
+      },
+      {
+        "name": "fin",
+        "connection_type": "http",
+        "connection_string": "http://fin-mcp.apps.svc.cluster.local:8000/mcp",
+        "auth_type": "none",
+        "is_ping_available": false,
+        "is_code_mode_client": true,
+        "_comment": "Talks to fin-api in-cluster; no auth on the MCP hop because the Service is ClusterIP-only and fin-api is not exposed to it with credentials. The deployment sets FIN_MCP_ALLOW_WRITES=1, so '*' grants mutating tools as well - narrow to an allow-list like paperless above if that becomes a concern.",
+        "tools_to_execute": ["*"]
+      }
+    ]
+  }
+}

@@ -26,6 +26,10 @@ spec:
       kind: Deployment
       name: bifrost
       namespace: apps
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: bifrost-valkey
+      namespace: apps
   interval: 15m
   retryInterval: 15m
   timeout: 15m

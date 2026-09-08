@@ -13,6 +13,24 @@ kind: ConfigMap
 metadata:
   name: bifrost-config
 data:
+  # On the semantic_cache plugin below (it backs the UI's "Local Cache Hit Rate"
+  # gauge; the "External" gauge beside it is provider-side prompt caching and has
+  # nothing to do with this plugin). Three conditions must ALL hold or the cache
+  # silently no-ops instead of erroring:
+  #   1. vector_store is enabled - the plugin drives it via FT.* commands, which
+  #      is why bifrost-valkey must be the valkey-bundle image and not plain valkey.
+  #   2. default_cache_key is non-empty. Caching only engages for requests carrying
+  #      x-bf-cache-key, and no in-cluster client (open-webui, the MCP agents) sends
+  #      that header, so without a default nothing is ever cached.
+  #   3. The request's conversation is within conversation_history_threshold, which
+  #      SKIPS caching above that many messages. Upstream default is 3, which would
+  #      exclude essentially every MCP agent loop; 20 keeps them eligible.
+  # Started in direct/hash mode: dimension 1 and no provider/embedding_model, so
+  # there is no embedding call on a miss. To switch to semantic matching, set
+  # provider llamaswap + embedding_model Qwen-Embed-4B (already served at
+  # 10.0.0.59:9000 for karakeep and paperless) and set dimension to that model's
+  # real vector width - a mismatch fails reads and writes silently, and changing it
+  # later needs a fresh vector_store_namespace.
   config.json: |
     {
       "$schema": "https://www.getbifrost.ai/schema",
@@ -40,7 +58,31 @@ data:
           }
         }
       },
+      "vector_store": {
+        "enabled": true,
+        "type": "redis",
+        "config": {
+          "addr": "bifrost-valkey:6379",
+          "db": 0,
+          "use_tls": false
+        }
+      },
       "plugins": [
+        {
+          "enabled": true,
+          "name": "semantic_cache",
+          "config": {
+            "dimension": 1,
+            "ttl": "24h",
+            "threshold": 0.8,
+            "conversation_history_threshold": 20,
+            "exclude_system_prompt": false,
+            "cache_by_model": true,
+            "cache_by_provider": true,
+            "vector_store_namespace": "BifrostSemanticCachePlugin",
+            "default_cache_key": "fluxcd-default"
+          }
+        },
         {
           "enabled": true,
           "name": "otel",

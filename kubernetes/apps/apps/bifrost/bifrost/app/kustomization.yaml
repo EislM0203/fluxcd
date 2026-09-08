@@ -5,6 +5,7 @@ resources:
   - cm.yaml
   - secret.yaml
   - pvc.yaml
+  - valkey.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml

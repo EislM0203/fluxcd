@@ -1,0 +1,83 @@
+---
+# Vector store backing Bifrost's semantic_cache plugin. Must be the *bundle*
+# image, not plain valkey/redis: Bifrost drives the store through FT.* commands
+# (index creation + search) from valkey-search, and falls back to no caching at
+# all if FT.INFO/FT.SEARCH are missing. This holds even in direct/hash mode,
+# where entries are metadata-only but still indexed as TAG fields.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bifrost-valkey
+  labels:
+    app: bifrost-valkey
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: bifrost-valkey
+  template:
+    metadata:
+      labels:
+        app: bifrost-valkey
+    spec:
+      containers:
+        - name: valkey
+          image: harbor.cloud.traunseenet.com/docker.io/valkey/valkey-bundle:9.0.0@sha256:97a97ca464bce7f9b7fb2347d3ffaea3d4b26c28fb793f482ce2b04a4e00b753
+          args:
+            - valkey-server
+            # volatile-lru only evicts keys carrying a TTL - i.e. cache entries -
+            # so the FT index itself is never evicted out from under the plugin.
+            # Kept under the container limit so valkey trims itself before the
+            # kubelet OOM-kills it.
+            - --maxmemory
+            - 768mb
+            - --maxmemory-policy
+            - volatile-lru
+          ports:
+            - name: valkey
+              containerPort: 6379
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: valkey
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["valkey-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          volumeMounts:
+            - name: valkey-data
+              mountPath: /data
+      volumes:
+        # Deliberately ephemeral: this is a TTL-bounded cache, so losing it on a
+        # restart only costs a refill. Swap for a PVC if you raise ttl far enough
+        # that a Renovate image bump wiping the cache actually hurts.
+        - name: valkey-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bifrost-valkey
+  labels:
+    app: bifrost-valkey
+spec:
+  type: ClusterIP
+  selector:
+    app: bifrost-valkey
+  ports:
+    - name: valkey
+      port: 6379
+      targetPort: valkey
+      protocol: TCP

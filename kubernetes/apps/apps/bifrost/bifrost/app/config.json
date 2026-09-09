@@ -207,8 +207,23 @@
         },
         "is_ping_available": false,
         "is_code_mode_client": true,
-        "_comment": "Fastmail's official hosted MCP server",
-        "tools_to_execute": ["*"]
+        "_comment": "Fastmail's official hosted MCP server.",
+        "tools_to_execute": [
+          "list_calendars",
+          "search_events",
+          "create_event",
+          "draft_email",
+          "read_email",
+          "read_thread",
+          "search_email",
+          "list_folders",
+          "list_identities",
+          "search_contacts",
+          "read_note",
+          "search_notes",
+          "create_note",
+          "add_to_note"
+        ]
       }
     ]
   }

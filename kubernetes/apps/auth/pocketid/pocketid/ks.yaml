@@ -10,6 +10,8 @@ spec:
     - name: traefik-base
     - name: longhorn-addons
     - name: harbor-app
+    - name: hashicorp-vault-app
+    - name: external-secrets-app
   path: ./kubernetes/apps/auth/pocketid/pocketid/app
   prune: true
   wait: true

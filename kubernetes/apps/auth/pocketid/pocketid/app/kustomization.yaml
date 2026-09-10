@@ -7,3 +7,4 @@ resources:
   - httproute.yaml
   - secret.yaml
   - pvc.yaml
+  - externalsecret.yaml

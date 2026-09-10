@@ -6,6 +6,9 @@ metadata:
   name: mcp-app
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: hashicorp-vault-app
+    - name: external-secrets-app
   path: ./kubernetes/apps/apps/mcp/mcp/app
   prune: true
   wait: true

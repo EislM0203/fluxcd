@@ -11,6 +11,9 @@ spec:
     - name: longhorn-addons
     - name: bifrost-app
     - name: searxng-app
+    - name: harbor-app
+    - name: hashicorp-vault-app
+    - name: external-secrets-app
   path: ./kubernetes/apps/apps/open-webui/open-webui/app
   prune: true
   wait: true

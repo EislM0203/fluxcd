@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - ./configmap.yaml
   - ./secret.yaml
+  - ./externalsecret.yaml
   - ./pvc.yaml
   - ./deployment.yaml
   - ./service.yaml

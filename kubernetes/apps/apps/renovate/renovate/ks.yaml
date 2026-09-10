@@ -6,6 +6,9 @@ metadata:
   name: renovate-app
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: hashicorp-vault-app
+    - name: external-secrets-app
   path: ./kubernetes/apps/apps/renovate/renovate/app
   prune: true
   wait: true

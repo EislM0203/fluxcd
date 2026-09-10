@@ -12,6 +12,8 @@ spec:
     - name: longhorn-addons
     - name: volsync
     - name: harbor-app
+    - name: hashicorp-vault-app
+    - name: external-secrets-app
   path: ./kubernetes/apps/apps/obsidian-livesync/obsidian-livesync/app
   prune: true
   wait: true

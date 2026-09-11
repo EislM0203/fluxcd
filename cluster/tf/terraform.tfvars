@@ -8,7 +8,7 @@ proxmox_nodes = {
     storage     = "local-zfs"
     cores       = 8
     memory      = 32768
-    disk_size   = 250
+    disk_size   = 500
     template_id   = 999
     template_node = "pve-01"
   }
@@ -26,7 +26,7 @@ proxmox_nodes = {
     storage     = "local-lvm"
     cores       = 8
     memory      = 24576
-    disk_size   = 250
+    disk_size   = 500
     template_id   = 1001
     template_node = "pve-03"
   }

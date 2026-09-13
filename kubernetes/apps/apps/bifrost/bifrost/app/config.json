@@ -114,6 +114,17 @@
         "tools_to_execute": ["*"]
       },
       {
+        "name": "mdmem",
+        "connection_type": "http",
+        "connection_string": "http://mdmem.apps.svc.cluster.local:8080/mcp",
+        "auth_type": "headers",
+        "headers": { "Authorization": "env.MDMEM_AUTH_HEADER" },
+        "is_ping_available": false,
+        "is_code_mode_client": false,
+        "_comment": "Long-term agent memory.",
+        "tools_to_execute": ["*"]
+      },
+      {
         "name": "paperless",
         "connection_type": "http",
         "connection_string": "http://paperless-mcp.apps.svc.cluster.local:5000/mcp",

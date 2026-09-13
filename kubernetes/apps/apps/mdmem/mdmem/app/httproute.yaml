@@ -1,0 +1,25 @@
+# Only the UI port is routed. :8080 (MCP) gets no HTTPRoute — Bifrost reaches it
+# at mdmem.apps.svc.cluster.local:8080, same namespace (§13a.5).
+#
+# Do not apply this before the OIDC group check is live (§14.19): *.cloud is
+# split-horizon, not private.
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mdmem
+spec:
+  parentRefs:
+    - name: traefik
+      namespace: networking
+      sectionName: websecure-cloud
+  hostnames:
+    - memory.cloud.traunseenet.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: mdmem
+          port: 8081

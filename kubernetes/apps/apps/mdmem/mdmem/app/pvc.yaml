@@ -1,0 +1,38 @@
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: mdmem-restore
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: restic-mdmem
+    copyMethod: Snapshot
+    storageClassName: longhorn-storage
+    volumeSnapshotClassName: longhorn-snapshot
+    accessModes: ["ReadWriteOnce"]
+    capacity: 5Gi
+    cacheCapacity: 1Gi
+    enableFileDeletion: false
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mdmem-data
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: longhorn-storage
+  # Do NOT set numberOfReplicas: 1 here. The vault is the primary artefact of
+  # this service; an hourly restic snapshot is not block-level redundancy.
+  # dataSourceRef:
+  #   kind: ReplicationDestination
+  #   apiGroup: volsync.backube
+  #   name: mdmem-restore
+  resources:
+    requests:
+      storage: 5Gi

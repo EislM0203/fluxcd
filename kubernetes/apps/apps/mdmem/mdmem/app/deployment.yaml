@@ -1,0 +1,88 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mdmem
+  labels:
+    app: mdmem
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mdmem
+  template:
+    metadata:
+      labels:
+        app: mdmem
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch   # Longhorn: else /data comes up root-owned
+      containers:
+        - name: mdmem
+          # Pin tag AND digest. Renovate does not track library/*, so the digest
+          # is bumped by hand in the same commit that pushes a build (§13a.2).
+          image: harbor.cloud.traunseenet.com/library/mdmem:0.1.0@sha256:4b0c21bec82f12ae5f6e3b5398fc6af31fecf3bfb5c0d96b44acd85bf638d1f4
+          imagePullPolicy: IfNotPresent
+          args: ["serve"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: HOME
+              value: /tmp
+            - name: XDG_CACHE_HOME
+              value: /tmp
+          envFrom:
+            - configMapRef:
+                name: mdmem-env
+            - secretRef:
+                name: mdmem          # from Vault via the ExternalSecret
+          ports:
+            - name: mcp
+              containerPort: 8080
+            - name: ui
+              containerPort: 8081
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: ui
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: ui
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet:
+              path: /readyz          # never checks Bifrost (§14.17)
+              port: ui
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: mdmem-data
+        - name: tmp
+          emptyDir: {}

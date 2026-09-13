@@ -1,2 +1,9 @@
 ---
 rke2_version: "v1.35.0+rke2r3"
+
+# Static /etc/hosts entries applied to every node by
+# infra/bootstrap/configure-hosts-file.yml
+static_host_entries:
+  - ip: 10.0.0.50
+    hostnames:
+      - harbor.cloud.traunseenet.com

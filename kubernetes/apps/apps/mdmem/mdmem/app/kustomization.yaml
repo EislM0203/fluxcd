@@ -1,0 +1,56 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: apps
+resources:
+  - ./externalsecret.yaml
+  - ./secret.yaml            # SOPS: restic-mdmem only (§12.1)
+  - ./pvc.yaml
+  - ./deployment.yaml
+  - ./service.yaml
+  - ./httproute.yaml
+  - ./networkpolicy.yaml
+  - ./servicemonitor.yaml
+configMapGenerator:
+  - name: mdmem-env
+    literals:
+      # --- storage ---------------------------------------------------------
+      - VAULT_DIR=/data/vault
+      - INDEX_DB=/data/index.db
+      - CACHE_DB=/data/emb_cache.db
+      - HISTORY_DIR=/data/.history
+      - AUDIT_LOG=/data/audit.jsonl
+      # --- embeddings ------------------------------------------------------
+      - BIFROST_URL=http://bifrost.apps.svc.cluster.local:8080
+      # provider-prefixed; a bare alias 404s and looks like an mdmem bug (§7, §14.14)
+      - EMBED_MODEL=llamaswap/qwen3-embedding-4b
+      - EMBED_DIM=2560
+      # --- retrieval -------------------------------------------------------
+      - FUSION=rrf
+      - CC_ALPHA=0.5
+      - FTS_TRIGRAM=1
+      - INBOX_WEIGHT=0.8
+      - BM25_WEIGHTS=3,2,1.5,1
+      - INCLUDE_INBOX_DEFAULT=true
+      - MIN_SCORE=
+      - MAX_CHARS_DEFAULT=6000
+      - DUP_THRESHOLD=0.90
+      - MAX_NOTE_CHARS=8000
+      # --- listeners -------------------------------------------------------
+      - MCP_ADDR=0.0.0.0:8080
+      - UI_ADDR=0.0.0.0:8081
+      # the MCP SDK checks the Host header; Bifrost dials the service name (§14.24)
+      - MCP_ALLOWED_HOSTS=mdmem.apps.svc.cluster.local:8080,mdmem:8080,localhost:8080
+      # --- ui / auth -------------------------------------------------------
+      - UI_BASE_URL=https://memory.cloud.traunseenet.com
+      - UI_ALLOWED_ORIGINS=https://memory.cloud.traunseenet.com
+      - OIDC_ISSUER=https://pocketid.cloud.traunseenet.com
+      - OIDC_SCOPE=openid email profile groups
+      - OIDC_CLIENT_ID=dc2aa40e-4386-46cc-bae6-0259a2e7490e
+      - OIDC_GROUPS_CLAIM=groups
+      - OIDC_REQUIRED_GROUP=mdmem_admins
+      - SESSION_TTL_HOURS=12
+      # --- misc ------------------------------------------------------------
+      - LOG_LEVEL=info
+      - LOG_STYLE=json
+      - TZ=Europe/Vienna

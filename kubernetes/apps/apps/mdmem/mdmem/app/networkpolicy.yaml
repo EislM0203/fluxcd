@@ -1,0 +1,49 @@
+# Required, not optional (§13a.5a). newt's egress policy allows the entire apps
+# namespace on every port and reaches pods directly rather than through Traefik,
+# so without this policy "not published through Pangolin" is a promise that
+# lives in a remote dashboard instead of in git — and :8080, whose only control
+# is a bearer token, would be one click from the internet.
+#
+# After applying, verify the two things it can silently break: the pod stays
+# Ready (kubelet probes) and the Prometheus target stays UP (§14.23).
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mdmem-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: mdmem
+  policyTypes: ["Ingress"]
+  ingress:
+    # MCP: Bifrost only, same namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps
+          podSelector:
+            matchLabels:
+              app: bifrost
+      ports:
+        - protocol: TCP
+          port: 8080
+    # UI: Traefik only — deliberately NOT newt, so Pangolin cannot bypass the gateway
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 8081
+    # /metrics scrape
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - protocol: TCP
+          port: 8081

@@ -1,0 +1,15 @@
+---
+- name: Configure static /etc/hosts entries
+  hosts: proxmox
+  become: yes
+
+  tasks:
+    - name: Ensure static host entries are present in /etc/hosts
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - static host entries"
+        block: |
+          {% for entry in static_host_entries %}
+          {{ entry.ip }} {{ entry.hostnames | join(' ') }}
+          {% endfor %}
+      tags: [bootstrap, hosts]

@@ -1,0 +1,18 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mdmem
+  labels:
+    app: mdmem
+spec:
+  endpoints:
+    - port: ui
+      path: /metrics
+      interval: 15s
+      honorLabels: true
+  namespaceSelector:
+    matchNames: ["apps"]
+  selector:
+    matchLabels:
+      app: mdmem

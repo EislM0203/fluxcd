@@ -23,7 +23,7 @@ configMapGenerator:
       # --- embeddings ------------------------------------------------------
       - BIFROST_URL=http://bifrost.apps.svc.cluster.local:8080
       # provider-prefixed; a bare alias 404s and looks like an mdmem bug (§7, §14.14)
-      - EMBED_MODEL=llamaswap/qwen3-embedding-4b
+      - EMBED_MODEL=llamaswap/Qwen-Embed-4B
       - EMBED_DIM=2560
       # --- retrieval -------------------------------------------------------
       - FUSION=rrf

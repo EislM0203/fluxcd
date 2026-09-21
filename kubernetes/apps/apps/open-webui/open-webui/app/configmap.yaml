@@ -34,6 +34,13 @@ data:
   IMAGES_OPENAI_API_BASE_URL: "http://bifrost.apps.svc.cluster.local:8080/v1"
   IMAGE_GENERATION_MODEL: "llamaswap/Qwen-Image-2.1"
   IMAGE_SIZE: "1024x1024"
+  # Image editing is off by default and needs its own engine/model. The edit base
+  # URL and key fall back to OPENAI_API_BASE_URL / OPENAI_API_KEY, which already
+  # point at Bifrost with the same virtual key, so only these four are needed.
+  ENABLE_IMAGE_EDIT: "true"
+  IMAGE_EDIT_ENGINE: openai
+  IMAGE_EDIT_MODEL: "llamaswap/Qwen-Image-2.1"
+  IMAGE_EDIT_SIZE: "1024x1024"
 kind: ConfigMap
 metadata:
   name: open-webui-env

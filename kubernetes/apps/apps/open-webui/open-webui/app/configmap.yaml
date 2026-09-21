@@ -26,6 +26,14 @@ data:
   WEB_SEARCH_ENGINE: searxng
   WEB_SEARCH_RESULT_COUNT: "3"
   SEARXNG_QUERY_URL: http://searxng-web.apps.svc.cluster.local:8080/search?q=<query>
+  # Image generation: sd.cpp sd-server behind llama-swap, reached through Bifrost's
+  # OpenAI images API. IMAGES_OPENAI_API_KEY is the existing Bifrost virtual key and
+  # arrives from vault apps/open-webui via the ExternalSecret, so it is not set here.
+  ENABLE_IMAGE_GENERATION: "true"
+  IMAGE_GENERATION_ENGINE: openai
+  IMAGES_OPENAI_API_BASE_URL: "http://bifrost.apps.svc.cluster.local:8080/v1"
+  IMAGE_GENERATION_MODEL: "llamaswap/Qwen-Image-2.1"
+  IMAGE_SIZE: "1024x1024"
 kind: ConfigMap
 metadata:
   name: open-webui-env

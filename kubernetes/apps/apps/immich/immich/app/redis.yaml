@@ -186,7 +186,7 @@ spec:
       containers:
         - name: redis
           # image: docker.io/bitnami/redis:7.2.5-debian-12-r0
-          image: docker.io/valkey/valkey:9@sha256:a91d34ab33975b1054e26f1bd9995b268f7e0c507b5ded7f3d181a1a25521630
+          image: docker.io/valkey/valkey:9@sha256:418652cfb58ef879d4978c33553735d7147016032d5aefaa14c828e611eb9dfd
           imagePullPolicy: "IfNotPresent"
           securityContext:
             allowPrivilegeEscalation: false

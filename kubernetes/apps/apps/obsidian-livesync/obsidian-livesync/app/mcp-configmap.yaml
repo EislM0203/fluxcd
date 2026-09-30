@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: obsidian-mcp
+data:
+  COUCHDB_URL: "http://obsidian-livesync.apps.svc.cluster.local:5984"
+  COUCHDB_DATABASE: "second-brain"
+  COUCHDB_OBFUSCATE_PROPERTIES: "true"
+  VAULT_NAME: "Second Brain"
+  BASE_URL: "http://obsidian-mcp.apps.svc.cluster.local:8787"
+  PORT: "8787"
+  HOST: "0.0.0.0"
+  DATA_DIR: "/data"
+  READ_ONLY: "false"

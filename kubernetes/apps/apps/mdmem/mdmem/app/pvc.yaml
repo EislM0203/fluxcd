@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationDestination
 metadata:
@@ -8,17 +9,13 @@ spec:
     manual: restore-once
   restic:
     repository: restic-mdmem
-    copyMethod: Snapshot
     storageClassName: longhorn-storage
-    volumeSnapshotClassName: longhorn-snapshot
     accessModes: ["ReadWriteOnce"]
+    copyMethod: Snapshot
     capacity: 5Gi
-    cacheCapacity: 1Gi
     enableFileDeletion: false
-    moverSecurityContext:
-      runAsUser: 1000
-      runAsGroup: 1000
-      fsGroup: 1000
+    cleanupCachePVC: false
+    cleanupTempPVC: false
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

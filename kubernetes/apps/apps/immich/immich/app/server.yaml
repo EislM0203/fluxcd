@@ -99,10 +99,10 @@ spec:
   storageClassName: longhorn-storage
   accessModes:
     - "ReadWriteOnce"
-  # dataSourceRef:
-  #   kind: ReplicationDestination
-  #   apiGroup: volsync.backube
-  #   name: immich-restore
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: immich-restore
   resources:
     requests:
       storage: "15Gi"

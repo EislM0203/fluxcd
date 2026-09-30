@@ -1,0 +1,27 @@
+---
+# Ingress-only. The MCP port must not be reachable from anything other than
+# Bifrost — Bearer-token auth gates the tools, but defense-in-depth means the
+# network layer should enforce the same constraint.
+#
+# Kubelet liveness/readiness probes bypass NetworkPolicy (they originate from
+# the node, not a pod), so no explicit probe rule is needed.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: obsidian-mcp-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: obsidian-mcp
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps
+          podSelector:
+            matchLabels:
+              app: bifrost
+      ports:
+        - protocol: TCP
+          port: 8787

@@ -1,0 +1,87 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obsidian-mcp
+  labels:
+    app: obsidian-mcp
+spec:
+  # One replica: the search index is held in-process and persisted to a
+  # single RWO volume. Recreate so two pods never write the same index file.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: obsidian-mcp
+  template:
+    metadata:
+      labels:
+        app: obsidian-mcp
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: obsidian-mcp
+          image: harbor.cloud.traunseenet.com/library/obsidian-sync-mcp:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8787
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: obsidian-mcp
+            # COUCHDB_USER and COUCHDB_PASSWORD — reused from the existing CouchDB secret.
+            - secretRef:
+                name: obsidian-livesync-admin
+            # MCP_AUTH_TOKEN and COUCHDB_PASSPHRASE
+            - secretRef:
+                name: obsidian-mcp
+          env:
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=384"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: obsidian-mcp-data
+        - name: tmp
+          emptyDir: {}

@@ -235,6 +235,19 @@
           "create_note",
           "add_to_note"
         ]
+      },
+      {
+        "name": "obsidian",
+        "connection_type": "http",
+        "connection_string": "http://obsidian-mcp.apps.svc.cluster.local:8787/mcp",
+        "auth_type": "headers",
+        "headers": {
+          "Authorization": "env.OBSIDIAN_MCP_AUTH_HEADER"
+        },
+        "is_ping_available": false,
+        "is_code_mode_client": true,
+        "_comment": "obsidian-sync-mcp in CouchDB mode, backed by the obsidian-livesync CouchDB instance",
+        "tools_to_execute": ["*"]
       }
     ]
   }

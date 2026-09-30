@@ -9,3 +9,9 @@ resources:
   - ./deployment.yaml
   - ./service.yaml
   - ./httproute.yaml
+  - ./mcp-configmap.yaml
+  - ./mcp-externalsecret.yaml
+  - ./mcp-pvc.yaml
+  - ./mcp-deployment.yaml
+  - ./mcp-service.yaml
+  - ./mcp-networkpolicy.yaml

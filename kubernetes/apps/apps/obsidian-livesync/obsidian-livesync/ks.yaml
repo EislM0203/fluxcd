@@ -27,6 +27,10 @@ spec:
       kind: Deployment
       name: obsidian-livesync
       namespace: apps
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: obsidian-mcp
+      namespace: apps
   interval: 15m
   retryInterval: 15m
   timeout: 15m

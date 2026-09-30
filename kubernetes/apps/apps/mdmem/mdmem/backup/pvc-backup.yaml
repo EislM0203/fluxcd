@@ -1,26 +1,22 @@
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationsource_v1alpha1.json
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:
-  name: mdmem
+  name: mdmem-backup
 spec:
   sourcePVC: mdmem-data
   trigger:
     schedule: "0 */6 * * *"
   restic:
-    repository: restic-mdmem
-    copyMethod: Snapshot
-    storageClassName: longhorn-storage
-    volumeSnapshotClassName: longhorn-snapshot
-    cacheCapacity: 1Gi
     pruneIntervalDays: 1
+    repository: restic-mdmem
     retain:
       hourly: 5
       daily: 4
       weekly: 3
       monthly: 2
       yearly: 1
-    moverSecurityContext:
-      runAsUser: 1000
-      runAsGroup: 1000
-      fsGroup: 1000
+    copyMethod: Snapshot
+    storageClassName: longhorn-storage
+    unlock: "something"

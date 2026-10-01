@@ -13,6 +13,17 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: dsh-dns
+  annotations:
+     external-dns.alpha.kubernetes.io/hostname: "dsh.local.traunseenet.com"
+spec:
+  type: ExternalName
+  externalName: 10.0.0.103
+  ports: []
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: adguard-dns
   annotations:
      external-dns.alpha.kubernetes.io/hostname: "adguard.local.traunseenet.com"

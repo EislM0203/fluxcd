@@ -1,0 +1,35 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: &name nextcloud-data
+  labels:
+    app: *name
+spec:
+  storageClassName: longhorn-storage
+  accessModes:
+    - "ReadWriteOnce"
+  # dataSourceRef:
+  #   kind: ReplicationDestination
+  #   apiGroup: volsync.backube
+  #   name: nextcloud-restore
+  resources:
+    requests:
+      storage: "10Gi"
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: nextcloud-restore
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: restic-nextcloud
+    storageClassName: longhorn-storage
+    accessModes: ["ReadWriteOnce"]
+    copyMethod: Snapshot
+    capacity: 10Gi
+    enableFileDeletion: false
+    cleanupCachePVC: false
+    cleanupTempPVC: false

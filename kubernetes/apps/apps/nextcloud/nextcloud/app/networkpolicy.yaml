@@ -1,0 +1,65 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nextcloud-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: nextcloud
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        # LAN, via the Gateway
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+        # public, via Pangolin (k8s-newt-blueprint)
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app: k8s-newt
+      ports:
+        - protocol: TCP
+          port: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nextcloud-redis-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: nextcloud-redis-master
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: nextcloud
+      ports:
+        - protocol: TCP
+          port: 6379
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nextcloud-imaginary-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: nextcloud-imaginary
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: nextcloud
+      ports:
+        - protocol: TCP
+          port: 9000

@@ -1,0 +1,59 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nextcloud-imaginary
+  name: nextcloud-imaginary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nextcloud-imaginary
+  template:
+    metadata:
+      labels:
+        app: nextcloud-imaginary
+    spec:
+      containers:
+        # Nextcloud's maintained build (manual recommends it over h2non): HEIC support, -return-size
+        - image: harbor.cloud.traunseenet.com/ghcr.io/nextcloud-releases/aio-imaginary:20260929_105435@sha256:0e32abf8b2198e53b6395983e2c046dad53d82cfd2ad227d731425f6296f1cf9
+          name: imaginary
+          ports:
+            - containerPort: 9000
+              name: http
+              protocol: TCP
+          livenessProbe: &probe
+            httpGet:
+              path: /health
+              port: http
+          readinessProbe: *probe
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            # image USER is "nobody" by name; numeric so runAsNonRoot can verify it
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+              # needed for HEIC previews (Nextcloud admin manual)
+              add: ["SYS_NICE"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-imaginary
+spec:
+  type: ClusterIP
+  selector:
+    app: nextcloud-imaginary
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP

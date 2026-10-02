@@ -1,0 +1,83 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: &name nextcloud-pg
+  annotations:
+    cnpg.io/skipEmptyWalArchiveCheck: "enabled"
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.6-system-trixie
+  enableSuperuserAccess: true
+  primaryUpdateStrategy: unsupervised
+  externalClusters:
+    - name: *name
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: *name
+          serverName: *name
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: *name
+        serverName: *name
+  bootstrap:
+    # First deploy: initdb. Switch to recovery only once a base backup exists in S3.
+    initdb:
+      database: nextcloud
+      owner: nextcloud
+    # recovery:
+    #   source: *name
+    #   database: nextcloud
+    #   owner: nextcloud
+  storage:
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+      storageClassName: longhorn-storage
+      volumeMode: Filesystem
+  monitoring:
+    enablePodMonitor: true
+  managed:
+    services:
+      disabledDefaultServices: ["ro", "r"]
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: nextcloud-pg
+spec:
+  retentionPolicy: 30d
+  configuration:
+    destinationPath: s3://cnpg-backups/nextcloud
+    endpointURL: http://10.0.0.154:9000
+    s3Credentials:
+      accessKeyId:
+        name: s3-nextcloud-pg-backup
+        key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        name: s3-nextcloud-pg-backup
+        key: AWS_SECRET_ACCESS_KEY
+    data:
+      compression: bzip2
+    wal:
+      compression: bzip2
+      maxParallel: 8
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: nextcloud-pg-backup
+spec:
+  schedule: "0 0 4 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: nextcloud-pg
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io

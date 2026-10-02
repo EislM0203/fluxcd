@@ -1,0 +1,30 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: apps
+resources:
+  - secret.yaml
+  - externalsecret.yaml
+  - pg-nextcloud.yaml
+  - redis.yaml
+  - pvc.yaml
+  - deployment.yaml
+  - imaginary.yaml
+  - httproute.yaml
+  - networkpolicy.yaml
+# hashed names: any change here rolls the pod
+configMapGenerator:
+  - name: nextcloud-env
+    literals:
+      - NEXTCLOUD_TRUSTED_DOMAINS=next.cloud.traunseenet.com
+      - OVERWRITEHOST=next.cloud.traunseenet.com
+      - OVERWRITEPROTOCOL=https
+      - OVERWRITECLIURL=https://next.cloud.traunseenet.com
+      - TRUSTED_PROXIES=10.42.0.0/16
+      - REDIS_HOST=nextcloud-redis-master
+      - REDIS_HOST_PORT=6379
+  - name: nextcloud-config
+    files:
+      - custom.config.php
+      - copy-custom-config.sh

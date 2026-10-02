@@ -1,0 +1,154 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nextcloud
+  name: nextcloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nextcloud
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: nextcloud
+    spec:
+      containers:
+        - image: harbor.cloud.traunseenet.com/docker.io/library/nextcloud:35.0.1-apache@sha256:b1ae671e9815401b0e837b19b9c778e89887721d67f0c8f9d34aa1d27a9a208f
+          name: nextcloud
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: nextcloud-env
+          env:
+            # only read on first install (autoconfig.php); afterwards config.php holds them
+            - name: POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-pg-app
+                  key: host
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-pg-app
+                  key: dbname
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-pg-app
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-pg-app
+                  key: password
+            - name: NEXTCLOUD_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-admin
+                  key: username
+            - name: NEXTCLOUD_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-admin
+                  key: password
+          # first boot runs the installer before apache starts
+          startupProbe:
+            httpGet:
+              path: /status.php
+              port: 80
+              httpHeaders:
+                - name: Host
+                  value: next.cloud.traunseenet.com
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /status.php
+              port: 80
+              httpHeaders:
+                - name: Host
+                  value: next.cloud.traunseenet.com
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /status.php
+              port: 80
+              httpHeaders:
+                - name: Host
+                  value: next.cloud.traunseenet.com
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - mountPath: /var/www/html
+              name: nextcloud-data
+              subPath: html
+            - mountPath: /nextcloud-custom
+              name: nextcloud-config
+            - mountPath: /docker-entrypoint-hooks.d/before-starting
+              name: nextcloud-hooks
+        # crond needs root; cron.sh runs cron.php as www-data
+        - image: harbor.cloud.traunseenet.com/docker.io/library/nextcloud:35.0.1-apache@sha256:b1ae671e9815401b0e837b19b9c778e89887721d67f0c8f9d34aa1d27a9a208f
+          name: nextcloud-cron
+          command:
+            - /cron.sh
+          envFrom:
+            - configMapRef:
+                name: nextcloud-env
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - mountPath: /var/www/html
+              name: nextcloud-data
+              subPath: html
+      volumes:
+        - name: nextcloud-data
+          persistentVolumeClaim:
+            claimName: nextcloud-data
+        - name: nextcloud-config
+          configMap:
+            name: nextcloud-config
+            items:
+              - key: custom.config.php
+                path: custom.config.php
+        - name: nextcloud-hooks
+          configMap:
+            name: nextcloud-config
+            defaultMode: 0755
+            items:
+              - key: copy-custom-config.sh
+                path: copy-custom-config.sh
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud
+spec:
+  type: ClusterIP
+  selector:
+    app: nextcloud
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP

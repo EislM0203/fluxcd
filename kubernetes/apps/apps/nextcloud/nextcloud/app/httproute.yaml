@@ -1,0 +1,42 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nextcloud-server
+spec:
+  parentRefs:
+    - name: traefik
+      namespace: networking
+      sectionName: websecure-cloud
+  hostnames:
+    - next.cloud.traunseenet.com
+  rules:
+    # CalDAV/CardDAV discovery: the admin manual says to do these at the proxy
+    - matches:
+        - path:
+            type: Exact
+            value: /.well-known/carddav
+        - path:
+            type: Exact
+            value: /.well-known/caldav
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /remote.php/dav/
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            set:
+              - name: Strict-Transport-Security
+                value: max-age=15552000
+      backendRefs:
+        - name: nextcloud
+          port: 80

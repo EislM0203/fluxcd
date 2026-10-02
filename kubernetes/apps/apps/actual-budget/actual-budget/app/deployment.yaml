@@ -24,7 +24,7 @@ spec:
         fsGroup: 1001 # make the longhorn /data PVC writable
       containers:
         - name: actual-budget
-          image: harbor.cloud.traunseenet.com/docker.io/actualbudget/actual-server:26.8.1
+          image: harbor.cloud.traunseenet.com/docker.io/actualbudget/actual-server:26.10.0@sha256:24645e971da6bb1a1f953d6859e307a0b29be1e8b4130a35b3220c209b5b860c
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

@@ -25,20 +25,20 @@ spec:
         serverName: *name
   bootstrap:
     # First deploy: initdb. Switch to recovery only once a base backup exists in S3.
-    initdb:
-      database: nextcloud
-      owner: nextcloud
-    # recovery:
-    #   source: *name
+    # initdb:
     #   database: nextcloud
     #   owner: nextcloud
+    recovery:
+      source: *name
+      database: nextcloud
+      owner: nextcloud
   storage:
     pvcTemplate:
       accessModes:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 5Gi
+          storage: 10Gi
       storageClassName: longhorn-storage
       volumeMode: Filesystem
   monitoring:

@@ -31,6 +31,10 @@ spec:
       name: nextcloud-imaginary
       namespace: apps
     - apiVersion: apps/v1
+      kind: Deployment
+      name: eurooffice
+      namespace: apps
+    - apiVersion: apps/v1
       kind: StatefulSet
       name: nextcloud-redis-master
       namespace: apps

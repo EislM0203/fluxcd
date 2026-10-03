@@ -1,0 +1,78 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: eurooffice
+  name: eurooffice
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: eurooffice
+  template:
+    metadata:
+      labels:
+        app: eurooffice
+    spec:
+      containers:
+        # All-in-one image (bundled postgres/redis/rabbitmq/nginx under supervisord, runs as root).
+        # No volume: its DB and cache only hold open editing sessions; documents live in Nextcloud.
+        - image: harbor.cloud.traunseenet.com/ghcr.io/euro-office/documentserver:v9.3.4-hotfix.1@sha256:889e681923d2dcc8bdfb92fe128d10e185fcff880d302b6a0c0c7bf339499290
+          name: documentserver
+          ports:
+            - containerPort: 80
+              name: http
+              protocol: TCP
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: eurooffice
+                  key: JWT_SECRET
+            # Nextcloud is reached via its ClusterIP (StorageUrl); the request filter blocks private IPs by default
+            - name: ALLOW_PRIVATE_IP_ADDRESS
+              value: "true"
+          startupProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              memory: 4Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eurooffice
+spec:
+  type: ClusterIP
+  selector:
+    app: eurooffice
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP

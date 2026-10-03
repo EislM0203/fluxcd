@@ -11,6 +11,7 @@ resources:
   - pvc.yaml
   - deployment.yaml
   - imaginary.yaml
+  - eurooffice.yaml
   - httproute.yaml
   - networkpolicy.yaml
 # hashed names: any change here rolls the pod

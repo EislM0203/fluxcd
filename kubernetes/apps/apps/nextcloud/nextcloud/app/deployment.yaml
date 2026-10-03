@@ -58,6 +58,12 @@ spec:
                 secretKeyRef:
                   name: nextcloud-admin
                   key: password
+            # read by custom.config.php (eurooffice.jwt_secret)
+            - name: EUROOFFICE_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: eurooffice
+                  key: JWT_SECRET
           # first boot runs the installer before apache starts
           startupProbe:
             httpGet:
@@ -112,6 +118,13 @@ spec:
           envFrom:
             - configMapRef:
                 name: nextcloud-env
+          # background jobs load config.php too (eurooffice availability check)
+          env:
+            - name: EUROOFFICE_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: eurooffice
+                  key: JWT_SECRET
           resources:
             requests:
               cpu: 10m

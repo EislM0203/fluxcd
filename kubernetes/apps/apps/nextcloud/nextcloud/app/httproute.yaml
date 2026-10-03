@@ -40,3 +40,24 @@ spec:
       backendRefs:
         - name: nextcloud
           port: 80
+---
+# The browser loads the editors straight from the Document Server, so it needs its own public name
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: eurooffice
+spec:
+  parentRefs:
+    - name: traefik
+      namespace: networking
+      sectionName: websecure-cloud
+  hostnames:
+    - office.cloud.traunseenet.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: eurooffice
+          port: 80

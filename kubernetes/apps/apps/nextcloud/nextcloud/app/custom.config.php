@@ -1,5 +1,16 @@
 <?php
 $CONFIG = array (
+  // replaces the installer's list: Euro-Office calls back on the Service name (StorageUrl)
+  'trusted_domains' => array (
+    'next.cloud.traunseenet.com',
+    'nextcloud.apps.svc.cluster.local',
+  ),
+  'eurooffice' => array (
+    'DocumentServerUrl' => 'https://office.cloud.traunseenet.com/',
+    'DocumentServerInternalUrl' => 'http://eurooffice.apps.svc.cluster.local/',
+    'StorageUrl' => 'http://nextcloud.apps.svc.cluster.local/',
+    'jwt_secret' => getenv('EUROOFFICE_JWT_SECRET'),
+  ),
   'default_phone_region' => 'DE',
   'maintenance_window_start' => 1,
   'preview_imaginary_url' => 'http://nextcloud-imaginary',

@@ -25,13 +25,13 @@ spec:
         serverName: *name
   bootstrap:
     # First deploy: initdb. Switch to recovery only once a base backup exists in S3.
-    # initdb:
-    #   database: nextcloud
-    #   owner: nextcloud
-    recovery:
-      source: *name
+    initdb:
       database: nextcloud
       owner: nextcloud
+    #recovery:
+      #source: *name
+      #database: nextcloud
+      #owner: nextcloud
   storage:
     pvcTemplate:
       accessModes:
@@ -58,10 +58,10 @@ spec:
     endpointURL: http://10.0.0.154:9000
     s3Credentials:
       accessKeyId:
-        name: s3-nextcloud-pg-backup
+        name: s3-nextcloud-backup-secrets
         key: AWS_ACCESS_KEY_ID
       secretAccessKey:
-        name: s3-nextcloud-pg-backup
+        name: s3-immich-backup-secrets
         key: AWS_SECRET_ACCESS_KEY
     data:
       compression: bzip2

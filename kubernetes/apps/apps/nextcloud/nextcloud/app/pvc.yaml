@@ -9,10 +9,10 @@ spec:
   storageClassName: longhorn-storage
   accessModes:
     - "ReadWriteOnce"
-  # dataSourceRef:
-  #   kind: ReplicationDestination
-  #   apiGroup: volsync.backube
-  #   name: nextcloud-restore
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: nextcloud-restore
   resources:
     requests:
       storage: "10Gi"

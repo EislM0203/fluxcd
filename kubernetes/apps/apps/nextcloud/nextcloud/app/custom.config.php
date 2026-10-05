@@ -5,6 +5,11 @@ $CONFIG = array (
     'next.cloud.traunseenet.com',
     'nextcloud.apps.svc.cluster.local',
   ),
+  // always use the current CNPG app secret, so a restored config.php can't carry a stale password
+  'dbhost' => getenv('POSTGRES_HOST'),
+  'dbname' => getenv('POSTGRES_DB'),
+  'dbuser' => getenv('POSTGRES_USER'),
+  'dbpassword' => getenv('POSTGRES_PASSWORD'),
   'eurooffice' => array (
     'DocumentServerUrl' => 'https://office.cloud.traunseenet.com/',
     'DocumentServerInternalUrl' => 'http://eurooffice.apps.svc.cluster.local/',

@@ -27,7 +27,7 @@ spec:
             - configMapRef:
                 name: nextcloud-env
           env:
-            # only read on first install (autoconfig.php); afterwards config.php holds them
+            # also read on every request via custom.config.php (db* keys)
             - name: POSTGRES_HOST
               valueFrom:
                 secretKeyRef:
@@ -118,8 +118,28 @@ spec:
           envFrom:
             - configMapRef:
                 name: nextcloud-env
-          # background jobs load config.php too (eurooffice availability check)
+          # background jobs load config.php too (db login + eurooffice availability check)
           env:
+            - name: POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-pg-app
+                  key: host
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-pg-app
+                  key: dbname
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-pg-app
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-pg-app
+                  key: password
             - name: EUROOFFICE_JWT_SECRET
               valueFrom:
                 secretKeyRef:

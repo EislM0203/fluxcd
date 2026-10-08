@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: volsync
+spec:
+  groups:
+    - name: volsync
+      rules:
+        - alert: VolSyncVolumeOutOfSync
+          # 1 once a ReplicationSource misses its scheduled interval without a successful sync.
+          # VolSync keeps reporting deleted/renamed objects until its controller restarts,
+          # so a source that no longer exists can show up here as a ghost.
+          expr: max by (obj_namespace, obj_name) (volsync_volume_out_of_sync{role="source"}) == 1
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: VolSync backup {{ $labels.obj_namespace }}/{{ $labels.obj_name }} is out of sync
+            description: >-
+              ReplicationSource {{ $labels.obj_namespace }}/{{ $labels.obj_name }} missed its schedule.
+              Check `kubectl -n {{ $labels.obj_namespace }} describe replicationsource {{ $labels.obj_name }}`.
+              If the object no longer exists, restart the VolSync controller to drop the stale metric.
+        - alert: VolSyncControllerDown
+          expr: absent(up{job="volsync-metrics"} == 1)
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: VolSync metrics are not being scraped
+            description: Without them VolSyncVolumeOutOfSync cannot fire.

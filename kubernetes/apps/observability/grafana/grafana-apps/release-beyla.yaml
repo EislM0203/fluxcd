@@ -57,15 +57,16 @@ data:
         - k8s_namespace: auth
         - k8s_namespace: secured
         - k8s_namespace: flux-system
-        - exe_path: (worker)|(backend)|(frontend)|(cilium)|(hubble) # any service exec that has name worker,backent...
-          namespace: kube-system
+        # (removed a cluster-wide exe_path match for worker|backend|frontend|cilium|hubble:
+        #  RKE2 runs Canal, not Cilium, and `namespace:` only relabeled matches, it did not filter)
         # - k8s_namespace: storage
         # - exe_path: (worker)|(backend)|(frontend) # any service exec that has name worker,backent...
         #   namespace: MyApplication 
         #   name: "TestLoadGenerator" # overwrites the built in name with this
         # - exe_path: tcpforwarder 
         #   namespace: network
-    trace_printer: text
+    # was "text": printed every span to stdout, which filelog shipped to Loki
+    trace_printer: disabled
     otel_traces_export:
       endpoint: http://opentelemetry-collector.observability.svc.cluster.local:4318/v1/traces
     otel_metrics_export:
@@ -73,3 +74,11 @@ data:
     attributes:
       kubernetes:
         enable: true
+        # Name services after the workload, not the Helm/Flux instance label:
+        # app.kubernetes.io/instance merged all Flux controllers into "flux-system"
+        # and named Traefik "traefik-networking". Pods without these labels fall
+        # back to their owner (Deployment/StatefulSet) name.
+        resource_labels:
+          service.name:
+            - app.kubernetes.io/name
+            - app.kubernetes.io/component

@@ -51,7 +51,7 @@ data:
       unmatched: heuristic
     discovery:
       # instrument replaces the deprecated services block; values are globs.
-      # Beyla, Alloy and the OTel collector stay excluded by default_exclude_instrument.
+      # Beyla and Alloy stay excluded by default_exclude_instrument.
       instrument:
         - k8s_namespace: apps
         - k8s_namespace: default
@@ -59,7 +59,27 @@ data:
         - k8s_namespace: auth
         - k8s_namespace: secured
         - k8s_namespace: flux-system
-        # - k8s_namespace: storage
+        - k8s_namespace: storage
+        - k8s_namespace: longhorn-system
+        - k8s_namespace: observability
+      # Added to default_exclude_instrument, not replacing it.
+      exclude_instrument:
+        # The collector image runs /otelcol-k8s, which the default *otelcol globs miss;
+        # tracing it would turn Beyla's own exports into new spans.
+        - exe_path: "*otelcol-k8s"
+        # Telemetry backends: tracing their ingest/scrape traffic loops back into them.
+        - k8s_namespace: observability
+          k8s_pod_labels:
+            app.kubernetes.io/name: prometheus
+        - k8s_namespace: observability
+          k8s_pod_labels:
+            app.kubernetes.io/name: loki
+        - k8s_namespace: observability
+          k8s_pod_labels:
+            app.kubernetes.io/name: tempo
+        - k8s_namespace: observability
+          k8s_pod_labels:
+            app.kubernetes.io/name: jaeger
     # was "text": printed every span to stdout, which filelog shipped to Loki
     trace_printer: disabled
     otel_traces_export:
@@ -69,10 +89,21 @@ data:
     attributes:
       kubernetes:
         enable: true
-        # resource_labels left at Beyla's OTel-spec defaults. Workloads set their identity:
+        # Workloads set their identity (OTel k8s spec, highest precedence first):
         #   service.name:      annotation resource.opentelemetry.io/service.name,
-        #                      else label app.kubernetes.io/instance, then app.kubernetes.io/name,
-        #                      else the owning Deployment/StatefulSet name
+        #                      else the labels below, else the owning workload's name
         #   service.namespace: annotation resource.opentelemetry.io/service.namespace,
-        #                      else label app.kubernetes.io/part-of, else the k8s namespace
+        #                      else the label below, else the k8s namespace
         # Group an app's components (web, redis, db, ...) with app.kubernetes.io/part-of.
+        resource_labels:
+          # Beyla's defaults, plus longhorn.io/component as a last label so Longhorn's
+          # instance-manager pods (owned by hash-named InstanceManager CRs) and
+          # engine-image pods get readable names.
+          service.name:
+            - app.kubernetes.io/instance
+            - app.kubernetes.io/name
+            - longhorn.io/component
+          service.namespace:
+            - app.kubernetes.io/part-of
+          service.version:
+            - app.kubernetes.io/version

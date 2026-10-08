@@ -122,8 +122,10 @@ spec:
           - exemplar-storage
           - auto-gomemlimit
           - new-service-discovery-manager
-        retention: 3d
-        retentionSize: 1GB
+        # Size-bound: keep as much history as fits. retentionSize counts blocks + WAL;
+        # ~13% of the 20Gi PVC stays free for compaction's temporary blocks.
+        retention: 365d
+        retentionSize: 17GB
         storageSpec:
           volumeClaimTemplate:
             spec:

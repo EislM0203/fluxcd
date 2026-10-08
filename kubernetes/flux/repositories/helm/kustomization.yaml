@@ -13,7 +13,6 @@ resources:
   - ./harbor.yaml
   - ./renovate.yaml
   - ./opentelemetry.yaml
-  - ./jaeger.yaml
   - ./grafana.yaml
   - ./prometheus.yaml
   - ./external-secrets.yaml

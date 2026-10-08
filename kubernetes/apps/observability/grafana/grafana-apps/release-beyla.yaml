@@ -76,9 +76,6 @@ data:
         - k8s_namespace: observability
           k8s_pod_labels:
             app.kubernetes.io/name: tempo
-        - k8s_namespace: observability
-          k8s_pod_labels:
-            app.kubernetes.io/name: jaeger
     # was "text": printed every span to stdout, which filelog shipped to Loki
     trace_printer: disabled
     otel_traces_export:

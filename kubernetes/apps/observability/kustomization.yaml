@@ -5,7 +5,6 @@ kind: Kustomization
 resources:
   - ./prometheus/ks.yaml
   - ./grafana/ks.yaml
-  - ./jaeger/ks.yaml
   - ./otelcol/ks.yaml
   - namespace.yaml
   - loadbalancer-services.yaml

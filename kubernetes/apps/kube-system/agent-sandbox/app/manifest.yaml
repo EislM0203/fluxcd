@@ -110,7 +110,7 @@ spec:
       serviceAccountName: agent-sandbox-controller
       containers:
       - name: agent-sandbox-controller
-        image: registry.k8s.io/agent-sandbox/agent-sandbox-controller:v0.5.6@sha256:dc23fb0d5624c306ca2f8ef0d41848dba670ebaf62beb500f870175aec529ffd
+        image: registry.k8s.io/agent-sandbox/agent-sandbox-controller:v1.0.6@sha256:14c479c9e89ca87d05dfcf597840473c0196d6e6eec622a7959e72108d75b24e
         args:
         - --leader-elect=true
         ports:

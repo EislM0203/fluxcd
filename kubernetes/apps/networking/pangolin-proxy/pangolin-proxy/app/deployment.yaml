@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: olm
-          image: harbor.cloud.traunseenet.com/docker.io/fosrl/olm:1.8.2@sha256:9a8486519830768cc365451cf2bf07d4717f9d9c85fd830f7a800d1f6ba417ef
+          image: harbor.cloud.traunseenet.com/docker.io/fosrl/olm:1.10.1@sha256:19943d7087262a0786f347bbefc0e9b4f01e857c198cd07de164fe83bc5e4d55
           command: ["/bin/sh", "-c", "ulimit -n 65536 && exec olm"]
           env:
             - name: PANGOLIN_ENDPOINT

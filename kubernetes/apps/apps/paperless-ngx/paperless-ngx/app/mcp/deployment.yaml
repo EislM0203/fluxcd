@@ -13,6 +13,7 @@ spec:
     metadata:
       labels:
         app: paperless-mcp
+        app.kubernetes.io/part-of: paperless
     spec:
       containers:
         - name: paperless-mcp

@@ -14,6 +14,7 @@ spec:
     metadata:
       labels:
         app: paperless-gotenberg
+        app.kubernetes.io/part-of: paperless
     spec:
       containers:
         - image: harbor.cloud.traunseenet.com/docker.io/gotenberg/gotenberg:8.37@sha256:f29984bd1e226bf1b93ba90af06000afa8b315853e99d27b9aaa41b93f15c769

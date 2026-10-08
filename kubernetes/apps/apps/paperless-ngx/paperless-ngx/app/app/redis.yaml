@@ -14,6 +14,7 @@ spec:
     metadata:
       labels:
         app: paperless-redis
+        app.kubernetes.io/part-of: paperless
     spec:
       containers:
         - image: harbor.cloud.traunseenet.com/docker.io/library/redis:8.10.2@sha256:2c2dff791878316e3b083188be0d578423b24813cdda5de0e80ea4f7b3e6bfd6

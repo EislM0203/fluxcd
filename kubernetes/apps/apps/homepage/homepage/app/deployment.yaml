@@ -29,10 +29,15 @@ spec:
             - name: http
               containerPort: 3000
               protocol: TCP
+          # v2 applies HOMEPAGE_ALLOWED_HOSTS to every request, probes included;
+          # without an allowed Host header the kubelet's pod-IP host gets a 400.
           livenessProbe:
             httpGet:
               path: /
               port: http
+              httpHeaders:
+                - name: Host
+                  value: homepage.cloud.traunseenet.com
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 5
@@ -41,6 +46,9 @@ spec:
             httpGet:
               path: /
               port: http
+              httpHeaders:
+                - name: Host
+                  value: homepage.cloud.traunseenet.com
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 5

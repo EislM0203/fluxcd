@@ -93,7 +93,7 @@ variable "pocketid_client_secret" {
 variable "image_gerbil" {
   description = "Gerbil Docker image tag"
   type        = string
-  default     = "1.5.1"
+  default     = "1.5.2"
 }
 
 variable "image_traefik" {

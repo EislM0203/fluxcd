@@ -11,15 +11,19 @@ spec:
         # gotk_resource_info comes from kube-state-metrics' custom resource state config
         # (see prometheus/app/release-prometheus.yaml).
         - alert: FluxResourceNotReady
-          # 30m: Kustomizations waiting on a dependency are also Ready=False during a rollout.
-          expr: max by (customresource_kind, exported_namespace, name) (gotk_resource_info{ready="False", suspended!="true"}) == 1
-          for: 30m
+          # Only the resource that actually fails: everything queued behind it is Ready=False
+          # with reason DependencyNotReady, which would otherwise alert as dozens of resources.
+          expr: >-
+            max by (customresource_kind, exported_namespace, name) (
+              gotk_resource_info{ready="False", suspended!="true", ready_reason!="DependencyNotReady"}
+            ) == 1
+          for: 15m
           labels:
             severity: warning
           annotations:
             summary: Flux {{ $labels.customresource_kind }} {{ $labels.exported_namespace }}/{{ $labels.name }} is not ready
             description: >-
-              Failing for over 30 minutes. Check
+              Failing for over 15 minutes. Check
               `flux get {{ $labels.customresource_kind | toLower }} {{ $labels.name }} -n {{ $labels.exported_namespace }}`.
         - alert: FluxResourceStuck
           expr: max by (customresource_kind, exported_namespace, name) (gotk_resource_info{ready="Unknown", suspended!="true"}) == 1

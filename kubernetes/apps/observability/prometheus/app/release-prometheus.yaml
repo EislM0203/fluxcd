@@ -63,6 +63,7 @@ spec:
                 labelsFromPath:
                   exported_namespace: [metadata, namespace]
                   ready: [status, conditions, '[type=Ready]', status]
+                  ready_reason: [status, conditions, '[type=Ready]', reason]
                   suspended: [spec, suspend]
                   revision: [status, lastAppliedRevision]
                   source_name: [spec, sourceRef, name]
@@ -79,6 +80,7 @@ spec:
                 labelsFromPath:
                   exported_namespace: [metadata, namespace]
                   ready: [status, conditions, '[type=Ready]', status]
+                  ready_reason: [status, conditions, '[type=Ready]', reason]
                   suspended: [spec, suspend]
                   revision: [status, history, '0', chartVersion]
                   chart_name: [status, history, '0', chartName]
@@ -95,6 +97,7 @@ spec:
                 labelsFromPath:
                   exported_namespace: [metadata, namespace]
                   ready: [status, conditions, '[type=Ready]', status]
+                  ready_reason: [status, conditions, '[type=Ready]', reason]
                   suspended: [spec, suspend]
                   revision: [status, artifact, revision]
             - groupVersionKind: {group: source.toolkit.fluxcd.io, version: v1, kind: OCIRepository}
@@ -110,6 +113,7 @@ spec:
                 labelsFromPath:
                   exported_namespace: [metadata, namespace]
                   ready: [status, conditions, '[type=Ready]', status]
+                  ready_reason: [status, conditions, '[type=Ready]', reason]
                   suspended: [spec, suspend]
                   revision: [status, artifact, revision]
             - groupVersionKind: {group: source.toolkit.fluxcd.io, version: v1, kind: HelmRepository}
@@ -125,6 +129,7 @@ spec:
                 labelsFromPath:
                   exported_namespace: [metadata, namespace]
                   ready: [status, conditions, '[type=Ready]', status]
+                  ready_reason: [status, conditions, '[type=Ready]', reason]
                   suspended: [spec, suspend]
                   revision: [status, artifact, revision]
             - groupVersionKind: {group: source.toolkit.fluxcd.io, version: v1, kind: HelmChart}
@@ -140,6 +145,7 @@ spec:
                 labelsFromPath:
                   exported_namespace: [metadata, namespace]
                   ready: [status, conditions, '[type=Ready]', status]
+                  ready_reason: [status, conditions, '[type=Ready]', reason]
                   suspended: [spec, suspend]
                   revision: [status, artifact, revision]
                   chart_name: [spec, chart]

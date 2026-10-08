@@ -47,6 +47,7 @@ spec:
         # Same service.name as Traefik's own OTLP traces; Beyla would otherwise
         # use app.kubernetes.io/instance ("traefik-networking")
         resource.opentelemetry.io/service.name: traefik
+        resource.opentelemetry.io/service.namespace: traefik
       additionalContainers: []
       initContainers: []
     resources:

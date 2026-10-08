@@ -26,6 +26,8 @@ spec:
   uninstall:
     keepHistory: false
   values:
+    podAnnotations:
+      "resource.opentelemetry.io/service.namespace": "volsync"
     manageCRDs: true
     replicaCount: 1
     serviceAccount:

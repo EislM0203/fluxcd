@@ -26,6 +26,8 @@ spec:
   uninstall:
     keepHistory: false
   values:
+    podAnnotations:
+      "resource.opentelemetry.io/service.namespace": "cloudnative-pg"
     replicaCount: 2
     config:
       secret: true

@@ -5,3 +5,13 @@ namespace: storage
 resources:
 - release.yaml
 - https://github.com/cloudnative-pg/plugin-barman-cloud/releases/download/v0.11.0/manifest.yaml
+patches:
+  # OTel service.namespace grouping (Beyla): the plugin belongs with the operator
+  - target:
+      kind: Deployment
+      name: barman-cloud
+    patch: |-
+      - op: add
+        path: /spec/template/metadata/annotations
+        value:
+          resource.opentelemetry.io/service.namespace: cloudnative-pg

@@ -29,6 +29,18 @@ spec:
   uninstall:
     keepHistory: false
   values:
+    prometheus-node-exporter:
+      podAnnotations:
+        "resource.opentelemetry.io/service.name": "node-exporter"
+        "resource.opentelemetry.io/service.namespace": "kube-prometheus-stack"
+    kube-state-metrics:
+      podAnnotations:
+        "resource.opentelemetry.io/service.name": "kube-state-metrics"
+        "resource.opentelemetry.io/service.namespace": "kube-prometheus-stack"
+    prometheusOperator:
+      podAnnotations:
+        "resource.opentelemetry.io/service.name": "prometheus-operator"
+        "resource.opentelemetry.io/service.namespace": "kube-prometheus-stack"
     crds:
       enabled: true
       upgradeJob:
@@ -170,6 +182,11 @@ spec:
       enabled: false
       forceDeployDashboards: true
     alertmanager:
+      alertmanagerSpec:
+        podMetadata:
+          annotations:
+            "resource.opentelemetry.io/service.name": "alertmanager"
+            "resource.opentelemetry.io/service.namespace": "kube-prometheus-stack"
       enabled: true
       service:
         annotations: {}

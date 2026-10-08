@@ -89,17 +89,32 @@ spec:
       nodeSelector:
         kubernetes.io/hostname: rke2-node-2
     portal:
+      podAnnotations:
+        "resource.opentelemetry.io/service.name": "harbor-portal"
+        "resource.opentelemetry.io/service.namespace": "harbor"
       <<: *tolerations-and-nodelectors
     core:
+      podAnnotations:
+        "resource.opentelemetry.io/service.name": "harbor-core"
+        "resource.opentelemetry.io/service.namespace": "harbor"
       <<: *tolerations-and-nodelectors
     jobservice:
+      podAnnotations:
+        "resource.opentelemetry.io/service.name": "harbor-jobservice"
+        "resource.opentelemetry.io/service.namespace": "harbor"
       <<: *tolerations-and-nodelectors
     registry:
+      podAnnotations:
+        "resource.opentelemetry.io/service.name": "harbor-registry"
+        "resource.opentelemetry.io/service.namespace": "harbor"
       <<: *tolerations-and-nodelectors
     trivy:
       enabled: false
       <<: *tolerations-and-nodelectors
     database:
+      podAnnotations:
+        "resource.opentelemetry.io/service.name": "harbor-database"
+        "resource.opentelemetry.io/service.namespace": "harbor"
       type: internal
       internal:
         <<: *tolerations-and-nodelectors
@@ -137,6 +152,9 @@ spec:
                 mountPath: /temp
                 # subPath: database
     redis:
+      podAnnotations:
+        "resource.opentelemetry.io/service.name": "harbor-redis"
+        "resource.opentelemetry.io/service.namespace": "harbor"
       internal:
         <<: *tolerations-and-nodelectors
     trace:

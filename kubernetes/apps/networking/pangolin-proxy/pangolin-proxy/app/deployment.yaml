@@ -12,6 +12,7 @@ spec:
   template:
     metadata:
       labels:
+        app.kubernetes.io/part-of: pangolin-proxy
         app: pangolin-proxy
     spec:
       containers:

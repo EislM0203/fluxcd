@@ -25,6 +25,8 @@ spec:
     name: grafana-operator
   interval: 1h
   values:
+    podAnnotations:
+      "resource.opentelemetry.io/service.namespace": "grafana"
     dashboard:
       enabled: true
     serviceMonitor:

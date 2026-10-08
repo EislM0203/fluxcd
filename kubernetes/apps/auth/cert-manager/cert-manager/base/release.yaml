@@ -31,6 +31,17 @@ spec:
   uninstall:
     keepHistory: false
   values:
+    webhook:
+      podAnnotations:
+        "resource.opentelemetry.io/service.name": "cert-manager-webhook"
+        "resource.opentelemetry.io/service.namespace": "cert-manager"
+    cainjector:
+      podAnnotations:
+        "resource.opentelemetry.io/service.name": "cert-manager-cainjector"
+        "resource.opentelemetry.io/service.namespace": "cert-manager"
+    podAnnotations:
+      "resource.opentelemetry.io/service.name": "cert-manager"
+      "resource.opentelemetry.io/service.namespace": "cert-manager"
     installCRDs: true
     crds:
       enabled: true

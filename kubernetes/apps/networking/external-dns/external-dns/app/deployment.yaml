@@ -12,6 +12,7 @@ spec:
   template:
     metadata:
       labels:
+        app.kubernetes.io/part-of: external-dns
         app: *name
     spec:
       automountServiceAccountToken: true

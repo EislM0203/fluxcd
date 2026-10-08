@@ -26,4 +26,6 @@ spec:
       retries: 3
   uninstall:
     keepHistory: false
-  values: {}
+  values:
+    podAnnotations:
+      resource.opentelemetry.io/service.namespace: grafana

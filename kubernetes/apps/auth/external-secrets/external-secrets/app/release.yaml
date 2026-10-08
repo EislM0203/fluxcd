@@ -27,14 +27,23 @@ spec:
   uninstall:
     keepHistory: false
   values:
+    podAnnotations:
+      "resource.opentelemetry.io/service.name": "external-secrets"
+      "resource.opentelemetry.io/service.namespace": "external-secrets"
     installCRDs: true
     leaderElect: true
     image:
       repository: harbor.cloud.traunseenet.com/ghcr.io/external-secrets/external-secrets
     webhook:
+      podAnnotations:
+        "resource.opentelemetry.io/service.name": "external-secrets-webhook"
+        "resource.opentelemetry.io/service.namespace": "external-secrets"
       image:
         repository: harbor.cloud.traunseenet.com/ghcr.io/external-secrets/external-secrets
     certController:
+      podAnnotations:
+        "resource.opentelemetry.io/service.name": "external-secrets-cert-controller"
+        "resource.opentelemetry.io/service.namespace": "external-secrets"
       image:
         repository: harbor.cloud.traunseenet.com/ghcr.io/external-secrets/external-secrets
     serviceMonitor:

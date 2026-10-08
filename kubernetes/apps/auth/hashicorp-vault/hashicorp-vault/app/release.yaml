@@ -35,6 +35,9 @@ spec:
     injector:
       enabled: false
     server:
+      annotations:
+        "resource.opentelemetry.io/service.name": "vault"
+        "resource.opentelemetry.io/service.namespace": "hashicorp-vault"
       image:
         repository: harbor.cloud.traunseenet.com/docker.io/hashicorp/vault
       # the chart's own PVC is replaced by pvc.yaml so volsync can back it up

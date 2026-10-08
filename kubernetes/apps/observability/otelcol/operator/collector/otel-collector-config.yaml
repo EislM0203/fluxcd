@@ -71,9 +71,18 @@ spec:
           insecure: true
     processors:
       batch: {}
+      # Needs the ClusterRole in rbac.yaml; without it every pod lookup was forbidden
+      # and logs reached Loki with only the file-path attributes.
       k8sattributes:
+        # DaemonSet: each collector only needs the pods on its own node
+        filter:
+          node_from_env_var: K8S_NODE_NAME
         extract:
-          metadata: [k8s.namespace.name, k8s.deployment.name, k8s.statefulset.name, k8s.daemonset.name, k8s.cronjob.name, k8s.job.name, k8s.node.name, k8s.pod.name, k8s.pod.uid, k8s.pod.start_time]
+          # service.name / service.namespace follow the OTel k8s spec, same as Beyla:
+          # resource.opentelemetry.io/* annotations, then app.kubernetes.io/* labels,
+          # then the owning workload / k8s namespace. Loki indexes both by default.
+          otel_annotations: true
+          metadata: [service.name, service.namespace, k8s.namespace.name, k8s.deployment.name, k8s.statefulset.name, k8s.daemonset.name, k8s.cronjob.name, k8s.job.name, k8s.node.name, k8s.pod.name, k8s.pod.uid, k8s.pod.start_time]
         passthrough: false
         pod_association:
         - sources:
@@ -83,6 +92,7 @@ spec:
           - from: resource_attribute
             name: k8s.pod.uid
         - sources:
+          - from: connection
       memory_limiter:
         check_interval: 5s
         limit_percentage: 80

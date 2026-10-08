@@ -4,3 +4,4 @@ kind: Kustomization
 namespace: observability
 resources:
   - otel-collector-config.yaml
+  - rbac.yaml

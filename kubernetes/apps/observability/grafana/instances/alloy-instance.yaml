@@ -13,8 +13,9 @@ spec:
     mounts:
       varlog: true
     extraEnv:
+      # "cluster" label on Alloy's self-metrics; matches CLUSTER_NAME in flux/vars/cluster-settings
       - name: CLUSTER_NAME
-        value: daemonset-test-cluster
+        value: fluxcd
     configMap:
       content: |-
         prometheus.exporter.self "default" {}

@@ -30,6 +30,14 @@ spec:
       - key: node-role.kubernetes.io/control-plane
         operator: "Exists"
         effect: "NoSchedule"
+    # ~360-560Mi per node at steady state. No CPU limit: throttling an eBPF agent delays
+    # its event processing and drops data; the memory limit caps a runaway.
+    resources:
+      requests:
+        cpu: 50m
+        memory: 512Mi
+      limits:
+        memory: 1536Mi
     serviceMonitor:
       enabled: true
     # The chart only renders the ServiceMonitor with service.enabled and

@@ -16,6 +16,12 @@ spec:
   - name: rke2agent
     hostPath:
       path: /var/lib/rancher/rke2/agent/logs/
+  # filelog read offsets (file_storage), kept on the node so a collector restart or
+  # rollout resumes where it stopped instead of skipping the logs written meanwhile.
+  - name: otelcol-state
+    hostPath:
+      path: /var/lib/otelcol
+      type: DirectoryOrCreate
   volumeMounts:
   - name: varlog
     mountPath: /var/log
@@ -23,11 +29,33 @@ spec:
   - name: rke2agent
     mountPath: /var/lib/rancher/rke2/agent/logs/
     readOnly: true
+  - name: otelcol-state
+    mountPath: /var/lib/otelcol
+  # The hostPath dir is created root-owned; hand it to the collector's non-root user
+  # (10001) instead of running the collector itself as root.
+  initContainers:
+  - name: chown-state
+    image: harbor.cloud.traunseenet.com/docker.io/library/busybox:1.37.0@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e
+    command: ["chown", "-R", "10001:10001", "/var/lib/otelcol"]
+    securityContext:
+      runAsUser: 0
+      capabilities:
+        drop: ["ALL"]
+        add: ["CHOWN"]
+    volumeMounts:
+    - name: otelcol-state
+      mountPath: /var/lib/otelcol
   env:
   - name: K8S_NODE_NAME
     valueFrom:
       fieldRef:
         fieldPath: spec.nodeName
+  # Referenced by every ${env:MY_POD_IP} listen address below; it was never set, so the
+  # receivers silently listened on all interfaces.
+  - name: MY_POD_IP
+    valueFrom:
+      fieldRef:
+        fieldPath: status.podIP
   mode: daemonset
   # ~60Mi in use; the limit also sizes memory_limiter (limit_percentage of the cgroup limit)
   resources:
@@ -39,6 +67,7 @@ spec:
   config:
     receivers:
       filelog:
+        storage: file_storage
         include_file_path: true
         include:
           - /var/log/pods/*/*/*.log
@@ -69,6 +98,9 @@ spec:
     extensions:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
+      file_storage:
+        directory: /var/lib/otelcol/file_storage
+        create_directory: true
     exporters:
       otlp/grafana_cloud_tempo:
         endpoint: grafana-tempo.observability.svc.cluster.local:4317
@@ -153,6 +185,7 @@ spec:
     service:
       extensions:
       - health_check
+      - file_storage
       # Processor order: memory_limiter first, k8sattributes before batch (connection-based
       # pod association needs the per-request context that batching drops), batch last.
       # k8sattributes only fills attributes that are missing, so Beyla's service.name is kept.

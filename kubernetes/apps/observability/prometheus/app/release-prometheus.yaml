@@ -228,6 +228,18 @@ spec:
         enabled: false
       prometheusSpec:
         enableRemoteWriteReceiver: true
+        # Native OTLP ingestion (/api/v1/otlp) for the collector's metrics pipeline (Beyla,
+        # apps' OTLP metrics). service.name/service.namespace become job, service.instance.id
+        # becomes instance; promote the k8s attributes so these series join with the rest.
+        enableOTLPReceiver: true
+        otlp:
+          promoteResourceAttributes:
+            - service.namespace
+            - k8s.namespace.name
+            - k8s.pod.name
+            - k8s.deployment.name
+            - k8s.statefulset.name
+            - k8s.daemonset.name
         podMonitorSelectorNilUsesHelmValues: false
         probeSelectorNilUsesHelmValues: false
         ruleSelectorNilUsesHelmValues: false

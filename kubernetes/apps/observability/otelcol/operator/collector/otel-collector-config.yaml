@@ -29,12 +29,22 @@ spec:
       fieldRef:
         fieldPath: spec.nodeName
   mode: daemonset
+  # ~60Mi in use; the limit also sizes memory_limiter (limit_percentage of the cgroup limit)
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
   config:
     receivers:
       filelog:
         include_file_path: true
         include:
           - /var/log/pods/*/*/*.log
+        # Never ship the collector's own logs: anything it logs per record would loop back in.
+        exclude:
+          - /var/log/pods/observability_opentelemetry-collector-*/*/*.log
         operators:
           - id: container-parser
             type: container
@@ -60,13 +70,18 @@ spec:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
     exporters:
-      debug: {}
       otlp/grafana_cloud_tempo:
         endpoint: grafana-tempo.observability.svc.cluster.local:4317
         tls:
           insecure: true
       otlphttp:
         endpoint: http://grafana-loki.observability.svc.cluster.local:3100/otlp
+        tls:
+          insecure: true
+      # Prometheus' native OTLP receiver (enableOTLPReceiver); otlphttp appends /v1/metrics.
+      # Before this, the metrics pipeline only had the debug exporter and dropped everything.
+      otlphttp/prometheus:
+        endpoint: http://prometheus-operated.observability.svc.cluster.local:9090/api/v1/otlp
         tls:
           insecure: true
     processors:
@@ -102,26 +117,26 @@ spec:
         - action: insert
           from_attribute: k8s.pod.uid
           key: service.instance.id
-    connectors:
-      spanmetrics: {}
     service:
       extensions:
       - health_check
+      # Processor order: memory_limiter first, k8sattributes before batch (connection-based
+      # pod association needs the per-request context that batching drops), batch last.
+      # k8sattributes only fills attributes that are missing, so Beyla's service.name is kept.
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [batch]
-          # debug removed: its per-batch log lines added noise; jaeger (otlp) removed: Jaeger is suspended
-          exporters: [spanmetrics, otlp/grafana_cloud_tempo]
+          processors: [memory_limiter, k8sattributes, batch]
+          # Span metrics come from Tempo's metrics-generator; the collector's spanmetrics
+          # connector duplicated them and is removed.
+          exporters: [otlp/grafana_cloud_tempo]
         metrics:
-          receivers: [otlp, spanmetrics]
-          processors: [batch, k8sattributes]
-          exporters: [debug]
+          receivers: [otlp]
+          processors: [memory_limiter, k8sattributes, batch]
+          exporters: [otlphttp/prometheus]
         logs:
-          receivers: [otlp,filelog]
-          # receivers: [otlp]
-          processors: [batch, k8sattributes]
-          # debug removed: filelog re-ingested its output from this collector's own pod logs
+          receivers: [otlp, filelog]
+          processors: [memory_limiter, k8sattributes, batch]
           exporters: [otlphttp]
       telemetry:
         metrics: []

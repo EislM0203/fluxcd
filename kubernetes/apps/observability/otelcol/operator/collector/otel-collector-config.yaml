@@ -101,7 +101,7 @@ spec:
         traces:
           receivers: [otlp]
           processors: [batch]
-          # debug removed: it printed every span; jaeger (otlp) removed: Jaeger is suspended
+          # debug removed: its per-batch log lines added noise; jaeger (otlp) removed: Jaeger is suspended
           exporters: [spanmetrics, otlp/grafana_cloud_tempo]
         metrics:
           receivers: [otlp, spanmetrics]

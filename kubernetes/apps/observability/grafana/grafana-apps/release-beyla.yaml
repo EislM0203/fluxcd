@@ -6,6 +6,10 @@ metadata:
   namespace: observability
 spec:
   interval: 15m
+  # Each Beyla pod takes ~2-3 min to stop (eBPF probe teardown) and the DaemonSet rolls
+  # one node at a time, so a rollout exceeds Helm's default 5m wait; the upgrade then
+  # timed out and was rolled back.
+  timeout: 15m
   chart:
     spec:
       chart: beyla

@@ -24,22 +24,7 @@ spec:
       retries: 3
   uninstall:
     keepHistory: false
-  # The chart has no pod-annotation value for the UI; without this Beyla names it
-  # after app.kubernetes.io/instance ("longhorn"), shared with other components.
-  postRenderers:
-    - kustomize:
-        patches:
-          - target:
-              kind: Deployment
-              name: longhorn-ui
-            patch: |-
-              - op: add
-                path: /spec/template/metadata/annotations
-                value:
-                  resource.opentelemetry.io/service.name: longhorn-ui
   values:
-    annotations:
-      "resource.opentelemetry.io/service.name": "longhorn-manager"
     persistence: 
       defaultClass: false
     longhornUI:

@@ -1,0 +1,50 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cnpg
+spec:
+  groups:
+    - name: cnpg
+      rules:
+        # Backups run through the barman-cloud plugin, so the in-tree
+        # cnpg_collector_last_*_backup_timestamp metrics stay 0; use the plugin's.
+        - alert: CNPGBackupTooOld
+          # 26h covers the daily 04:00 schedules with slack; the 6-hourly ones are well inside it.
+          expr: max by (namespace, job) (time() - barman_cloud_cloudnative_pg_io_last_available_backup_timestamp) > 26 * 3600
+          for: 30m
+          labels:
+            severity: critical
+          annotations:
+            summary: No successful Postgres backup for {{ $labels.job }} in over 26h
+            description: >-
+              Last successful barman-cloud backup was {{ $value | humanizeDuration }} ago.
+              Check `kubectl -n {{ $labels.namespace }} get backups.postgresql.cnpg.io`.
+        - alert: CNPGBackupFailed
+          expr: >-
+            max by (namespace, job) (barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp)
+            > max by (namespace, job) (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp)
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: Latest Postgres backup for {{ $labels.job }} failed
+            description: The most recent barman-cloud backup attempt failed after the last successful one.
+        - alert: CNPGWALArchivingStuck
+          # WAL segments waiting to be archived; they pile up when archiving to object storage fails.
+          expr: max by (namespace, job) (cnpg_collector_pg_wal_archive_status{value="ready"}) > 10
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: WAL archiving is falling behind for {{ $labels.job }}
+            description: '{{ $value }} WAL segments are waiting to be archived; point-in-time recovery is at risk.'
+        - alert: CNPGInstanceDown
+          expr: max by (namespace, job, pod) (cnpg_collector_up) == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: Postgres instance {{ $labels.pod }} is down
+            description: The CNPG instance manager reports PostgreSQL as not running.

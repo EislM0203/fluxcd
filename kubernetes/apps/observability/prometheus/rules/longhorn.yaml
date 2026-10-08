@@ -1,0 +1,57 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: longhorn
+spec:
+  groups:
+    - name: longhorn
+      rules:
+        # longhorn_volume_robustness: 0 unknown, 1 healthy, 2 degraded, 3 faulted
+        - alert: LonghornVolumeFaulted
+          expr: max by (volume, pvc, pvc_namespace) (longhorn_volume_robustness) == 3
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: Longhorn volume for {{ $labels.pvc_namespace }}/{{ $labels.pvc }} is faulted
+            description: All replicas of {{ $labels.volume }} are unusable; the workload cannot use its data.
+        - alert: LonghornVolumeDegraded
+          # Replica rebuilds after a node restart can take a while; only alert when it persists.
+          expr: max by (volume, pvc, pvc_namespace) (longhorn_volume_robustness) == 2
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: Longhorn volume for {{ $labels.pvc_namespace }}/{{ $labels.pvc }} is degraded
+            description: '{{ $labels.volume }} is running with fewer healthy replicas than configured.'
+        - alert: LonghornNodeNotReady
+          expr: max by (node) (longhorn_node_status{condition="ready"}) == 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Longhorn node {{ $labels.node }} is not ready
+        - alert: LonghornDiskNotReady
+          expr: max by (node, disk) (longhorn_disk_status{condition="ready"}) == 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Longhorn disk {{ $labels.disk }} on {{ $labels.node }} is not ready
+        - alert: LonghornNodeStorageHigh
+          expr: max by (node) (longhorn_node_storage_usage_bytes / longhorn_node_storage_capacity_bytes) > 0.85
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: Longhorn storage on {{ $labels.node }} is {{ $value | humanizePercentage }} full
+        - alert: LonghornMetricsMissing
+          expr: absent(up{job="longhorn-backend"} == 1)
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Longhorn metrics are not being scraped
+            description: Without them the other Longhorn alerts cannot fire.

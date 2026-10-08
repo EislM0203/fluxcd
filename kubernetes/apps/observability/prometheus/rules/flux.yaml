@@ -1,0 +1,38 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: flux
+spec:
+  groups:
+    - name: flux
+      rules:
+        # gotk_resource_info comes from kube-state-metrics' custom resource state config
+        # (see prometheus/app/release-prometheus.yaml).
+        - alert: FluxResourceNotReady
+          # 30m: Kustomizations waiting on a dependency are also Ready=False during a rollout.
+          expr: max by (customresource_kind, exported_namespace, name) (gotk_resource_info{ready="False", suspended!="true"}) == 1
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: Flux {{ $labels.customresource_kind }} {{ $labels.exported_namespace }}/{{ $labels.name }} is not ready
+            description: >-
+              Failing for over 30 minutes. Check
+              `flux get {{ $labels.customresource_kind | toLower }} {{ $labels.name }} -n {{ $labels.exported_namespace }}`.
+        - alert: FluxResourceStuck
+          expr: max by (customresource_kind, exported_namespace, name) (gotk_resource_info{ready="Unknown", suspended!="true"}) == 1
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: Flux {{ $labels.customresource_kind }} {{ $labels.exported_namespace }}/{{ $labels.name }} has been reconciling for over an hour
+        - alert: FluxMetricsMissing
+          expr: absent(gotk_resource_info)
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: No Flux reconcile status metrics
+            description: kube-state-metrics is not exporting gotk_resource_info, so the other Flux alerts cannot fire.

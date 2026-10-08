@@ -6,3 +6,8 @@ namespace: observability
 resources:
   - rules.yaml
   - volsync.yaml
+  - cnpg.yaml
+  - cert-manager.yaml
+  - flux.yaml
+  - longhorn.yaml
+  - services.yaml

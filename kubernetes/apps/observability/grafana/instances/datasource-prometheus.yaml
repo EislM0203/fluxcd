@@ -18,6 +18,11 @@ spec:
     isDefault: true
     jsonData:
       timeInterval: "60s"
+      # Tempo's metrics-generator attaches exemplars labelled "traceID" (send_exemplars);
+      # this turns them into links to the trace.
+      exemplarTraceIdDestinations:
+        - name: traceID
+          datasourceUid: tempo
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1

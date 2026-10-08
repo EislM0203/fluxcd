@@ -41,10 +41,29 @@ spec:
             processors:
               - service-graphs
               - span-metrics
+            # Add the app group (service.namespace, from Beyla/k8sattributes) as a label so
+            # span metrics and the service graph can be grouped per app.
+            processor:
+              span_metrics:
+                dimensions:
+                  - service.namespace
+              service_graphs:
+                dimensions:
+                  - service.namespace
       metricsGenerator:
         # -- If true, enables Tempo's metrics generator (https://grafana.com/docs/tempo/next/metrics-generator/)
         enabled: true
         remoteWriteUrl: "http://prometheus-operated.observability.svc.cluster.local:9090/api/v1/write"
+        storage:
+          # Explicit remote_write (replaces remoteWriteUrl) to send exemplars: trace IDs on
+          # latency histograms, linked to Tempo from the Prometheus datasource.
+          remote_write:
+            - url: "http://prometheus-operated.observability.svc.cluster.local:9090/api/v1/write"
+              send_exemplars: true
+      # Traces and WAL live in /var/tempo; without a volume they were lost on every restart.
+      extraVolumeMounts:
+        - name: tempo-data
+          mountPath: /var/tempo
     # # this is jaeger
     # # tempoQuery:
     # #   enabled: true
@@ -62,18 +81,30 @@ spec:
     # #       - secretName: tempo-cert
     # #         hosts:
     # #           - tempo-query.cloud.traunseenet.com
-      # extraVolumeMounts:
-      #   - name: tempo-pvc
-      #     mountPath: /mnt/volume
-      #     existingClaim: tempo-pvc
     service:
       type: ClusterIP
-    # persistence:
-    #   enabled: true
-    #   storageClassName: longhorn-storage
-    #   accessModes:
-    #     - ReadWriteOnce
-    #   size: 2Gi
+    # A standalone PVC instead of persistence.enabled: that adds volumeClaimTemplates,
+    # which are immutable on the existing StatefulSet and would fail the upgrade.
+    extraVolumes:
+      - name: tempo-data
+        persistentVolumeClaim:
+          claimName: tempo-data
+    serviceMonitor:
+      enabled: true
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tempo-data
+  namespace: observability
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-storage
+  resources:
+    requests:
+      # 12h retention; current volume of traces is small
+      storage: 5Gi
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1

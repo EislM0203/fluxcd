@@ -56,21 +56,14 @@ spec:
       limits_config:
         retention_period: 30d
         allow_structured_metadata: true
-        otlp_config:
-          resource_attributes:
-            attributes_config:
-              - action: index_label
-                regex: service.group
-          scope_attributes:
-            - action: drop
-              attributes:
-                - method.name
-          log_attributes:
-            - action: structured_metadata
-              attributes:
-                - user.id
-            - action: drop
-              regex: .*
+        # No otlp_config: the previous one was the example from Loki's OTel docs
+        # (service.group index label, drop all log attributes but user.id) and dropped
+        # log.iostream/log.file.path. Defaults index service.name/namespace and the k8s
+        # workload attributes; other attributes become structured metadata.
+    # Scrape Loki itself so ingestion failures can alert.
+    monitoring:
+      serviceMonitor:
+        enabled: true
     singleBinary:
       replicas: 1
       persistence:

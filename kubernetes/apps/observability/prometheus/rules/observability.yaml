@@ -1,0 +1,73 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: observability
+spec:
+  groups:
+    # The telemetry pipeline watching itself: collector -> Loki / Tempo / Prometheus.
+    # A target that stops being scraped is already covered by the default TargetDown alert.
+    - name: observability
+      rules:
+        - alert: OtelCollectorExportFailing
+          expr: >-
+            sum by (exporter) (rate({__name__=~"otelcol_exporter_send_failed_(spans|log_records|metric_points)_total"}[10m])) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: OTel collector exporter {{ $labels.exporter }} is failing to send data
+            description: Telemetry for this backend is being dropped. Check the collector logs and the backend.
+        - alert: OtelCollectorRefusingData
+          expr: >-
+            sum by (receiver) (rate({__name__=~"otelcol_receiver_refused_(spans|log_records|metric_points)_total"}[10m])) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: OTel collector receiver {{ $labels.receiver }} is refusing data
+            description: Usually the memory_limiter rejecting input because the collector is near its memory limit.
+        - alert: OtelCollectorQueueFilling
+          expr: max by (exporter) (otelcol_exporter_queue_size / otelcol_exporter_queue_capacity) > 0.8
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: OTel collector queue for {{ $labels.exporter }} is {{ $value | humanizePercentage }} full
+            description: The backend is not keeping up; data will be dropped once the queue is full.
+        - alert: LokiIngestErrors
+          expr: >-
+            (
+              sum by (route) (rate(loki_request_duration_seconds_count{route=~"otlp_v1_logs|loki_api_v1_push", status_code=~"5.."}[10m]))
+              / sum by (route) (rate(loki_request_duration_seconds_count{route=~"otlp_v1_logs|loki_api_v1_push"}[10m]))
+            ) > 0.05
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Loki is failing {{ $value | humanizePercentage }} of {{ $labels.route }} pushes
+            description: Logs are being lost. Check the Loki logs and its volume.
+        - alert: LokiDiscardingLogs
+          expr: sum by (reason) (rate(loki_discarded_samples_total[10m])) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Loki is discarding log lines ({{ $labels.reason }})
+            description: Usually rate or size limits, or log lines too old to accept.
+        - alert: TempoDiscardingSpans
+          expr: sum by (reason) (rate(tempo_discarded_spans_total[10m])) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Tempo is discarding spans ({{ $labels.reason }})
+        - alert: TempoMetricsGeneratorRemoteWriteFailing
+          # Span metrics / service graph (and the ServiceHighErrorRate alert) depend on this.
+          expr: sum(rate(prometheus_remote_storage_samples_failed_total{job=~".*tempo.*"}[10m])) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Tempo's metrics-generator cannot write span metrics to Prometheus

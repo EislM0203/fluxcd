@@ -11,3 +11,4 @@ resources:
   - flux.yaml
   - longhorn.yaml
   - services.yaml
+  - observability.yaml

@@ -44,3 +44,21 @@ spec:
       app: longhorn-manager
   endpoints:
     - port: manager
+---
+# OpenTelemetry collector self-metrics (otelcol_*: accepted/refused/sent/failed, queues),
+# served on :8888 by the operator-created monitoring Service.
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/servicemonitor_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: opentelemetry-collector
+  namespace: observability
+spec:
+  namespaceSelector:
+    matchNames:
+      - observability
+  selector:
+    matchLabels:
+      operator.opentelemetry.io/collector-service-type: monitoring
+  endpoints:
+    - port: monitoring

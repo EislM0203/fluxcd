@@ -9,6 +9,7 @@ spec:
   template:
     metadata:
       labels:
+        app.kubernetes.io/part-of: ntfy
         app: ntfy
     spec:
       containers:

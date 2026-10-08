@@ -26,6 +26,10 @@ spec:
   values:
     replicaCount: 1
 
+    # OTel service.namespace grouping (Beyla), same as openshell-pg
+    podLabels:
+      app.kubernetes.io/part-of: openshell
+
     workload:
       # Use Deployment (not StatefulSet) — no sqlite PVC needed with external Postgres.
       kind: deployment

@@ -13,6 +13,7 @@ spec:
   template:
     metadata:
       labels:
+        app.kubernetes.io/part-of: nextcloud
         app: nextcloud-imaginary
     spec:
       containers:

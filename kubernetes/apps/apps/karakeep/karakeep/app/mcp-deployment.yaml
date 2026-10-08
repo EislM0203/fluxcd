@@ -12,6 +12,7 @@ spec:
   template:
     metadata:
       labels:
+        app.kubernetes.io/part-of: karakeep
         app: karakeep-mcp
     spec:
       initContainers:

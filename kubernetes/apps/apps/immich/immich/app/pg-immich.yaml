@@ -5,6 +5,10 @@ metadata:
   annotations:
     cnpg.io/skipEmptyWalArchiveCheck: "enabled"
 spec:
+  # Groups the database with the app's other components (service.namespace)
+  inheritedMetadata:
+    labels:
+      app.kubernetes.io/part-of: immich
   instances: 1
   imageName: ghcr.io/tensorchord/cloudnative-vectorchord:18.3
   postgresql:

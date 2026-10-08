@@ -14,6 +14,7 @@ spec:
   template:
     metadata:
       labels:
+        app.kubernetes.io/part-of: immich
         app: *name
     spec:
       containers:

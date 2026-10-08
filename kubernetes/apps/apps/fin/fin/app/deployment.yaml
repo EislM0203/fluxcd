@@ -17,6 +17,7 @@ spec:
   template:
     metadata:
       labels:
+        app.kubernetes.io/part-of: fin
         app: fin
         component: api
     spec:
@@ -83,6 +84,7 @@ spec:
   template:
     metadata:
       labels:
+        app.kubernetes.io/part-of: fin
         app: fin
         component: web
     spec:
@@ -137,6 +139,7 @@ spec:
   template:
     metadata:
       labels:
+        app.kubernetes.io/part-of: fin
         app: fin
         component: mcp
     spec:

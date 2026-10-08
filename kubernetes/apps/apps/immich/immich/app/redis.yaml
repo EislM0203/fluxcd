@@ -173,9 +173,9 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      metadata:
       labels:
         app: *name
+        app.kubernetes.io/part-of: immich
     spec:
       securityContext:
         fsGroup: 1001

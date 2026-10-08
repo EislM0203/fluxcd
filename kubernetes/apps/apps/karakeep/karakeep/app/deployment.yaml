@@ -134,12 +134,16 @@ spec:
     spec:
       containers:
         - name: meilisearch
-          image: harbor.cloud.traunseenet.com/docker.io/getmeili/meilisearch:v1.51.0@sha256:a9eb29ee09ab4943db3b4c68620bd6f3382e6b2b0ac4431c0e607b48dbcd4c14
+          image: harbor.cloud.traunseenet.com/docker.io/getmeili/meilisearch:v1.54.3@sha256:e68913ab7d6f5b159529e472cfd362ce3c741fafd3c127961b2142abbe41b3c9
           ports:
             - name: meilisearch
               containerPort: 7700
               protocol: TCP
           env:
+            # Upgrade the on-disk database in place when the image version changes;
+            # without it a version mismatch refuses to start. No-op when versions match.
+            - name: MEILI_UPGRADE_DB
+              value: "true"
             - name: MEILI_NO_ANALYTICS
               valueFrom:
                 configMapKeyRef:

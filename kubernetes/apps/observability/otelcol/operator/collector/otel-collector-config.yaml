@@ -61,10 +61,6 @@ spec:
         endpoint: ${env:MY_POD_IP}:13133
     exporters:
       debug: {}
-      otlp:
-        endpoint: jaegertracing.observability.svc.cluster.local:4317
-        tls:
-          insecure: true
       otlp/grafana_cloud_tempo:
         endpoint: grafana-tempo.observability.svc.cluster.local:4317
         tls:
@@ -105,7 +101,8 @@ spec:
         traces:
           receivers: [otlp]
           processors: [batch]
-          exporters: [otlp, debug, spanmetrics,otlp/grafana_cloud_tempo]
+          # debug removed: it printed every span; jaeger (otlp) removed: Jaeger is suspended
+          exporters: [spanmetrics, otlp/grafana_cloud_tempo]
         metrics:
           receivers: [otlp, spanmetrics]
           processors: [batch, k8sattributes]
@@ -114,7 +111,8 @@ spec:
           receivers: [otlp,filelog]
           # receivers: [otlp]
           processors: [batch, k8sattributes]
-          exporters: [debug, otlphttp]
+          # debug removed: filelog re-ingested its output from this collector's own pod logs
+          exporters: [otlphttp]
       telemetry:
         metrics: []
           # address: ${env:MY_POD_IP}:8888

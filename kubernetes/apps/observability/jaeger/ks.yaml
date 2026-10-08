@@ -6,6 +6,8 @@ metadata:
   name: jaeger-app
   namespace: flux-system
 spec:
+  # Suspended: traces go to Tempo only; the collector no longer exports to Jaeger.
+  suspend: true
   dependsOn:
     - name: traefik-base
   path: ./kubernetes/apps/observability/jaeger/app

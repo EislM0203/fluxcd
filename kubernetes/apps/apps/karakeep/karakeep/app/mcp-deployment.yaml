@@ -18,7 +18,7 @@ spec:
         # Warms the npx cache so the first spawn beats Bifrost's hardcoded
         # 30s MCP initialize timeout; a cold download does not.
         - name: npm-prefetch
-          image: harbor.cloud.traunseenet.com/ghcr.io/supercorp-ai/supergateway:3.4.3
+          image: harbor.cloud.traunseenet.com/ghcr.io/supercorp-ai/supergateway:4.1.0@sha256:1938c43538a5308bce07d58028e9de00b7acfecb40b39b059b2f3931800ad910
           env:
             - name: NPM_CONFIG_CACHE
               value: /npm-cache
@@ -38,7 +38,7 @@ spec:
         # karakeep-mcp is stdio-only, so supergateway exposes it over
         # streamable HTTP for Bifrost at http://karakeep-mcp:8000/mcp.
         - name: supergateway
-          image: harbor.cloud.traunseenet.com/ghcr.io/supercorp-ai/supergateway:3.4.3
+          image: harbor.cloud.traunseenet.com/ghcr.io/supercorp-ai/supergateway:4.1.0@sha256:1938c43538a5308bce07d58028e9de00b7acfecb40b39b059b2f3931800ad910
           args:
             - --stdio
             # Bump together with the karakeep image, keeping the same minor.

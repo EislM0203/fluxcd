@@ -32,6 +32,11 @@ spec:
         effect: "NoSchedule"
     serviceMonitor:
       enabled: true
+    # The chart only renders the ServiceMonitor with service.enabled and
+    # config.data.prometheus_export set; the latter only tells the chart the port,
+    # the exporter itself is enabled in the beyla-config ConfigMap below.
+    service:
+      enabled: true
     config:
       create: false
       name: "beyla-config"
@@ -80,8 +85,12 @@ data:
     trace_printer: disabled
     otel_traces_export:
       endpoint: http://opentelemetry-collector.observability.svc.cluster.local:4318/v1/traces
-    otel_metrics_export:
-      endpoint: http://opentelemetry-collector.observability.svc.cluster.local:4318/v1/metrics
+    # Metrics are scraped by Prometheus instead of pushed over OTLP: through Prometheus'
+    # OTLP translation, ~20-30% of Beyla's points were rejected as out-of-order (several
+    # OTLP resources per container mapping to the same job/instance series).
+    prometheus_export:
+      port: 9090
+      path: /metrics
     attributes:
       kubernetes:
         enable: true

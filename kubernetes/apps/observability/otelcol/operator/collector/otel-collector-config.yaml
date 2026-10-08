@@ -93,11 +93,24 @@ spec:
         filter:
           node_from_env_var: K8S_NODE_NAME
         extract:
-          # service.name / service.namespace follow the OTel k8s spec, same as Beyla:
-          # resource.opentelemetry.io/* annotations, then app.kubernetes.io/* labels,
-          # then the owning workload / k8s namespace. Loki indexes both by default.
+          # service.name / service.namespace per the OTel k8s spec (Loki indexes both).
+          # Two gaps vs Beyla are closed by transform/identity below: in this processor the
+          # app.kubernetes.io/instance label overwrites the service.name annotation, and the
+          # spec has no app.kubernetes.io/part-of -> service.namespace rule.
           otel_annotations: true
           metadata: [service.name, service.namespace, k8s.namespace.name, k8s.deployment.name, k8s.statefulset.name, k8s.daemonset.name, k8s.cronjob.name, k8s.job.name, k8s.node.name, k8s.pod.name, k8s.pod.uid, k8s.pod.start_time]
+          # Temporary inputs for transform/identity, deleted there in every pipeline.
+          annotations:
+            - tag_name: tmp.identity.name_annotation
+              key: resource.opentelemetry.io/service.name
+              from: pod
+            - tag_name: tmp.identity.namespace_annotation
+              key: resource.opentelemetry.io/service.namespace
+              from: pod
+          labels:
+            - tag_name: tmp.identity.part_of
+              key: app.kubernetes.io/part-of
+              from: pod
         passthrough: false
         pod_association:
         - sources:
@@ -108,6 +121,26 @@ spec:
             name: k8s.pod.uid
         - sources:
           - from: connection
+      # Give logs the same identity Beyla gives traces: the service.name annotation wins
+      # over the instance label, and app.kubernetes.io/part-of sets service.namespace
+      # unless a service.namespace annotation does. Traces/metrics only drop the temp keys
+      # (Beyla already resolved their identity).
+      transform/identity:
+        error_mode: ignore
+        log_statements:
+          - context: resource
+            statements:
+              - set(attributes["service.name"], attributes["tmp.identity.name_annotation"]) where attributes["tmp.identity.name_annotation"] != nil
+              - set(attributes["service.namespace"], attributes["tmp.identity.part_of"]) where attributes["tmp.identity.part_of"] != nil and attributes["tmp.identity.namespace_annotation"] == nil
+              - delete_matching_keys(attributes, "^tmp\\.identity\\.")
+        trace_statements:
+          - context: resource
+            statements:
+              - delete_matching_keys(attributes, "^tmp\\.identity\\.")
+        metric_statements:
+          - context: resource
+            statements:
+              - delete_matching_keys(attributes, "^tmp\\.identity\\.")
       memory_limiter:
         check_interval: 5s
         limit_percentage: 80
@@ -126,17 +159,17 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [memory_limiter, k8sattributes, batch]
+          processors: [memory_limiter, k8sattributes, transform/identity, batch]
           # Span metrics come from Tempo's metrics-generator; the collector's spanmetrics
           # connector duplicated them and is removed.
           exporters: [otlp/grafana_cloud_tempo]
         metrics:
           receivers: [otlp]
-          processors: [memory_limiter, k8sattributes, batch]
+          processors: [memory_limiter, k8sattributes, transform/identity, batch]
           exporters: [otlphttp/prometheus]
         logs:
           receivers: [otlp, filelog]
-          processors: [memory_limiter, k8sattributes, batch]
+          processors: [memory_limiter, k8sattributes, transform/identity, batch]
           exporters: [otlphttp]
       telemetry:
         metrics: []

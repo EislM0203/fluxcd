@@ -18,7 +18,7 @@ spec:
         app: paperless
     spec:
       containers:
-        - image: harbor.cloud.traunseenet.com/ghcr.io/paperless-ngx/paperless-ngx:3.0.5@sha256:65a4cabf0169ea7fbd90ab7bb28ba3f8b5909613635acda1a03ad606f34b456b
+        - image: harbor.cloud.traunseenet.com/ghcr.io/paperless-ngx/paperless-ngx:3.3.0@sha256:6b94799bc769a063b3340cc5847402e626d4d91d29a295a8e747f8e9bead4207
           name: paperless
           ports:
             - containerPort: 8000

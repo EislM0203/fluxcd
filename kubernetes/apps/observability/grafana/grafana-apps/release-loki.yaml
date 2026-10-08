@@ -37,6 +37,11 @@ spec:
         replication_factor: 1
       ingester:
         chunk_encoding: snappy
+      # limits_config.retention_period is only enforced by the compactor with
+      # retention enabled; without this block no logs were ever deleted.
+      compactor:
+        retention_enabled: true
+        delete_request_store: filesystem
       storage:
         type: filesystem
       schemaConfig:

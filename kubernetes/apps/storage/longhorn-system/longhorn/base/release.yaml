@@ -5,10 +5,13 @@ metadata:
   name: longhorn
 spec:
   interval: 15m
+  # Covers the pre-upgrade checker job plus the longhorn-manager DaemonSet rollout.
+  timeout: 15m
   chart:
     spec:
+      # Upgrade one minor at a time (1.10 -> 1.11 -> 1.12); Longhorn rejects skipped minors.
       chart: longhorn
-      version: 1.10.1
+      version: 1.10.2
       sourceRef:
         kind: HelmRepository
         name: longhorn
@@ -20,16 +23,32 @@ spec:
       retries: 3
   upgrade:
     cleanupOnFail: true
+    # No automatic rollback: for Longhorn a rollback is a downgrade, which it does not
+    # support once the new manager has migrated its CRs. A failed upgrade stays failed
+    # for manual inspection.
     remediation:
-      retries: 3
+      retries: 0
+      remediateLastFailure: false
   uninstall:
     keepHistory: false
   values:
-    persistence: 
+    persistence:
       defaultClass: false
     longhornUI:
       replicas: 1
+    defaultSettings:
+      # Upgrade volume engines to the new engine image after each Longhorn upgrade, one
+      # volume per node at a time (live upgrade for V1 volumes). 0 left them on the old engine.
+      concurrentAutomaticEngineUpgradePerNodeLimit: 1
+    # Backups are done by VolSync, not Longhorn. Empty strings (not omitted keys) are
+    # needed to clear the existing default BackupTarget: the manager keeps the current
+    # value for any key missing from the longhorn-default-resource ConfigMap.
     defaultBackupStore:
-      backupTarget: "s3://flux-backup@us-east-1/"
-      backupTargetCredentialSecret: s3-secret
-      pollInterval: 30
+      backupTarget: ""
+      backupTargetCredentialSecret: ""
+    networkPolicies:
+      # Chart >= 1.12 renders internal NetworkPolicies by default (independent of
+      # networkPolicies.enabled). They block Prometheus scraping longhorn-manager
+      # (longhorn/longhorn#13741) and, depending on the CNI, host iSCSI traffic to
+      # instance-manager. No effect on older charts; adopt them as a separate change.
+      restrictInternalTraffic: false

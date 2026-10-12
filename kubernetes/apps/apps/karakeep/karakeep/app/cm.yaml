@@ -10,6 +10,7 @@ data:
   OPENAI_BASE_URL: http://bifrost.apps.svc.cluster.local:8080/v1
   INFERENCE_TEXT_MODEL: llamaswap/Qwen3.6-35B-A3B
   INFERENCE_IMAGE_MODEL: llamaswap/Qwen3.6-35B-A3B
+  OPENAI_REASONING_EFFORT: none
   EMBEDDING_TEXT_MODEL: ollamalxc/qwen3-embedding:8b-q4_K_M
   EMBEDDING_DIMENSIONS: "4096"
   EMBEDDING_JOB_TIMEOUT_SEC: "180"

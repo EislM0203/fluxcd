@@ -22,6 +22,18 @@
         "stream_idle_timeout_in_seconds": 300,
         "max_retries": 1
       }
+    },
+    "ollamalxc": {
+      "custom_provider_config": {
+        "base_provider_type": "openai",
+        "is_key_less": true
+      },
+      "network_config": {
+        "base_url": "http://10.0.0.104:11434",
+        "allow_private_network": true,
+        "default_request_timeout_in_seconds": 300,
+        "max_retries": 1
+      }
     }
   },
   "vector_store": {

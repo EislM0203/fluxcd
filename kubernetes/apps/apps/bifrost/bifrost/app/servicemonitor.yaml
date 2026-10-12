@@ -8,6 +8,13 @@ spec:
       path: /metrics
       interval: 15s
       honorLabels: true
+      basicAuth:
+        username:
+          name: bifrost
+          key: BIFROST_ADMIN_USERNAME
+        password:
+          name: bifrost
+          key: BIFROST_ADMIN_PASSWORD
   namespaceSelector:
     matchNames:
       - apps

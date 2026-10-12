@@ -7,7 +7,15 @@
     "enable_logging": true,
     "log_retention_days": 30,
     "prometheus_labels": ["cluster=fluxcd"],
-    "allowed_origins": ["https://bifrost.cloud.traunseenet.com"]
+    "allowed_origins": ["https://bifrost.cloud.traunseenet.com"],
+    "enforce_auth_on_inference": true
+  },
+  "governance": {
+    "auth_config": {
+      "is_enabled": true,
+      "admin_username": "env.BIFROST_ADMIN_USERNAME",
+      "admin_password": "env.BIFROST_ADMIN_PASSWORD"
+    }
   },
   "providers": {
     "llamaswap": {

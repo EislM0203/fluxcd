@@ -24,7 +24,7 @@ metadata:
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: longhorn-storage
-  # /data holds the server state (users.json, authentication.json) plus one folder
+  # /data/space (SB_FOLDER) holds the server state (users.json, authentication.json) plus one folder
   # per space — each space is plain markdown with its own .silverbullet index.
   # An hourly restic snapshot is the backup; Longhorn keeps its replica count.
   # Back this volume properly: accounts and the OIDC client secret live here too.

@@ -1,7 +1,11 @@
 # Login is the app's own (Dashboard accounts), so this route is the only front door:
 # no HTTPRoute on :3001 (metrics) — scraped in-cluster by kube-prometheus.
-# With no space bound to / yet, opening / redirects to /.dashboard for the
-# first-run setup wizard; after setup the space is served at / with no restart.
+# First run: an EMPTY /data/space (SB_FOLDER) boots the unconfigured setup wizard and every path 307s
+# to /.setup/ (not a login bypass — that surface only exists while there is no
+# users.json). Once provisioned, / serves the space bound to "/" and unbound hosts
+# redirect to /.dashboard. None of that holds if the instance boots in legacy
+# single-space mode, which is unauthenticated: see the boot-mode warning in
+# kustomization.yaml.
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute

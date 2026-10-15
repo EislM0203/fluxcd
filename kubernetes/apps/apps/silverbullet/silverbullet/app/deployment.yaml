@@ -31,7 +31,7 @@ spec:
           image: harbor.cloud.traunseenet.com/ghcr.io/silverbulletmd/silverbullet:2.12.1@sha256:370a3bf2daa37b7dbba62183085c57d5d43862189ea127e0765646d230561d9d
           imagePullPolicy: IfNotPresent
           # No args and no SB_USER: the entrypoint passes $SB_FOLDER to the server,
-          # which boots in the default multi-space mode. An empty /data opens the
+          # which boots in the default multi-space mode. An empty /data/space opens the
           # first-run setup wizard (admin account + first space); see httproute.yaml.
           securityContext:
             allowPrivilegeEscalation: false
@@ -56,25 +56,29 @@ spec:
               mountPath: /data
             - name: tmp
               mountPath: /tmp
-          # /.ping answers 200 "OK" and is documented as one of the paths exempt
-          # from auth, so it works both in first-run setup mode and once a space
-          # is serving. The image's own HEALTHCHECK uses /.instance instead; kept
-          # out of the probes so behaviour does not depend on it.
+          # /.instance is the only path answered in BOTH first-run setup mode and
+          # multi-space mode (setup_api.rs / dispatch.rs, unauthenticated), and it
+          # is what the image's own HEALTHCHECK uses. It is deliberately NOT /.ping:
+          # /.ping is missing while the setup wizard is up (so the pod could not
+          # come Ready before provisioning) and exists in legacy single-space mode,
+          # where /.instance 404s. Probing /.instance therefore also acts as a
+          # guard: an instance that accidentally boots single-space goes NotReady
+          # instead of serving an unauthenticated space.
           startupProbe:
             httpGet:
-              path: /.ping
+              path: /.instance
               port: http
             periodSeconds: 5
             failureThreshold: 36
           readinessProbe:
             httpGet:
-              path: /.ping
+              path: /.instance
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /.ping
+              path: /.instance
               port: http
             initialDelaySeconds: 30
             periodSeconds: 30

@@ -1,14 +1,5 @@
 ---
-# NOT GitOps-able (§12.1 caveat): SilverBullet keeps its identity + space config in
-# the Dashboard UI, not in env vars, so some of it lives only on the PVC:
-#   - accounts / space membership / per-space access levels  -> /data/users.json
-#   - OIDC (Pocket ID) issuer, client ID + client secret     -> /data/authentication.json
-#   - primary server URL (Admin -> Server), required for the SSO callback
-# Enable SSO there, not here: Admin -> Server first (the callback origin is derived
-# from the primary URL), then Admin -> Authentication -> OpenID Connect, issuer
-# https://pocketid.cloud.traunseenet.com, callback <host>/.auth/central/oidc/callback.
-# Keep one local admin account for recovery. There is no rollback path for this
-# state short of a VolSync restore, which also reverts the notes.
+
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: apps
@@ -29,21 +20,19 @@ configMapGenerator:
       # metrics live on their own port, never exposed through the HTTPRoute
       - SB_METRICS_PORT=3001
       # --- storage ---------------------------------------------------------
-      # /data is the mount point; the entrypoint resolves SB_FOLDER to it.
+      # /data is the PVC mount point; SB_FOLDER is a subfolder of it because the
+      # ext4 root holds lost+found, which detect() counts as "not empty" and boots
+      # open single-space (see header). The entrypoint mkdir -p's it (fsGroup 1000).
       # In multi-space mode this folder holds the server config, the accounts and
       # (by default) the spaces — all of it lands in the VolSync backup.
-      - SB_FOLDER=/data
+      - SB_FOLDER=/data/space
       # Set explicitly: the entrypoint would otherwise stat /data for the owner.
       - PUID=1000
       - PGID=1000
       # Longhorn is not NFS, so the default native watch (auto) is correct;
       # SB_FS_WATCH=poll is only needed on NFS/SMB mounts.
-      # --- auth ------------------------------------------------------------
-      # Multi-space (accounts) mode: logins are accounts created in the Dashboard,
-      # stored on /data (PVC) — no credentials in Git or Vault. These two apply
-      # server-wide in accounts mode as of 2.11.x (they were ignored before).
-      - SB_LOCKOUT_LIMIT=10
-      - SB_LOCKOUT_TIME=300
-      # Deliberately NOT set: SB_USER/SB_AUTH_TOKEN/SB_NAME/SB_DESCRIPTION are the
-      # legacy single-space knobs; in accounts mode the server name, index page and
-      # per-space access levels are set in the Dashboard instead.
+      # --- shell -----------------------------------------------------------
+      # The server-side shell defaults to on (backend "local", empty whitelist =
+      # any command). Off in every boot mode; not a legacy var, so it does not
+      # change detect(). Remove only if a space really needs shell commands.
+      - SB_SHELL_BACKEND=off

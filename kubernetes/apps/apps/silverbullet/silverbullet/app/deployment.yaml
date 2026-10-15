@@ -1,0 +1,93 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: silverbullet
+  labels:
+    app: silverbullet
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate          # RWO Longhorn volume, single writer
+  selector:
+    matchLabels:
+      app: silverbullet
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: silverbullet
+        app: silverbullet
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch   # Longhorn: else /data comes up root-owned
+      containers:
+        - name: silverbullet
+          # Pin tag AND digest (§13a.2). Tag = latest release at time of writing,
+          # digest = the multi-arch manifest index of ghcr.io/silverbulletmd/silverbullet:2.12.1.
+          image: harbor.cloud.traunseenet.com/ghcr.io/silverbulletmd/silverbullet:2.12.1@sha256:370a3bf2daa37b7dbba62183085c57d5d43862189ea127e0765646d230561d9d
+          imagePullPolicy: IfNotPresent
+          # No args and no SB_USER: the entrypoint passes $SB_FOLDER to the server,
+          # which boots in the default multi-space mode. An empty /data opens the
+          # first-run setup wizard (admin account + first space); see httproute.yaml.
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            # The image strips /etc/passwd down to root, so HOME is otherwise
+            # unset and Deno/SilverBullet caches would aim at a read-only path.
+            - name: HOME
+              value: /tmp
+          envFrom:
+            - configMapRef:
+                name: silverbullet-env
+          ports:
+            - name: http
+              containerPort: 3000
+            - name: metrics
+              containerPort: 3001
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+          # /.ping answers 200 "OK" and is documented as one of the paths exempt
+          # from auth, so it works both in first-run setup mode and once a space
+          # is serving. The image's own HEALTHCHECK uses /.instance instead; kept
+          # out of the probes so behaviour does not depend on it.
+          startupProbe:
+            httpGet:
+              path: /.ping
+              port: http
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet:
+              path: /.ping
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /.ping
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: silverbullet-data
+        - name: tmp
+          emptyDir: {}

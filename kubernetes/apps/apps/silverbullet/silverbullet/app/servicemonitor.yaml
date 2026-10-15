@@ -1,0 +1,18 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: silverbullet
+  labels:
+    app: silverbullet
+spec:
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 60s
+      honorLabels: true
+  namespaceSelector:
+    matchNames: ["apps"]
+  selector:
+    matchLabels:
+      app: silverbullet

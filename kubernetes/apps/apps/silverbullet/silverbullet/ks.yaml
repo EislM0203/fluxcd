@@ -1,0 +1,56 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: silverbullet-app
+  namespace: flux-system
+spec:
+  targetNamespace: apps
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: silverbullet
+  dependsOn:
+    - name: traefik-base
+    - name: longhorn-addons
+    - name: cert-manager-addons
+    - name: volsync
+    - name: harbor-app                # the image is pulled from in-cluster Harbor
+    - name: pocketid-app              # SSO IdP; wired in the Dashboard, see app/kustomization.yaml
+  path: ./kubernetes/apps/apps/silverbullet/silverbullet/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  wait: true
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: silverbullet
+      namespace: apps
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: silverbullet-backup
+  namespace: flux-system
+spec:
+  targetNamespace: apps
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: silverbullet
+  dependsOn:
+    - name: silverbullet-app
+    - name: volsync
+  path: ./kubernetes/apps/apps/silverbullet/silverbullet/backup
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m

@@ -1,0 +1,35 @@
+# Same rule as every other app here (§13a.5a): the apps namespace is reachable
+# from newt directly, so a policy is what keeps "login required" true.
+#
+# After applying, verify the two things it can silently break: the pod stays
+# Ready (kubelet probes) and the Prometheus target stays UP (§14.23).
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: silverbullet-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: silverbullet
+  policyTypes: ["Ingress"]
+  ingress:
+    # UI: Traefik only — deliberately NOT newt, so Pangolin cannot bypass the gateway
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 3000
+    # /metrics scrape on SB_METRICS_PORT
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - protocol: TCP
+          port: 3001

@@ -17,6 +17,7 @@ spec:
     - name: harbor-app                # the image is pulled from in-cluster Harbor
     - name: hashicorp-vault-app       # the ExternalSecret needs Vault reachable
     - name: external-secrets-app
+    - name: pocketid-app              # OIDC_ISSUER: login is configured in mdmem's cm
     - name: bifrost-app               # embeddings + the MCP front door
   path: ./kubernetes/apps/apps/mdmem/mdmem/app
   prune: true

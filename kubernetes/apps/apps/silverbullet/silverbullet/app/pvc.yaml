@@ -1,0 +1,37 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: silverbullet-restore
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: restic-silverbullet
+    storageClassName: longhorn-storage
+    accessModes: ["ReadWriteOnce"]
+    copyMethod: Snapshot
+    capacity: 5Gi
+    enableFileDeletion: false
+    cleanupCachePVC: false
+    cleanupTempPVC: false
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: silverbullet-data
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: longhorn-storage
+  # /data holds the server state (users.json, authentication.json) plus one folder
+  # per space — each space is plain markdown with its own .silverbullet index.
+  # An hourly restic snapshot is the backup; Longhorn keeps its replica count.
+  # Back this volume properly: accounts and the OIDC client secret live here too.
+  # dataSourceRef:
+  #   kind: ReplicationDestination
+  #   apiGroup: volsync.backube
+  #   name: silverbullet-restore
+  resources:
+    requests:
+      storage: 5Gi

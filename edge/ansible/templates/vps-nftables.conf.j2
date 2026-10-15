@@ -1,0 +1,61 @@
+#!/usr/sbin/nft -f
+# {{ ansible_managed }}
+#
+# VPS = dumb pipe. It terminates nothing worth protecting: HAProxy passes TLS through,
+# udp/{{ wg_inner_port }} is relayed blindly to the home VM, and sshd is only reachable over wg0.
+
+flush ruleset
+
+define PUB = "{{ public_iface }}"
+define HOME = {{ wg_home_outer_address }}
+
+table inet edge {
+    # Per-source rate limit on NEW relayed admin-WireGuard flows (UDP flood / conntrack
+    # exhaustion via spoofed sources). A real client uses one flow.
+    set wg_inner_new {
+        type ipv4_addr
+        flags dynamic, timeout
+        timeout 1m
+        size 65536
+    }
+
+    chain input {
+        type filter hook input priority filter; policy drop;
+
+        ct state established,related accept
+        ct state invalid drop
+        iif "lo" accept
+        meta l4proto { icmp, ipv6-icmp } accept
+
+        iifname $PUB tcp dport { 80, 443 } accept                      # HAProxy
+        iifname $PUB udp dport {{ wg_outer_port }} accept                    # outer WG (udp {{ wg_inner_port }} is DNATed in prerouting, never hits input)
+        iifname "wg0" tcp dport 22 accept                              # SSH only through the tunnel
+    }
+
+    chain forward {
+        type filter hook forward priority filter; policy drop;
+
+        ct state established,related accept
+        # The only forwarded flow: admin-client WireGuard relayed to the home VM.
+        iifname $PUB oifname "wg0" ip daddr $HOME udp dport {{ wg_inner_port }} ct state new update @wg_inner_new { ip saddr limit rate over 20/second burst 50 packets } counter drop
+        iifname $PUB oifname "wg0" ip daddr $HOME udp dport {{ wg_inner_port }} ct status dnat accept
+    }
+
+    chain output {
+        type filter hook output priority filter; policy accept;
+        # Hetzner metadata (incl. cloud-init user_data with the bootstrap wg0 key): root only.
+        ip daddr 169.254.169.254 meta skuid != 0 drop
+    }
+
+    chain prerouting {
+        type nat hook prerouting priority dstnat; policy accept;
+        iifname $PUB udp dport {{ wg_inner_port }} dnat ip to $HOME:{{ wg_inner_port }}
+    }
+
+    chain postrouting {
+        type nat hook postrouting priority srcnat; policy accept;
+        # Home only accepts 10.99.0.1 from this peer (AllowedIPs), and replies must come
+        # back through the VPS so conntrack can un-DNAT them.
+        oifname "wg0" ip daddr $HOME udp dport {{ wg_inner_port }} masquerade
+    }
+}

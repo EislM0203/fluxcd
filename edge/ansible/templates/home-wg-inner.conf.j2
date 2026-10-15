@@ -1,0 +1,18 @@
+# {{ ansible_managed }}
+# Inner tunnel: admin devices -> home LAN. Clients reach it at {{ vps_public_ip }}:{{ wg_inner_port }};
+# the VPS relays that UDP through wg-outer, so these packets ride inside the outer tunnel
+# (hence the smaller MTU; clients should use MTU {{ wg_inner_mtu }} too).
+[Interface]
+Address = {{ wg_home_inner_address }}/24
+ListenPort = {{ wg_inner_port }}
+MTU = {{ wg_inner_mtu }}
+PrivateKey = {{ wg_private_keys['wg-inner'] }}
+# Fail closed: refuse to come up if the edge nftables table is not loaded.
+PreUp = nft list table inet edge >/dev/null
+{% for peer in wg_admin_peers %}
+
+[Peer]
+# {{ peer.name }}
+PublicKey = {{ peer.public_key }}
+AllowedIPs = {{ peer.address }}/32
+{% endfor %}

@@ -1,0 +1,30 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: oauth2-proxy-app
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: traefik-addons            # both Gateways (traefik, traefik-public)
+    - name: pocketid-app              # OIDC issuer
+  path: ./kubernetes/apps/auth/oauth2-proxy/oauth2-proxy/app
+  prune: true
+  wait: true
+  # Suspended until app/secret.yaml exists (see app/secret.yaml.example),
+  # is sops-encrypted and listed in app/kustomization.yaml.
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: oauth2-proxy
+      namespace: auth
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: auth

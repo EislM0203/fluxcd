@@ -1,0 +1,25 @@
+---
+# oauth.cloud.traunseenet.com serves /oauth2/callback (and /oauth2/sign_out).
+# Attached to both Gateways so LAN and internet logins both complete.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: oauth2-proxy
+spec:
+  parentRefs:
+    - name: traefik
+      namespace: networking
+      sectionName: websecure-cloud
+    - name: traefik-public
+      namespace: networking
+      sectionName: websecure-public
+  hostnames:
+    - oauth.cloud.traunseenet.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: oauth2-proxy
+          port: 4180

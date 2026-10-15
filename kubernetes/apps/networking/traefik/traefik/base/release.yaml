@@ -66,6 +66,10 @@ spec:
               scheme: https
               permanent: true
       websecure:
+        # Ingress/IngressRoute routers without explicit entrypoints would
+        # otherwise attach to ALL entrypoints, incl. the public websecure-pub.
+        # (Every current route pins websecure; this is a safety net.)
+        asDefault: true
         #hostPort: 443
         port: 8443
         #containerPort: 8443
@@ -78,6 +82,49 @@ spec:
         transport:
           respondingTimeouts:
             readTimeout: 360
+      # Public edge: internet -> VPS HAProxy (TCP passthrough, PROXY v2) ->
+      # WireGuard -> home VM (DNAT) -> the DEDICATED `traefik-public` LB
+      # Service (${EDGE_PUBLIC_LB_IP}:9443, see service.additionalServices).
+      # Only the `traefik-public` Gateway (listener port 9443) binds here, so
+      # routes on the internal `traefik` Gateway (8443) are never public.
+      # Name must stay <= 15 chars (k8s containerPort name limit) -> not
+      # "websecure-public".
+      #
+      # ${EDGE_HOME_IP} / ${EDGE_PUBLIC_LB_IP} are Flux postBuild variables
+      # (flux/vars/cluster-settings.yaml, wired in ../ks.yaml). Flux envsubst
+      # has NO fail-on-unset (`:?` just behaves like `:=`), so EDGE_HOME_IP
+      # defaults to 192.0.2.1 (RFC 5737 TEST-NET-1, never a real peer): if
+      # unset, the public Service admits nobody and nothing is trusted —
+      # fail closed instead of an invalid "/32" that would crash Traefik.
+      websecure-pub:
+        port: 9443          # container port == Gateway listener port
+        expose:
+          default: false    # NOT on the shared LAN LB (traefik)
+          public: true      # only on the dedicated traefik-public LB
+        exposedPort: 9443   # Service port the home VM DNATs to
+        protocol: TCP
+        http:
+          tls:
+            enabled: true
+          # Reject requests carrying header-name aliases (e.g. X_Forwarded_For
+          # vs X-Forwarded-For) instead of passing them to backends (v3.7.12+).
+          aliasHeadersStrategy: reject
+        # The public Service is externalTrafficPolicy: Local, so the TCP peer
+        # Traefik sees is the home VM itself (no kube-proxy SNAT) -> trust
+        # exactly that /32. No LAN host or pod can forge a PROXY header.
+        proxyProtocol:
+          trustedIPs:
+            - "${EDGE_HOME_IP:=192.0.2.1}/32"
+        # Evaluated against the PROXY-decoded client address: real internet
+        # clients are never the home VM, so they cannot spoof X-Forwarded-*.
+        forwardedHeaders:
+          trustedIPs:
+            - "${EDGE_HOME_IP:=192.0.2.1}/32"
+        transport:
+          respondingTimeouts:
+            # internet-facing: shorter than websecure's 360s (slowloris);
+            # bump if a public app needs long uploads
+            readTimeout: 60
     tracing:
       otlp:
         enabled: true
@@ -171,3 +218,23 @@ spec:
         kube-vip.io/hwaddr: "00:00:6c:43:0c:1e"
         kube-vip.io/loadbalancerHostname: traefik-cluster
         external-dns.alpha.kubernetes.io/hostname: traefik-cluster.internal
+      # Dedicated LB for the public edge (ports with `expose.public: true`,
+      # i.e. only websecure-pub). Rendered as Service `traefik-public`.
+      additionalServices:
+        public:
+          spec:
+            type: LoadBalancer
+            # DaemonSet Traefik (incl. control-plane nodes, which are untainted)
+            # -> every node kube-vip may elect has a local endpoint. Keeps the
+            # home VM's source IP for loadBalancerSourceRanges + trustedIPs.
+            externalTrafficPolicy: Local
+            # kube-proxy drops LB traffic from anyone but the home VM
+            loadBalancerSourceRanges:
+              - "${EDGE_HOME_IP:=192.0.2.1}/32"
+          annotations:
+            # Static IP via kube-vip-cloud-provider (same as the observability
+            # LBs). NOT loadBalancerIP "0.0.0.0" = DHCP mode, which leased a
+            # LAN IP in use before. Pick a free IP; kube-vip's pool is
+            # 10.0.0.40-49 (kube-system/kubevip configmap; .41-.43 taken).
+            kube-vip.io/loadbalancerIPs: "${EDGE_PUBLIC_LB_IP}"
+            kube-vip.io/loadbalancerHostname: traefik-public

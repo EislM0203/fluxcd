@@ -1,0 +1,34 @@
+---
+# Canary for the public edge: whoami behind oauth2-proxy forward-auth,
+# reachable ONLY via the traefik-public Gateway.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: whoami-app
+  namespace: flux-system
+spec:
+  targetNamespace: apps
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: whoami
+  dependsOn:
+    - name: traefik-addons            # traefik-public Gateway
+    - name: harbor-app                # image pulled via in-cluster Harbor
+    - name: oauth2-proxy-app          # forward-auth backend
+  path: ./kubernetes/apps/apps/whoami/whoami/app
+  prune: true
+  # Suspended until oauth2-proxy-app is enabled (never expose it unauthenticated).
+  suspend: false
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  wait: true
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: whoami
+      namespace: apps

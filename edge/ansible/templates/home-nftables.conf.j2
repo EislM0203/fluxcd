@@ -1,0 +1,79 @@
+#!/usr/sbin/nft -f
+# {{ ansible_managed }}
+#
+# THE TRUST BOUNDARY. The VPS is treated as hostile: anything arriving on wg-outer is
+# untrusted. From it, exactly two things are allowed:
+#   1. tcp/{{ ingress_port }} -> DNAT to Traefik {{ ingress_ip }}:{{ ingress_port }} (public HTTPS, PROXY v2)
+#   2. udp/{{ wg_inner_port }} from {{ wg_vps_address }} -> local wg-inner (relayed admin WireGuard)
+# Only authenticated admin peers on wg-inner get onto the LAN ({{ home_lan_cidr }}).
+# Nothing from the LAN may enter wg-outer (a compromised VPS must not be reachable from home,
+# nor reach home except via the two holes above).
+
+flush ruleset
+
+define LAN_IF = "{{ lan_iface }}"
+define LAN = {{ home_lan_cidr }}
+define VPS_WG = {{ wg_vps_address }}
+define VPS_PUBLIC = {{ vps_public_ip }}
+define INGRESS = {{ ingress_ip }}
+
+table inet edge {
+    chain input {
+        type filter hook input priority filter; policy drop;
+
+        ct state established,related accept
+        ct state invalid drop
+        iif "lo" accept
+
+        # Untrusted side: only the relayed inner-WG UDP, and only from the VPS tunnel address.
+        iifname "wg-outer" ip saddr $VPS_WG udp dport {{ wg_inner_port }} accept
+        # Anything else from the VPS side is dropped; log (rate-limited) so probing by a
+        # compromised VPS is visible in the journal. `limit` is only a match, so the
+        # log rule must not be the dropping rule (over the limit it would not match).
+        iifname "wg-outer" limit rate 10/minute burst 5 packets log prefix "edge-wgouter-drop: " level info
+        iifname "wg-outer" counter drop
+
+        # Outer WG handshakes/data from the VPS (we dial out, so this is usually already
+        # 'established'; explicit for after conntrack timeouts / reboots). wg-outer's
+        # ListenPort is pinned, so match both ports.
+        iifname $LAN_IF ip saddr $VPS_PUBLIC udp sport {{ wg_outer_port }} udp dport {{ wg_home_outer_port }} accept
+
+        # Management: SSH from the LAN and from admin devices.
+        iifname $LAN_IF ip saddr $LAN tcp dport 22 accept
+        iifname "wg-inner" tcp dport 22 accept
+
+        # ICMP (incl. IPv6 neighbour discovery) from trusted sides only.
+        iifname { $LAN_IF, "wg-inner" } meta l4proto { icmp, ipv6-icmp } accept
+    }
+
+    chain prerouting {
+        type nat hook prerouting priority dstnat; policy accept;
+        # Public HTTPS from HAProxy (arrives as 10.99.0.1 -> {{ wg_home_outer_address }}:{{ ingress_port }}).
+        iifname "wg-outer" tcp dport {{ ingress_port }} dnat ip to $INGRESS:{{ ingress_port }}
+    }
+
+    chain forward {
+        type filter hook forward priority filter; policy drop;
+
+        # Replies only: also what lets LAN answer the two flows below. LAN can never
+        # *open* a connection into wg-outer (policy drop).
+        ct state established,related accept
+        ct state invalid drop
+
+        # wg-outer -> exactly Traefik's PROXY-protocol entrypoint, nothing else on the LAN.
+        iifname "wg-outer" oifname $LAN_IF ip daddr $INGRESS tcp dport {{ ingress_port }} ct status dnat accept
+
+        # Admin devices (authenticated by wg-inner keys) -> whole home LAN.
+        iifname "wg-inner" oifname $LAN_IF ip daddr $LAN accept
+
+        # Everything else (wg-outer -> anywhere else, LAN -> wg-outer, wg-inner -> internet,
+        # wg-inner <-> wg-outer) falls through to drop.
+    }
+
+    chain postrouting {
+        type nat hook postrouting priority srcnat; policy accept;
+        # LAN hosts have no route to 10.99.x; hide tunnel sources behind this VM.
+        # (Traefik still sees the real client IP via PROXY v2.)
+        iifname { "wg-outer", "wg-inner" } oifname $LAN_IF masquerade
+    }
+}

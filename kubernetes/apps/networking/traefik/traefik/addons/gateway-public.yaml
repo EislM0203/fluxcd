@@ -1,0 +1,44 @@
+---
+# Public edge Gateway: only reachable via the websecure-pub entrypoint
+# (dedicated LB Service traefik-public :9443, PROXY protocol from the VPS
+# edge). Attach an HTTPRoute here ONLY if the app should be internet-facing —
+# and put forward-auth on it.
+#
+# Cluster prerequisites (before un-suspending oauth2-proxy-app / whoami-app):
+#  1. flux/vars/cluster-settings.yaml: set EDGE_HOME_IP (home edge VM LAN IP)
+#     and EDGE_PUBLIC_LB_IP (static IP for Service traefik-public; the edge VM
+#     DNATs to it on :9443). Substituted by the traefik-base Kustomization.
+#  2. Pocket ID groups: `edge_users` (global gate in oauth2-proxy — every
+#     public login must be in it) and `whoami_users` (per-app, whoami
+#     Middleware). Add the allowed users to both.
+#  3. Namespace label edge.traunseenet.com/public: "true" on every namespace
+#     that may attach routes here (currently auth + apps, see
+#     kubernetes/apps/namespaces/).
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: traefik-public
+spec:
+  gatewayClassName: traefik
+  listeners:
+    # port MUST be the websecure-pub entrypoint CONTAINER port (9443); it is
+    # unique to that entrypoint, so internal routes never leak here
+    - name: websecure-public
+      port: 9443
+      protocol: HTTPS
+      hostname: "*.cloud.traunseenet.com"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: wildcard-cloud-traunseenet-tls
+      allowedRoutes:
+        # Opt-in per namespace. NOTE: labelling a namespace makes ALL
+        # HTTPRoutes in it eligible to go public (any route that names this
+        # Gateway as parentRef) — e.g. `apps` holds many apps. Review every
+        # route there. Follow-up: a ValidatingAdmissionPolicy requiring a
+        # forward-auth ExtensionRef on routes that reference traefik-public.
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              edge.traunseenet.com/public: "true"

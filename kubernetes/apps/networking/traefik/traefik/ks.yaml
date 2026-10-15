@@ -13,6 +13,14 @@ spec:
   path: ./kubernetes/apps/networking/traefik/traefik/base
   prune: true
   wait: true
+  # cluster-apps does NOT propagate postBuild to child Kustomizations (only
+  # decryption), so substitution is opted into here, for base only:
+  # EDGE_HOME_IP / EDGE_PUBLIC_LB_IP in release.yaml (public edge Service).
+  postBuild:
+    substituteFrom:
+      - kind: ConfigMap
+        name: cluster-settings
+        optional: false
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes

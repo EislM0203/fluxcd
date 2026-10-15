@@ -1,0 +1,88 @@
+---
+- name: Install HAProxy
+  ansible.builtin.apt:
+    name: haproxy
+    state: present
+
+- name: Render nftables ruleset
+  ansible.builtin.template:
+    src: vps-nftables.conf.j2
+    dest: /etc/nftables.conf
+    owner: root
+    group: root
+    mode: "0600"
+    validate: nft -c -f %s
+  notify: Reload nftables
+
+- name: Enable nftables
+  ansible.builtin.systemd:
+    name: nftables.service
+    enabled: true
+    state: started
+
+# cloud-init wrote the initial file from the same inputs; Ansible owns it from now on.
+- name: Render wg0
+  ansible.builtin.template:
+    src: vps-wg0.conf.j2
+    dest: /etc/wireguard/wg0.conf
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  notify: Reload wg0
+
+- name: Enable wg0
+  ansible.builtin.systemd:
+    name: wg-quick@wg0.service
+    enabled: true
+    state: started
+
+# `wg syncconf` (reload) does not touch MTU; set it live instead of restarting the tunnel
+# we are connected through.
+- name: Set wg0 MTU
+  ansible.builtin.command: ip link set dev wg0 mtu {{ wg_outer_mtu }}
+  when: ansible_facts['wg0']['mtu'] | default(0) | int != wg_outer_mtu | int
+  changed_when: true
+
+- name: Render HAProxy config
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: root
+    mode: "0644"
+    validate: haproxy -c -f %s
+  notify: Reload haproxy
+
+- name: Enable HAProxy
+  ansible.builtin.systemd:
+    name: haproxy.service
+    enabled: true
+    state: started
+
+# sshd binds 10.99.0.1 only (common.yml), which exists once wg0 is up.
+- name: Create ssh.service drop-in dir
+  ansible.builtin.file:
+    path: /etc/systemd/system/ssh.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Order sshd after wg0
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/ssh.service.d/10-after-wg0.conf
+    content: |
+      # Managed by Ansible (edge/ansible): sshd listens on the wg0 address only.
+      [Unit]
+      Wants=wg-quick@wg0.service
+      After=wg-quick@wg0.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart sshd
+
+# sshd itself (ListenAddress {{ wg_vps_address }}, no root/password login) is hardened
+# in tasks/common.yml via sshd_listen_address.

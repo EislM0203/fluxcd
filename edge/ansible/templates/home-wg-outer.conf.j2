@@ -1,0 +1,17 @@
+# {{ ansible_managed }}
+# Outer tunnel: home end (client). Dials out to the VPS; nothing is exposed at home.
+[Interface]
+Address = {{ wg_home_outer_address }}/24
+# Pinned so nftables can match the handshake port exactly.
+ListenPort = {{ wg_home_outer_port }}
+MTU = {{ wg_outer_mtu }}
+PrivateKey = {{ wg_private_keys['wg-outer'] }}
+# Fail closed: refuse to come up if the edge nftables table is not loaded.
+PreUp = nft list table inet edge >/dev/null
+
+[Peer]
+# VPS (wg0)
+PublicKey = {{ wg_vps_public_key }}
+Endpoint = {{ vps_public_ip }}:{{ wg_outer_port }}
+AllowedIPs = {{ wg_vps_address }}/32
+PersistentKeepalive = 25

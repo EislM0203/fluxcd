@@ -1,0 +1,8 @@
+# Copy to edge/ansible/known_hosts and replace with the REAL host public keys, obtained
+# out-of-band (see edge/README.md "Host keys"). Host public keys are not secret; the
+# real file is meant to be committed.
+#
+# <home VM LAN IP> ssh-ed25519 <contents of /etc/ssh/ssh_host_ed25519_key.pub on edge-home>
+# 10.99.0.1        ssh-ed25519 <contents of /etc/ssh/ssh_host_ed25519_key.pub on the VPS>
+10.0.0.212 ssh-ed25519 AAAA_REPLACE_WITH_HOME_VM_HOST_KEY
+10.99.0.1 ssh-ed25519 AAAA_REPLACE_WITH_VPS_HOST_KEY

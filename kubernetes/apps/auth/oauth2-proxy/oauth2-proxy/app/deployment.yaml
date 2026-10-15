@@ -1,0 +1,107 @@
+---
+# Auth-only oauth2-proxy (static 202 upstream) for Traefik forwardAuth.
+# One instance serves every *.cloud.traunseenet.com app: the session cookie is
+# scoped to .cloud.traunseenet.com, per-app authorization is done with the
+# allowed_groups query parameter on each app's forwardAuth Middleware, on top
+# of the global --allowed-group=edge_users gate.
+#
+# RESIDUAL RISK (accepted, *.cloud kept as cookie domain): the session cookie
+# is sent to EVERY *.cloud.traunseenet.com host, incl. internal apps that
+# ignore it. A compromised/XSS'd internal app can read nothing (HttpOnly) but
+# its backend sees the cookie and could replay it against public routes until
+# it expires (<= cookie-expire). Mitigations here: __Secure- prefix, Secure,
+# SameSite=Lax, 24h max lifetime, 1h refresh/re-validation.
+#
+# Sessions live entirely in the (encrypted) cookie, keyed by the shared
+# COOKIE_SECRET -> stateless across replicas, no Redis needed.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  labels:
+    app: oauth2-proxy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: oauth2-proxy
+        app: oauth2-proxy
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: oauth2-proxy
+          # quay.io is the only official registry and Harbor has no quay proxy
+          # project -> pulled direct, pinned tag + multi-arch index digest.
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.5@sha256:8498b0d0ef0a7b29686414000a08aee467f02d0299c9ed1e006a8f33fc017916
+          imagePullPolicy: IfNotPresent
+          args:
+            - --http-address=0.0.0.0:4180
+            - --provider=oidc
+            # resolved via split-horizon DNS to the Traefik LB (see networkpolicy.yaml)
+            - --oidc-issuer-url=https://pocketid.cloud.traunseenet.com
+            - --scope=openid email profile groups
+            - --oidc-groups-claim=groups
+            - --code-challenge-method=S256
+            - --redirect-url=https://oauth.cloud.traunseenet.com/oauth2/callback
+            # Split sessions become <name>_0, _1, ... (keep the prefix; list
+            # them in every Middleware's addAuthCookiesToResponse).
+            - --cookie-name=__Secure-oauth2-proxy
+            - --cookie-domain=.cloud.traunseenet.com
+            - --whitelist-domain=.cloud.traunseenet.com
+            - --cookie-secure=true
+            - --cookie-httponly=true
+            - --cookie-samesite=lax
+            - --cookie-expire=24h
+            # After 1h the session is refreshed via refresh token (groups
+            # re-read) or, without one, the id_token is re-verified; failing
+            # that, the user bounces through Pocket ID again.
+            - --cookie-refresh=1h
+            - --email-domain=*
+            # Global gate (Pocket ID group, create it + add users): enforced on
+            # login AND on every request (provider Authorize), in ADDITION to
+            # the per-app allowed_groups query (both must pass).
+            - --allowed-group=edge_users
+            - --reverse-proxy=true
+            - --set-xauthrequest=true
+            - --upstream=static://202
+            # unauthenticated browser requests to "/" get a 302 straight to Pocket ID
+            # (no sign-in page, no Traefik errors middleware needed)
+            - --skip-provider-button=true
+          envFrom:
+            - secretRef:
+                name: oauth2-proxy-secret
+          ports:
+            - name: http
+              containerPort: 4180
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi

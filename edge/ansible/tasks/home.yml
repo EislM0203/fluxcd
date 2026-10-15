@@ -1,0 +1,59 @@
+---
+- name: Install qemu-guest-agent (tf/home sets agent.enabled)
+  ansible.builtin.apt:
+    name: qemu-guest-agent
+    state: present
+
+- name: Enable qemu-guest-agent
+  ansible.builtin.systemd:
+    name: qemu-guest-agent.service
+    enabled: true
+    state: started
+
+# Firewall first, so the tunnels never come up without the trust boundary in place.
+- name: Render nftables ruleset (trust boundary)
+  ansible.builtin.template:
+    src: home-nftables.conf.j2
+    dest: /etc/nftables.conf
+    owner: root
+    group: root
+    mode: "0600"
+    validate: nft -c -f %s
+  notify: Reload nftables
+
+- name: Enable nftables
+  ansible.builtin.systemd:
+    name: nftables.service
+    enabled: true
+    state: started
+
+- name: Render wg-outer (client to VPS)
+  ansible.builtin.template:
+    src: home-wg-outer.conf.j2
+    dest: /etc/wireguard/wg-outer.conf
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  notify: Restart wg-outer
+
+- name: Render wg-inner (server for admin devices)
+  ansible.builtin.template:
+    src: home-wg-inner.conf.j2
+    dest: /etc/wireguard/wg-inner.conf
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  notify: Restart wg-inner
+
+# Apply systemd drop-ins/sysctl/nftables/config changes before the VPS play needs wg-outer.
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start WireGuard interfaces
+  ansible.builtin.systemd:
+    name: "wg-quick@{{ item }}.service"
+    enabled: true
+    state: started
+  loop: "{{ wg_interfaces }}"

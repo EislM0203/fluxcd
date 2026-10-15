@@ -2,5 +2,10 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: apps
+  labels:
+    # May attach HTTPRoutes to the public Gateway networking/traefik-public.
+    # Makes EVERY route in this namespace eligible — keep public routes
+    # behind oauth2-proxy forward-auth.
+    edge.traunseenet.com/public: "true"
   annotations:
     volsync.backube/privileged-movers: "true"

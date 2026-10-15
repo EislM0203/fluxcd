@@ -1,0 +1,49 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: oauth2-proxy
+spec:
+  podSelector:
+    matchLabels:
+      app: oauth2-proxy
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    # Traefik: HTTPRoute traffic AND forwardAuth subrequests
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 4180
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # OIDC discovery/token/userinfo go to the issuer's PUBLIC URL, which
+    # split-horizon DNS resolves to the Traefik LB 10.0.0.50:443. Calico
+    # evaluates egress after kube-proxy DNAT, i.e. against the Traefik POD on
+    # its websecure container port — so select the pods, never ipBlock the VIP.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 8443

@@ -6,3 +6,15 @@ metadata:
   name: cluster-settings
 data:
   CLUSTER_NAME: fluxcd
+  # --- Public edge (traefik-base Kustomization substitutes these into the
+  # traefik HelmRelease). Set BOTH before enabling the edge:
+  # EDGE_HOME_IP: LAN IPv4 of the home edge VM (WireGuard peer that DNATs into
+  #   the cluster). Only source allowed on the traefik-public LB and the only
+  #   trusted PROXY/X-Forwarded-* peer. Unset -> 192.0.2.1 = nobody (closed).
+  # EDGE_PUBLIC_LB_IP: static IPv4 for Service networking/traefik-public
+  #   (kube-vip pool 10.0.0.40-49, .41-.43 taken; must not be in the router's
+  #   DHCP range). The edge VM DNATs to <this>:9443. Unset -> empty
+  #   value, which the chart drops -> kube-vip assigns a random pool IP; still closed by
+  #   loadBalancerSourceRanges, but the edge DNAT target will not match.
+  EDGE_HOME_IP: "10.0.0.212"
+  EDGE_PUBLIC_LB_IP: "10.0.0.44"

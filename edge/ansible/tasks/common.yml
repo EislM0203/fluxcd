@@ -1,0 +1,219 @@
+---
+- name: Check for cloud-init
+  ansible.builtin.stat:
+    path: /usr/bin/cloud-init
+  register: cloud_init_bin
+
+# rc 2 = finished with recoverable errors; not our problem here.
+- name: Wait for cloud-init to finish (apt lock, initial wg0.conf on the VPS)
+  ansible.builtin.command: cloud-init status --wait
+  register: cloud_init_status
+  changed_when: false
+  failed_when: cloud_init_status.rc not in [0, 2]
+  when: cloud_init_bin.stat.exists
+
+- name: Install WireGuard, nftables and unattended-upgrades
+  ansible.builtin.apt:
+    name:
+      - wireguard-tools
+      - nftables
+      - unattended-upgrades
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+# --- Kernel / sysctl ---
+
+- name: Load kernel modules at boot (before systemd-sysctl)
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/edge.conf
+    content: |
+      # Managed by Ansible (edge/ansible)
+      {% for m in edge_kernel_modules | default([]) %}
+      {{ m }}
+      {% endfor %}
+    owner: root
+    group: root
+    mode: "0644"
+  when: edge_kernel_modules | default([]) | length > 0
+
+- name: Load kernel modules now
+  ansible.builtin.command: modprobe {{ item }}
+  loop: "{{ edge_kernel_modules | default([]) }}"
+  changed_when: false
+
+- name: Sysctls (IPv4 forwarding + per-host extras)
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/99-edge.conf
+    content: |
+      # Managed by Ansible (edge/ansible)
+      net.ipv4.ip_forward = 1
+      {% for k, v in (edge_sysctls | default({})) | dictsort %}
+      {{ k }} = {{ v }}
+      {% endfor %}
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Apply sysctl
+
+# --- Fail closed: WireGuard never runs without the nftables ruleset ---
+# Requires= + After=: the interface is not started if nftables.service failed to load
+# the ruleset (and is stopped if nftables is stopped). The wg configs also carry a
+# `PreUp = nft list table inet edge` guard for manual `wg-quick up`.
+
+- name: Create wg-quick drop-in dirs
+  ansible.builtin.file:
+    path: "/etc/systemd/system/wg-quick@{{ item }}.service.d"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ wg_interfaces }}"
+
+- name: Make wg-quick require nftables
+  ansible.builtin.copy:
+    dest: "/etc/systemd/system/wg-quick@{{ item }}.service.d/10-require-nftables.conf"
+    content: |
+      # Managed by Ansible (edge/ansible): no tunnel without the firewall.
+      [Unit]
+      Requires=nftables.service
+      After=nftables.service
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ wg_interfaces }}"
+  notify: Reload systemd
+
+# --- Patching ---
+
+- name: Enable periodic unattended-upgrades
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      // Managed by Ansible (edge/ansible)
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Download-Upgradeable-Packages "1";
+      APT::Periodic::AutocleanInterval "7";
+      APT::Periodic::Unattended-Upgrade "1";
+    owner: root
+    group: root
+    mode: "0644"
+
+# Same file name cloud-init writes on the VPS: Ansible is the source of truth afterwards.
+# Origins-Pattern lists merge with the distro's 50unattended-upgrades defaults.
+# The VPS is Debian (hcloud image), edge-home is Ubuntu (Proxmox template 999).
+- name: Configure unattended-upgrades (security origin, automatic reboot)
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/52unattended-upgrades-local
+    content: |
+      // Managed by Ansible (edge/ansible)
+      Unattended-Upgrade::Origins-Pattern {
+      {% if ansible_facts['distribution'] == 'Ubuntu' %}
+        "origin=Ubuntu,archive=${distro_codename}-security,label=Ubuntu";
+      {% else %}
+        "origin=Debian,codename=${distro_codename},label=Debian-Security";
+        "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+      {% endif %}
+      };
+      Unattended-Upgrade::Automatic-Reboot "true";
+      Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
+      Unattended-Upgrade::Automatic-Reboot-Time "{{ unattended_reboot_time }}";
+      Unattended-Upgrade::Remove-Unused-Dependencies "true";
+      Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Enable unattended-upgrades and apt timers
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - unattended-upgrades.service
+    - apt-daily.timer
+    - apt-daily-upgrade.timer
+
+# --- Time sync (WireGuard handshakes and TLS need a sane clock) ---
+
+- name: Check for chrony
+  ansible.builtin.stat:
+    path: /usr/sbin/chronyd
+  register: chronyd_bin
+
+- name: Install systemd-timesyncd (unless chrony is already the time daemon)
+  ansible.builtin.apt:
+    name: systemd-timesyncd
+    state: present
+  when: not chronyd_bin.stat.exists
+
+- name: Enable time sync daemon
+  ansible.builtin.systemd:
+    name: "{{ 'chrony.service' if chronyd_bin.stat.exists else 'systemd-timesyncd.service' }}"
+    enabled: true
+    state: started
+
+# --- sshd hardening ---
+# 10-edge.conf sorts before cloud-init's 50-cloud-init.conf; sshd uses the first value
+# it reads, so these win even if cloud-init enabled password auth (Proxmox user_account
+# with a password). Two-stage validation: `validate` checks the drop-in's own syntax
+# before it is installed; the full `sshd -t` then checks the merged config, and on
+# failure the previous drop-in is restored (or the new one removed) before failing, so
+# a later sshd restart/reboot never picks up a broken config.
+
+- name: Create sshd drop-in dir
+  ansible.builtin.file:
+    path: /etc/ssh/sshd_config.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Harden sshd
+  block:
+    - name: Render sshd drop-in
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/10-edge.conf
+        content: |
+          # Managed by Ansible (edge/ansible)
+          {% if sshd_listen_address is defined %}
+          # Public 22 is also blocked by nftables + the Hetzner firewall.
+          ListenAddress {{ sshd_listen_address }}
+          {% endif %}
+          PasswordAuthentication no
+          KbdInteractiveAuthentication no
+          PermitRootLogin no
+          AllowUsers {{ ansible_user }}
+        owner: root
+        group: root
+        mode: "0644"
+        backup: true
+        validate: /usr/sbin/sshd -t -f %s
+      register: sshd_dropin
+      notify: Restart sshd
+
+    - name: Validate full sshd config
+      ansible.builtin.command: /usr/sbin/sshd -t
+      changed_when: false
+      when: sshd_dropin is changed
+
+  rescue:
+    - name: Restore previous sshd drop-in
+      ansible.builtin.copy:
+        src: "{{ sshd_dropin.backup_file }}"
+        dest: /etc/ssh/sshd_config.d/10-edge.conf
+        remote_src: true
+        owner: root
+        group: root
+        mode: "0644"
+      when: sshd_dropin.backup_file is defined
+
+    - name: Remove new sshd drop-in (no previous version)
+      ansible.builtin.file:
+        path: /etc/ssh/sshd_config.d/10-edge.conf
+        state: absent
+      when: sshd_dropin is changed and sshd_dropin.backup_file is not defined
+
+    - name: Fail after rollback
+      ansible.builtin.fail:
+        msg: sshd config failed validation (sshd -t); previous drop-in restored.

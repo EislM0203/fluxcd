@@ -1,0 +1,134 @@
+---
+# Edge: Hetzner VPS is a dumb pipe (WireGuard + HAProxy TCP passthrough + UDP relay);
+# the home VM is the trust boundary (nftables decides what reaches the LAN).
+#
+# Home play runs first: it brings up wg-outer, which is the only way to reach the VPS
+# (sshd there listens on 10.99.0.1 only; inventory ProxyJumps through the home VM).
+
+- name: Edge home VM (trust boundary)
+  hosts: edge_home
+  become: true
+  gather_facts: true
+
+  vars:
+    wg_private_keys:
+      wg-outer: "{{ lookup('ansible.builtin.env', 'EDGE_WG_HOME_OUTER_PRIVATE_KEY') }}"
+      wg-inner: "{{ lookup('ansible.builtin.env', 'EDGE_WG_HOME_INNER_PRIVATE_KEY') }}"
+    lan_iface: "{{ ansible_facts['default_ipv4']['interface'] }}"
+    wg_interfaces: [wg-outer, wg-inner]
+    unattended_reboot_time: "04:30"
+
+  pre_tasks:
+    - name: Preflight
+      ansible.builtin.import_tasks: tasks/preflight.yml
+
+  tasks:
+    - name: Common setup
+      ansible.builtin.import_tasks: tasks/common.yml
+    - name: Home VM setup
+      ansible.builtin.import_tasks: tasks/home.yml
+
+  # Handlers run in the order listed here (not notify order): daemon-reload first.
+  handlers:
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Apply sysctl
+      ansible.builtin.command: sysctl -p /etc/sysctl.d/99-edge.conf
+      changed_when: true
+
+    # reload = `nft -f /etc/nftables.conf` (the file starts with `flush ruleset`, so the
+    # swap is atomic). Never `restarted`: that runs ExecStop (flush) and, via the
+    # wg-quick drop-ins' Requires=, would also restart the tunnels.
+    - name: Reload nftables
+      ansible.builtin.systemd:
+        name: nftables.service
+        state: reloaded
+
+    # Safe here: Ansible reaches the home VM over the LAN, not over these tunnels.
+    - name: Restart wg-outer
+      ansible.builtin.systemd:
+        name: wg-quick@wg-outer.service
+        state: restarted
+
+    - name: Restart wg-inner
+      ansible.builtin.systemd:
+        name: wg-quick@wg-inner.service
+        state: restarted
+
+    # Existing sessions survive an sshd restart; config was validated (sshd -t) first.
+    - name: Restart sshd
+      ansible.builtin.systemd:
+        name: ssh.service
+        state: restarted
+
+- name: Edge VPS (dumb pipe)
+  hosts: edge_vps
+  become: true
+  gather_facts: false
+
+  vars:
+    wg_private_keys:
+      wg0: "{{ lookup('ansible.builtin.env', 'TF_VAR_edge_wg_vps_private_key') }}"
+    public_iface: "{{ ansible_facts['default_ipv4']['interface'] }}"
+    wg_interfaces: [wg0]
+    unattended_reboot_time: "05:15"
+    sshd_listen_address: "{{ wg_vps_address }}"
+    # nf_conntrack must be loaded before systemd-sysctl applies net.netfilter.* at boot.
+    edge_kernel_modules: [nf_conntrack]
+    edge_sysctls:
+      net.netfilter.nf_conntrack_max: 262144
+
+  pre_tasks:
+    - name: Preflight
+      ansible.builtin.import_tasks: tasks/preflight.yml
+
+    - name: Wait for SSH over wg-outer
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+        delay: 5
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
+  tasks:
+    - name: Common setup
+      ansible.builtin.import_tasks: tasks/common.yml
+    - name: VPS setup
+      ansible.builtin.import_tasks: tasks/vps.yml
+
+  # Handlers run in the order listed here (not notify order): daemon-reload first.
+  handlers:
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Apply sysctl
+      ansible.builtin.command: sysctl -p /etc/sysctl.d/99-edge.conf
+      changed_when: true
+
+    # Atomic `nft -f` (see the home play). `restarted` would also restart wg0 via the
+    # Requires= drop-in and cut the connection we are running over.
+    - name: Reload nftables
+      ansible.builtin.systemd:
+        name: nftables.service
+        state: reloaded
+
+    # We are connected THROUGH wg0, so never restart it: `reload` = `wg syncconf`
+    # (keys/peers/endpoints) without tearing the interface down. MTU is set live in vps.yml.
+    - name: Reload wg0
+      ansible.builtin.systemd:
+        name: wg-quick@wg0.service
+        state: reloaded
+
+    - name: Reload haproxy
+      ansible.builtin.systemd:
+        name: haproxy.service
+        state: reloaded
+
+    # Existing sessions survive an sshd restart; config was validated (sshd -t) first.
+    - name: Restart sshd
+      ansible.builtin.systemd:
+        name: ssh.service
+        state: restarted

@@ -6,6 +6,9 @@ LIGHTHOUSE_ANSIBLE_DIR = lighthouse/ansible
 SANDBOX_TF_DIR = sandbox/tf
 SANDBOX_ANSIBLE_DIR = sandbox/ansible
 SANDBOX_INVENTORY = sandbox/ansible/inventory.ini
+EDGE_INFRA_TF_DIR = edge/tf/infra
+EDGE_HOME_TF_DIR = edge/tf/home
+EDGE_ANSIBLE_DIR = edge/ansible
 
 SECRETS_FILE = secrets.yaml
 TFVARS_FILE = cluster/tf/terraform.tfvars
@@ -14,7 +17,8 @@ SOPS_AGE_KEY_FILE = $(HOME)/.config/sops/age/keys.txt
 .PHONY: bootstrap-infra plan-tf apply-tf destroy-tf wait-for-nodes configure-hosts-file update-packages \
 	install-longhorn-dependencies install-tns-csi-dependencies reboot-if-required install-rke2-server install-rke2-agent cluster-readiness-check \
 	lighthouse-init lighthouse-plan lighthouse-apply lighthouse-bootstrap lighthouse-setup lighthouse-configure lighthouse-redeploy lighthouse-destroy \
-	sandbox-init sandbox-plan sandbox-apply sandbox-destroy sandbox-deploy sandbox-up
+	sandbox-init sandbox-plan sandbox-apply sandbox-destroy sandbox-deploy sandbox-up \
+	edge-infra-init edge-infra-plan edge-infra-apply edge-home-init edge-home-plan edge-home-apply edge-deploy edge-up
 
 bootstrap-infra: apply-tf \
 	wait-for-nodes \
@@ -114,3 +118,36 @@ sandbox-deploy:
 	@SOPS_AGE_KEY_FILE="$(SOPS_AGE_KEY_FILE)" ansible-playbook -i "$(SANDBOX_INVENTORY)" "$(SANDBOX_ANSIBLE_DIR)/site.yml"
 
 sandbox-up: sandbox-apply sandbox-deploy
+
+# ==========================================
+# Edge (Hetzner VPS dumb pipe + home VM trust boundary)
+# ==========================================
+
+edge-infra-init:
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="$(EDGE_INFRA_TF_DIR)" init
+
+edge-infra-plan:
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="$(EDGE_INFRA_TF_DIR)" plan
+
+edge-infra-apply:
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="$(EDGE_INFRA_TF_DIR)" apply
+
+# Reads server_ip from the edge/infra state and renders edge/ansible/inventory.ini.
+edge-home-init:
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="$(EDGE_HOME_TF_DIR)" init
+
+edge-home-plan:
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="$(EDGE_HOME_TF_DIR)" plan
+
+edge-home-apply:
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="$(EDGE_HOME_TF_DIR)" apply
+
+# .env sourced: the playbook reads the WireGuard private keys
+# (TF_VAR_edge_wg_vps_private_key, EDGE_WG_HOME_*_PRIVATE_KEY) from the environment.
+# Edge's own ansible.cfg: strict host key checking against edge/ansible/known_hosts
+# (pinned out-of-band, see edge/README.md); must run from the repo root.
+edge-deploy:
+	@test -s "$(EDGE_ANSIBLE_DIR)/known_hosts" || { echo "$(EDGE_ANSIBLE_DIR)/known_hosts missing: pin the host keys first (edge/README.md, Host keys)" >&2; exit 1; }
+	@set -a && eval "$$(sops --decrypt .env)" && set +a && ANSIBLE_CONFIG="$(EDGE_ANSIBLE_DIR)/ansible.cfg" ansible-playbook -i "$(EDGE_ANSIBLE_DIR)/inventory.ini" "$(EDGE_ANSIBLE_DIR)/site.yml"
+
+edge-up: edge-infra-apply edge-home-apply edge-deploy

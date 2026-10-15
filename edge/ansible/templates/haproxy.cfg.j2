@@ -1,0 +1,65 @@
+# {{ ansible_managed }}
+# Dumb pipe: no TLS termination here. TLS is passed through to Traefik at home, with the
+# real client address carried in a PROXY v2 header.
+global
+    log /dev/log local0
+    chroot /var/lib/haproxy
+    stats socket /run/haproxy/admin.sock mode 660 level admin
+    user haproxy
+    group haproxy
+    daemon
+    # Hard cap on concurrent connections (a 1-2 GB VPS; each TCP-mode conn is cheap).
+    maxconn 4096
+
+defaults
+    log global
+    option dontlognull
+    timeout connect 5s
+    # client/server apply until the connection becomes a tunnel; slowloris-style idle
+    # clients are cut after 60s.
+    timeout client 60s
+    timeout server 60s
+    # In TCP mode, `timeout tunnel` only takes over once no analyzer is left, i.e. after
+    # `tcp-request content accept` (a TLS ClientHello was seen). Long so websockets /
+    # long polls survive.
+    timeout tunnel 1h
+    timeout client-fin 30s
+    timeout server-fin 30s
+
+frontend https_in
+    mode tcp
+    option tcplog
+    bind :443
+    # Leave headroom for :80 under the global maxconn.
+    maxconn 3584
+
+    # Per-source limits: concurrent connections and connection rate.
+    stick-table type ip size 100k expire 30s store conn_cur,conn_rate(10s)
+    tcp-request connection track-sc0 src
+    tcp-request connection reject if { sc0_conn_cur gt 100 }
+    tcp-request connection reject if { sc0_conn_rate gt 200 }
+
+    # Only TLS gets through: wait (max 5s) for a ClientHello, reject anything else.
+    tcp-request inspect-delay 5s
+    tcp-request content accept if { req.ssl_hello_type 1 }
+    tcp-request content reject
+
+    default_backend home_traefik
+
+backend home_traefik
+    mode tcp
+    server home {{ wg_home_outer_address }}:{{ ingress_port }} send-proxy-v2
+
+frontend http_in
+    mode http
+    option httplog
+    timeout http-request 10s
+    bind :80
+    maxconn 512
+
+    stick-table type ip size 100k expire 30s store conn_cur,conn_rate(10s)
+    tcp-request connection track-sc0 src
+    tcp-request connection reject if { sc0_conn_cur gt 20 }
+    tcp-request connection reject if { sc0_conn_rate gt 100 }
+
+    http-request redirect scheme https code 301

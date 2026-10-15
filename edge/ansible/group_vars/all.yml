@@ -1,0 +1,38 @@
+---
+# Non-secret edge settings. Private keys come from the environment only (see site.yml).
+# `vps_public_ip` is supplied by the tf-generated inventory.
+
+# Public keys (`wg pubkey < private`). Placeholders are rejected by tasks/preflight.yml.
+wg_vps_public_key: 7rkKBl9O55iE4p/lzqeETjieSJA5f7OVWLnZuCKDgDE=
+wg_home_outer_public_key: YePzAZjvn6QWTNuvhGfIdqf0StvCRMjfmPvGGpQqHFk=
+wg_home_inner_public_key: ybr3mpc7m+cLNLva3ZsVtysUVPoMHVAcF9j9N7XxqlU=
+
+# Admin devices allowed onto wg-inner (-> full home LAN). Client config: Endpoint
+# <vps_public_ip>:51821, AllowedIPs 10.0.0.0/24, MTU 1340 (nested inside wg-outer).
+wg_admin_peers:
+  - name: phone
+    public_key: yK2Cx1sQMRSg5KKhdPS0W6qLpPhteqKyFPGc6Nhw2Cw=
+    address: 10.99.1.11
+
+# Outer tunnel (VPS <-> home VM).
+wg_outer_port: 51820
+# Fixed source/listen port of the home end, so the home nft rule can pin it (udp dport).
+wg_home_outer_port: 51830
+wg_vps_address: 10.99.0.1
+wg_home_outer_address: 10.99.0.2
+wg_outer_mtu: 1420
+
+# Inner tunnel (admin devices <-> home VM), relayed through the VPS on udp 51821.
+wg_inner_port: 51821
+wg_home_inner_address: 10.99.1.1
+wg_inner_mtu: 1340
+
+# Home side.
+home_lan_cidr: 10.0.0.0/24
+# IP of the cluster's DEDICATED public LoadBalancer Service (Traefik websecure-pub,
+# externalTrafficPolicy Local, loadBalancerSourceRanges = this VM's /32). NOT the shared
+# 10.0.0.50 VIP. Must equal EDGE_PUBLIC_LB_IP in Flux `cluster-settings`, and this VM's
+# LAN IP (edge/tf/home home_vm_ip) must equal EDGE_HOME_IP there. Preflight rejects the
+# placeholder.
+ingress_ip: 10.0.0.44
+ingress_port: 9443        # Traefik entrypoint that expects PROXY protocol v2

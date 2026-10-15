@@ -1,0 +1,15 @@
+# {{ ansible_managed }}
+# Outer tunnel: VPS end. The home VM dials in; it is the only peer.
+[Interface]
+Address = {{ wg_vps_address }}/24
+ListenPort = {{ wg_outer_port }}
+MTU = {{ wg_outer_mtu }}
+PrivateKey = {{ wg_private_keys['wg0'] }}
+# Fail closed: refuse to come up if the edge nftables table is not loaded.
+PreUp = nft list table inet edge >/dev/null
+
+[Peer]
+# home VM (wg-outer). Hygiene only, not a security control (root on the VPS can change it);
+# the controls are edge-home's wg-outer AllowedIPs + nftables.
+PublicKey = {{ wg_home_outer_public_key }}
+AllowedIPs = {{ wg_home_outer_address }}/32

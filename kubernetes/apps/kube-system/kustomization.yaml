@@ -5,6 +5,5 @@ kind: Kustomization
 resources:
   - ./snapshot-controller/ks.yaml
   - ./kubevip/ks.yaml
-  - ./agent-sandbox/ks.yaml
   - ./descheduler/ks.yaml
   - ./admission-policies/ks.yaml

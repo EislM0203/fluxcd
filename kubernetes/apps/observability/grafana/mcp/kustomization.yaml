@@ -5,3 +5,4 @@ resources:
   - cm.yaml
   - deployment.yaml
   - service.yaml
+  - networkpolicy.yaml

@@ -6,4 +6,5 @@ resources:
   - externalsecret.yaml
   - deployment.yaml
   - service.yaml
+  - mcp-networkpolicy.yaml
   - httproute.yaml

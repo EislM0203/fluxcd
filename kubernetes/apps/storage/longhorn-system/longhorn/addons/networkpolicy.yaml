@@ -1,0 +1,63 @@
+---
+# Longhorn's API (longhorn-backend :9500, and the UI's /v1 proxy) has no auth:
+# anyone who reaches it can delete volumes and backups. The forward-auth on
+# longhorn.cloud only gates Traefik, so these policies close the direct paths
+# from other pods. Ingress-only; kubelet probes come from the node and are not
+# affected (same for host traffic to local pods).
+#
+# Deliberately NOT the chart's networkPolicies.restrictInternalTraffic (see
+# base/release.yaml): that one also covers instance-manager etc. Here only the
+# two API entry points are restricted, and all of longhorn-system stays allowed.
+#
+# longhorn-manager: all Longhorn components (csi-plugin, ui, driver-deployer,
+# share-manager -> recovery backend 9503, manager <-> manager), Prometheus
+# scraping :9500/metrics (prometheus/app/monitors.yaml), and the admission
+# webhook :9502 from kube-apiserver (hostNetwork -> node IPs, so no peer filter).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: longhorn-manager-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: longhorn-manager
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector: {}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 9500
+    - ports:
+        - protocol: TCP
+          port: 9502
+---
+# longhorn-ui (longhorn-frontend): nginx that proxies /v1 to the manager API
+# without auth -> only Traefik (which applies oauth2-forward-auth-longhorn).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: longhorn-ui-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: longhorn-ui
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 8000

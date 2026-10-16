@@ -11,3 +11,4 @@ resources:
   - externalsecret.yaml
   - mcp-deployment.yaml
   - mcp-service.yaml
+  - mcp-networkpolicy.yaml

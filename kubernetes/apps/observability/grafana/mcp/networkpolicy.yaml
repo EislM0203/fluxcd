@@ -1,0 +1,25 @@
+---
+# Ingress-only, same as obsidian-mcp: MCP servers are called by Bifrost only
+# (apps that want tools go through Bifrost). The server answers without auth
+# and holds its own upstream credentials, so the network is the gate.
+# Kubelet probes come from the node and are not affected.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: grafana-mcp-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: grafana-mcp
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps
+          podSelector:
+            matchLabels:
+              app: bifrost
+      ports:
+        - protocol: TCP
+          port: 8000

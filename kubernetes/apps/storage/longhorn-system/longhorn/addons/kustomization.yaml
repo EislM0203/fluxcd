@@ -6,3 +6,4 @@ resources:
   - httproute.yaml
   - middleware-oauth2.yaml
   - volumesnapshotclass.yaml
+  - networkpolicy.yaml

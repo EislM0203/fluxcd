@@ -1,0 +1,38 @@
+---
+# Public (edge) route for Harbor: ONLY the registry protocol, so docker/helm/
+# oras push+pull work from anywhere, while the UI, /api/ and the OIDC login
+# (/c/) stay LAN/WG-only on the chart's route (release.yaml, expose.route).
+#   /v2/            registry API (pull, push, catalog)
+#   /service/token  bearer-token service the registry 401 points clients to
+#                   (docker login with robot account or OIDC CLI secret)
+# Same hostname as the internal route; split horizon picks the gateway.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: harbor-public
+  annotations:
+    # Required by ValidatingAdmissionPolicy httproute-public-edge: docker/helm
+    # clients can't do oauth2-proxy's browser flow. Harbor enforces its own
+    # auth (robot accounts / OIDC CLI secret); AppSec + CrowdSec in front.
+    edge.traunseenet.com/public-unauthenticated: "Registry protocol only (v2 + token), native robot/OIDC-CLI auth"
+spec:
+  parentRefs:
+    # Public via the edge (VPS -> home VM -> traefik-public); DNS by external-dns-public.
+    - name: traefik-public
+      namespace: networking
+      sectionName: websecure-public
+      group: gateway.networking.k8s.io
+      kind: Gateway
+  hostnames:
+    - harbor.cloud.traunseenet.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v2
+        - path:
+            type: PathPrefix
+            value: /service/token
+      backendRefs:
+        - name: harbor-core
+          port: 80

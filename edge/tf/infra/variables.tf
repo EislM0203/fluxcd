@@ -62,15 +62,12 @@ variable "edge_wg_home_public_key" {
   type        = string
 }
 
-variable "public_hostnames" {
-  description = "Names (relative to cloudflare_zone_domain) that get an unproxied A record to the VPS. Temporary until external-dns takes over."
-  type        = list(string)
-  # oauth.cloud hosts the oauth2-proxy callback; it must be public for any SSO-protected app.
-  default = ["whoami.cloud", "oauth.cloud"]
-}
-
 variable "acme_account_uri" {
-  description = "Optional: cert-manager's ACME account URI (kubectl get clusterissuer letsencrypt-prod -o jsonpath='{.status.acme.uri}'). When set, the CAA records also pin accounturi, so only that account can issue for public_hostnames."
+  # WARNING: the CAA sits on cloud.traunseenet.com, which also covers Pangolin's
+  # names (lighthouse: cloud.traunseenet.com itself + x.cloud CNAMEs to it). Pangolin's
+  # Traefik has its OWN Let's Encrypt account, so setting this breaks Pangolin
+  # certificate renewals. Leave it null until lighthouse/ is retired.
+  description = "Optional: cert-manager's ACME account URI (kubectl get clusterissuer letsencrypt-prod -o jsonpath='{.status.acme.uri}'). When set, the CAA on cloud.<zone> also pins accounturi, so only that account can issue for *.cloud names. Breaks Pangolin (lighthouse) renewals while it still serves *.cloud names."
   type        = string
   default     = null
 

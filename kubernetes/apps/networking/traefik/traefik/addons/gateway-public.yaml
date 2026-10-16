@@ -18,6 +18,12 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: traefik-public
+  annotations:
+    # Public DNS: external-dns-public (Cloudflare) uses this instead of the
+    # Gateway status address (which is the shared 10.0.0.50) → A <host> = edge
+    # VPS. Must match edge/tf/infra hcloud_server.edge IPv4. The Technitium
+    # instance is limited to --gateway-name=traefik and never reads this.
+    external-dns.alpha.kubernetes.io/target: "195.201.24.122"
 spec:
   gatewayClassName: traefik
   listeners:
@@ -34,9 +40,11 @@ spec:
       allowedRoutes:
         # Opt-in per namespace. NOTE: labelling a namespace makes ALL
         # HTTPRoutes in it eligible to go public (any route that names this
-        # Gateway as parentRef) — e.g. `apps` holds many apps. Review every
-        # route there. Follow-up: a ValidatingAdmissionPolicy requiring a
-        # forward-auth ExtensionRef on routes that reference traefik-public.
+        # Gateway as parentRef) — e.g. `apps` holds many apps. Mitigated by
+        # ValidatingAdmissionPolicy httproute-public-edge
+        # (kube-system/admission-policies): routes referencing traefik-public
+        # need oauth2 forward-auth on every rule, or an explicit
+        # edge.traunseenet.com/public-unauthenticated reason annotation.
         namespaces:
           from: Selector
           selector:

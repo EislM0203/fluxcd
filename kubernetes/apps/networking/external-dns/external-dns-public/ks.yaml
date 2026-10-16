@@ -18,7 +18,7 @@ spec:
   wait: true
   # Suspended until app/secret.yaml exists (see app/secret.yaml.example), is
   # sops-encrypted and listed in app/kustomization.yaml. Cutover order: edge/README.md.
-  suspend: true
+  suspend: false
   sourceRef:
     kind: GitRepository
     name: fluxcd-kubernetes

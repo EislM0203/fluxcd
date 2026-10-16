@@ -80,44 +80,47 @@ resource "hcloud_server" "edge" {
   }
 }
 
-# Public hostnames -> VPS. Unproxied: HAProxy passes TLS through to the cluster, so
-# Cloudflare must not terminate it. To be replaced by external-dns (phase 2).
-resource "cloudflare_dns_record" "public" {
-  for_each = toset(var.public_hostnames)
+# Public hostname A records are owned by external-dns now
+# (kubernetes/apps/networking/external-dns/external-dns-public): every HTTPRoute on
+# Gateway traefik-public gets an unproxied A record -> VPS (+ an ownership TXT
+# edge-public-a-<host>). The former tofu-managed A records are only FORGOTTEN here,
+# not deleted, so there is no DNS gap (and no 30 min negative caching, SOA minimum
+# 1800) during the cutover — see edge/README.md "Cutover to external-dns".
+removed {
+  from = cloudflare_dns_record.public
 
-  zone_id = data.cloudflare_zones.main.result[0].id
-  name    = "${each.value}.${var.cloudflare_zone_domain}" # v5 requires the full FQDN
-  content = hcloud_server.edge.ipv4_address
-  type    = "A"
-  ttl     = 60
-  proxied = false
+  lifecycle {
+    destroy = false
+  }
 }
 
-# CAA per public hostname (NOT at the apex: other zone hosts may rely on HTTP-01).
-# Only Let's Encrypt, only via DNS-01 (and, if acme_account_uri is set, only for the
-# cluster's cert-manager ACME account). The VPS terminates :80/:443 for these names, so
-# without this a compromised VPS could obtain a certificate via HTTP-01 / TLS-ALPN-01.
+# CAA on the `cloud` label (NOT the apex). A CA checks the CAA of the requested name
+# and climbs to its parents, so this one RRset covers every *.cloud name without its
+# own CAA (incl. names external-dns creates later, names CNAMEd to
+# cloud.traunseenet.com by lighthouse/Pangolin, and the *.cloud wildcard — whose CAA
+# lookup starts at cloud.traunseenet.com). Only Let's Encrypt, only via DNS-01 (and,
+# if acme_account_uri is set, only for that ACME account). The VPS terminates :80/:443
+# for these names, so without this a compromised VPS could obtain a certificate via
+# HTTP-01 / TLS-ALPN-01. Verified before moving it here: every issuer for *.cloud uses
+# DNS-01 (cluster ClusterIssuer letsencrypt-prod: dns01/cloudflare; Pangolin Traefik
+# (lighthouse/ansible/templates/traefik_config.yml.j2): dnsChallenge/cloudflare).
+# The record shares its name with lighthouse/tf's Pangolin A record
+# (cloud.traunseenet.com); different type, so neither stack touches the other's record.
 locals {
   caa_value = "letsencrypt.org; validationmethods=dns-01${var.acme_account_uri == null ? "" : "; accounturi=${var.acme_account_uri}"}"
-
-  caa_records = merge([
-    for host in var.public_hostnames : {
-      for tag in ["issue", "issuewild"] : "${host}/${tag}" => { host = host, tag = tag }
-    }
-  ]...)
 }
 
-resource "cloudflare_dns_record" "caa" {
-  for_each = local.caa_records
+resource "cloudflare_dns_record" "caa_cloud" {
+  for_each = toset(["issue", "issuewild"])
 
   zone_id = data.cloudflare_zones.main.result[0].id
-  name    = "${each.value.host}.${var.cloudflare_zone_domain}"
+  name    = "cloud.${var.cloudflare_zone_domain}"
   type    = "CAA"
   ttl     = 300
 
   data = {
     flags = 0
-    tag   = each.value.tag
+    tag   = each.value
     value = local.caa_value
   }
 }

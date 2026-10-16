@@ -94,20 +94,34 @@ It **cannot**:
 
 ## CAA and certificate monitoring
 
-`edge/tf/infra` creates, **per name in `public_hostnames`** (not at the zone apex, so
-other hosts in the zone can keep using HTTP-01):
+`edge/tf/infra` creates on the **`cloud` label** (`cloud.traunseenet.com`, not the
+zone apex, so other zone hosts can keep using HTTP-01):
 
 ```
-CAA 0 issue     "letsencrypt.org; validationmethods=dns-01[; accounturi=<uri>]"
-CAA 0 issuewild "letsencrypt.org; validationmethods=dns-01[; accounturi=<uri>]"
+cloud.traunseenet.com. CAA 0 issue     "letsencrypt.org; validationmethods=dns-01[; accounturi=<uri>]"
+cloud.traunseenet.com. CAA 0 issuewild "letsencrypt.org; validationmethods=dns-01[; accounturi=<uri>]"
 ```
+
+A CA looks up CAA at the requested name and climbs to its parents, so this one RRset
+covers **every** `*.cloud` name that has no CAA of its own: all names external-dns
+creates (no per-host records needed any more), Pangolin's `x.cloud` CNAMEs (a CNAME's
+CAA lookup follows to `cloud.traunseenet.com`), and the `*.cloud` wildcard certificate
+(its CAA check starts at `cloud.traunseenet.com`).
 
 Since the VPS terminates `:80`/`:443` for these names, a compromised VPS could otherwise
 get a certificate via HTTP-01 or TLS-ALPN-01 (from Let's Encrypt or any other CA). With
-CAA, only Let's Encrypt may issue, only via DNS-01 (which needs the Cloudflare token the
+CAA, only Let's Encrypt may issue, only via DNS-01 (which needs a Cloudflare token the
 VPS never sees).
 
-Pin the cluster's ACME account as well (`accounturi`): get the URI with
+Everything issuing for `*.cloud` today uses DNS-01 (checked when the CAA moved here):
+the cluster's only ACME issuer `ClusterIssuer letsencrypt-prod` (`dns01.cloudflare`) and
+Pangolin's Traefik (`lighthouse/ansible/templates/traefik_config.yml.j2`,
+`dnsChallenge: cloudflare`). Anything new under `*.cloud` **must** use DNS-01 too.
+
+Optionally pin the cluster's ACME account (`accounturi`) — **but not while
+lighthouse/Pangolin still serves `*.cloud` names** (`cloud.traunseenet.com` itself and
+its `x.cloud` CNAMEs): Pangolin has its own Let's Encrypt account and its renewals would
+fail. Once lighthouse is gone, get the URI with
 
 ```sh
 kubectl get clusterissuer letsencrypt-prod -o jsonpath='{.status.acme.uri}'
@@ -115,27 +129,113 @@ kubectl get clusterissuer letsencrypt-prod -o jsonpath='{.status.acme.uri}'
 
 and set `acme_account_uri` (e.g. `TF_VAR_acme_account_uri` or `terraform.tfvars`), then
 `make edge-infra-apply`. If cert-manager's ACME account is ever re-registered, the URI
-changes and issuance for these names fails until it is updated.
+changes and issuance for `*.cloud` fails until it is updated.
 
 Notes:
-- The listener's wildcard `*.cloud.traunseenet.com` is checked against CAA at
-  `cloud.traunseenet.com` and its parents, not at these per-host records, so it is not
-  affected (and wildcards can only be issued via DNS-01 anyway).
-- Check what is actually published: `dig CAA whoami.cloud.traunseenet.com`. If Cloudflare
-  adds CAA records for its own CAs (Universal SSL), those CAs are allowed too — verify.
+- Check what is actually published: `dig CAA oauth.cloud.traunseenet.com` (answers with
+  the `cloud` RRset). If Cloudflare adds CAA records for its own CAs (Universal SSL),
+  those CAs are allowed too — verify.
 - **Monitor Certificate Transparency** for the zone, e.g. a crt.sh search
   (`https://crt.sh/?q=%25.traunseenet.com`) or a certspotter/SSLMate watch, so any
   unexpected certificate is noticed.
+
+## Public DNS (external-dns)
+
+Public A records are created by a second external-dns instance,
+`kubernetes/apps/networking/external-dns/external-dns-public` (Flux Kustomization
+`externaldns-public-app`), from **HTTPRoutes attached to Gateway
+`networking/traefik-public`** — nothing else:
+
+| Setting | Effect |
+|---|---|
+| `--source=gateway-httproute --gateway-name=traefik-public --gateway-namespace=networking` | only routes on the public Gateway |
+| Gateway annotation `external-dns.alpha.kubernetes.io/target: "195.201.24.122"` | record content = edge VPS IP (the Gateway's status address is the shared LAN VIP). **Update it if the VPS is rebuilt with a new IP** (`hcloud_server.edge`). |
+| `--regex-domain-filter=^([a-z0-9-]+\.cloud\.)?traunseenet\.com$` | only `<one-label>.cloud.traunseenet.com` (never `cloud.traunseenet.com` itself = Pangolin's A record, never wildcards). A plain `--domain-filter=cloud.traunseenet.com` does not work with Cloudflare: the zone `traunseenet.com` itself is matched against the filter and would be skipped. |
+| `--policy=upsert-only`, `--registry=txt --txt-owner-id=edge-public --txt-prefix=edge-public-` | never deletes; only updates records it owns (TXT `edge-public-a-<host>.cloud…` with `external-dns/owner=edge-public`). Unowned records — lighthouse's Pangolin CNAMEs, anything created by hand or tofu — are skipped, never overwritten. The TXT sits at a different name than the record, so it can't clash with a CNAME. |
+| `--no-cloudflare-proxied` | DNS-only (grey cloud): the edge needs TLS passthrough. |
+
+Because the policy is upsert-only, **removing a public route does not remove its
+record** — delete the A record and its `edge-public-a-<host>` TXT in Cloudflare by hand
+(or switch to `--policy=sync` once trusted; deletion is still limited to owned records).
+
+The internal (Technitium) instance runs with `--gateway-name=traefik
+--gateway-namespace=networking`, so it ignores `traefik-public` and its target
+annotation: a route attached to **both** Gateways resolves to `10.0.0.50` internally and
+to the VPS publicly (split horizon). A route attached **only** to `traefik-public` gets
+no internal record — attach LAN-reachable apps to both Gateways.
+
+### Cloudflare API token
+
+dash.cloudflare.com → *My Profile* → *API Tokens* → *Create Token* → *Create Custom
+Token*:
+
+- **Permissions:** `Zone` · `DNS` · `Edit` **and** `Zone` · `Zone` · `Read`
+- **Zone Resources:** `Include` · `Specific zone` · `traunseenet.com` (only this zone)
+- optional: *Client IP Address Filtering* = your WAN IP
+- *Continue to summary* → *Create Token*, copy it once.
+
+Use a new token just for this instance (not cert-manager's, not tofu's). Then:
+
+```sh
+cd kubernetes/apps/networking/external-dns/external-dns-public/app
+cp secret.yaml.example secret.yaml        # paste the token as CF_API_TOKEN
+sops --encrypt --age age1q3mu6g0l3kr7spszks69yqrvlxvlgfrqgw9r00qqt8cj9xpjd9mqdkd7um --encrypted-regex '^(data|stringData)$' --in-place secret.yaml
+```
+
+and list `secret.yaml` in that directory's `kustomization.yaml` (commented line).
+
+### Cutover to external-dns (one-off)
+
+Before this change `edge/tf/infra` owned the A records (`public_hostnames`) and per-host
+CAA. Order (zero DNS gap — a gap would be cached as NXDOMAIN for up to 30 min, the
+zone's SOA minimum is 1800 s):
+
+0. **Ship the Technitium filter before the Gateway annotation.** The internal instance
+   only ignores the target annotation once it runs with `--gateway-name=traefik`. Push
+   `external-dns/app/deployment.yaml` first and wait until `externaldns-app` is applied
+   (`flux get ks externaldns-app`), then push `gateway-public.yaml`. Otherwise
+   `oauth.cloud` gets the VPS IP added in internal DNS for a few minutes. Check
+   afterwards: `dig +short @10.0.0.99 oauth.cloud.traunseenet.com` → only `10.0.0.50`.
+1. **Pre-create the ownership TXT** for the existing record (Cloudflare → DNS → Add
+   record, DNS only):
+   - Type `TXT`, Name `edge-public-a-oauth.cloud`, TTL Auto, Content
+     `"heritage=external-dns,external-dns/owner=edge-public,external-dns/resource=httproute/auth/oauth2-proxy"`
+
+   This makes external-dns treat the existing `oauth.cloud` A record as its own (same
+   content → no change). Without it, external-dns logs an owner mismatch and leaves the
+   record alone — still working, just unmanaged.
+2. **Create + encrypt the token** (above), list `secret.yaml`, set `suspend: false` in
+   `external-dns-public/ks.yaml`, push. Check:
+   `kubectl -n networking logs deploy/external-dns-public` — no errors; `All records are
+   already up to date` (or one update of `oauth.cloud`, which is fine).
+3. **`make edge-infra-apply`.** The plan must show: `cloudflare_dns_record.public` →
+   *will no longer be managed* (the `removed` block, **not destroyed**), per-host
+   `cloudflare_dns_record.caa[...]` × 4 destroyed, `cloudflare_dns_record.caa_cloud[...]`
+   × 2 created. Nothing under `cloudflare_dns_record.public` may say *destroy*.
+   (The old per-host CAA and the new `cloud` CAA are swapped in the same apply — for a
+   few seconds `oauth.cloud` may have no CAA. Acceptable; run it when nothing is
+   attacking the VPS.)
+4. **Delete the orphan** `whoami.cloud` A record (+ its CAA, if still there) in the
+   Cloudflare UI — the canary is gone and nothing owns that record any more.
+5. Verify: `dig +short @1.1.1.1 oauth.cloud.traunseenet.com` → `195.201.24.122`;
+   `dig +short @1.1.1.1 TXT edge-public-a-oauth.cloud.traunseenet.com`;
+   `dig CAA oauth.cloud.traunseenet.com @1.1.1.1` → the two `cloud` records.
+
+Skipping step 1 is safe but then `oauth.cloud` stays unmanaged; to hand it over later,
+create the TXT (step 1) at any time — or delete the A record and let external-dns
+recreate it within a minute (short gap, see above).
 
 ## Layout
 
 | Path | What |
 |---|---|
-| `edge/tf/infra/` | VPS, Hetzner firewall, Cloudflare A records, wg0 bootstrap via cloud-init (OpenTofu, state key `edge/infra`) |
+| `edge/tf/infra/` | VPS, Hetzner firewall, CAA on `cloud.traunseenet.com`, wg0 bootstrap via cloud-init (OpenTofu, state key `edge/infra`) |
 | `edge/tf/home/` | `edge-home` Proxmox VM; reads `server_ip` from the infra state and renders `edge/ansible/inventory.ini` (state key `edge/home`) |
-| `edge/tf/infra/` CAA | Per-host CAA records for `public_hostnames` (see above) |
 | `edge/ansible/` | Config for both hosts: HAProxy/nft/wg on the VPS, wg-outer/wg-inner/nft on edge-home, patching + sshd hardening on both. Own `ansible.cfg` (strict host keys, `known_hosts`) |
-| `kubernetes/apps/networking/traefik/…` | Public Traefik entrypoint `websecure-pub` (:9443, PROXY protocol), Gateway `traefik-public`, oauth2-proxy, whoami canary |
+| `kubernetes/apps/networking/traefik/…` | Public Traefik entrypoint `websecure-pub` (:9443, PROXY protocol), Gateway `traefik-public` (+ external-dns target annotation) |
+| `kubernetes/apps/auth/oauth2-proxy/` | oauth2-proxy (`oauth.cloud`, forward-auth for public apps) |
+| `kubernetes/apps/networking/external-dns/external-dns-public/` | external-dns → Cloudflare for routes on `traefik-public` (see Public DNS) |
+| `kubernetes/apps/kube-system/admission-policies/` | ValidatingAdmissionPolicy `httproute-public-edge` (forward-auth required on public routes) |
 
 ## Prerequisites
 
@@ -204,7 +304,7 @@ the repo root (the path is relative; anywhere else ssh fails closed).
 Order matters: **infra → home → deploy** (home reads the VPS IP from the infra state).
 
 ```sh
-# 1. VPS, firewall, DNS (whoami.cloud + oauth.cloud.traunseenet.com -> VPS)
+# 1. VPS, firewall, CAA on cloud.traunseenet.com (A records come from external-dns)
 make edge-infra-init edge-infra-apply
 
 # 2. home VM — set the two required vars first, e.g. edge/tf/home/terraform.tfvars:
@@ -229,7 +329,8 @@ and the `edge_vps` play connects through edge-home (ProxyCommand/jump via the ho
 LAN IP, same `~/.ssh/edge` key). There is no public SSH on the VPS at any point; if the
 outer tunnel is broken, use the Hetzner web console.
 
-Verify: `curl -I https://whoami.cloud.traunseenet.com` (oauth2-proxy redirect or whoami).
+Verify: `curl -I https://oauth.cloud.traunseenet.com/ping` (once external-dns-public has
+published the record, see Public DNS).
 
 ## Hardening applied by Ansible
 
@@ -324,25 +425,59 @@ of it.
 
 ## Exposing an app publicly
 
-1. Attach an `HTTPRoute` to the public Gateway (and put oauth2-proxy forward-auth on
-   it unless the app is meant to be fully public):
-   ```yaml
-   parentRefs:
-     - name: traefik-public
-       namespace: networking
-       sectionName: websecure-public
-   hostnames:
-     - myapp.cloud.traunseenet.com
-   ```
-   Hostnames must be under `*.cloud.traunseenet.com` (the listener's wildcard cert).
-2. Add the name to `public_hostnames` in `edge/tf/infra` (e.g. `["whoami.cloud", "myapp.cloud"]`)
-   and `make edge-infra-apply` (creates the A record **and** its CAA records).
+Attach an `HTTPRoute` to the public Gateway **with oauth2-proxy forward-auth on every
+rule** — DNS follows automatically (external-dns-public creates
+`<name>.cloud.traunseenet.com` A → VPS within ~1 min):
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: myapp
+  namespace: apps          # namespace must carry edge.traunseenet.com/public: "true"
+spec:
+  parentRefs:
+    - name: traefik         # internal (LAN) — keep it, see split horizon above
+      namespace: networking
+      sectionName: websecure-cloud
+    - name: traefik-public
+      namespace: networking
+      sectionName: websecure-public
+  hostnames:
+    - myapp.cloud.traunseenet.com
+  rules:
+    - filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: oauth2-forward-auth   # any name starting with oauth2-forward-auth
+      backendRefs:
+        - name: myapp
+          port: 80
+```
+
+- Hostnames must be a single label under `*.cloud.traunseenet.com` (the listener's
+  wildcard cert, and the external-dns filter).
+- The ValidatingAdmissionPolicy `httproute-public-edge` **rejects** any HTTPRoute that
+  names `traefik-public` unless every rule has such an `ExtensionRef` filter
+  (rule-level, not on a backendRef) — or the route is deliberately public and says why:
+  ```yaml
+  metadata:
+    annotations:
+      edge.traunseenet.com/public-unauthenticated: "<non-empty reason>"
+  ```
+  (oauth2-proxy's own route uses this). It also rejects a `*cloudflare-proxied`
+  annotation other than `"false"` on public routes.
+- Don't reuse a hostname that lighthouse/Pangolin already has (its `x.cloud` CNAMEs):
+  external-dns will not touch an unowned record, so the name keeps pointing at Pangolin.
+  Remove it from the newt blueprint (lighthouse tofu) first.
+- Removing the route does **not** remove the record (upsert-only) — delete it by hand.
 
 Nothing changes on the VPS or edge-home — they forward all of 443 blindly.
 
 ## Out of scope (phases 2/3)
 
 - CrowdSec in the cluster (Traefik bouncer)
-- external-dns with Cloudflare, replacing `public_hostnames`
 - GeoIP filtering
 - Migrating apps off Pangolin and removing `lighthouse/`

@@ -1,0 +1,100 @@
+---
+# Declarative Pocket ID login: creates (or updates) the OAuth2 auth source
+# "PocketID" via the Forgejo CLI. Idempotent; re-runs whenever this spec changes
+# (Flux force-replaces the immutable Job). Waits until the main pod has
+# migrated the database. Runs with an env-only app.ini in an emptyDir, so it
+# doesn't need the RWO data volume. SECRET_KEY must match the deployment: it
+# encrypts the stored client secret.
+#
+# Pocket ID client: callback https://git.cloud.traunseenet.com/user/oauth2/PocketID/callback
+# Groups: forgejo_users (may log in / sign up), forgejo_admins (site admin).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: forgejo-oidc
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app: forgejo-oidc
+        app.kubernetes.io/part-of: forgejo
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: oidc
+          image: code.forgejo.org/forgejo/forgejo:16.0.6-rootless@sha256:51b47921660e1ec7127f094208fe06901ba57df4fe6d59fcccc3a2419514a77f
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              export GITEA_WORK_DIR=/work GITEA_CUSTOM=/work/custom GITEA_APP_INI=/work/custom/conf/app.ini
+              mkdir -p /work/custom/conf
+              environment-to-ini -c "$GITEA_APP_INI"
+              fj() { forgejo -c "$GITEA_APP_INI" -w /work "$@"; }
+              tries=0
+              until fj admin auth list >/dev/null 2>&1; do
+                tries=$((tries+1)); [ "$tries" -gt 90 ] && { echo "database not ready"; exit 1; }
+                sleep 10
+              done
+              set -- --name PocketID --provider openidConnect \
+                --key "$OIDC_CLIENT_ID" --secret "$OIDC_CLIENT_SECRET" \
+                --auto-discover-url https://pocketid.cloud.traunseenet.com/.well-known/openid-configuration \
+                --scopes openid --scopes email --scopes profile --scopes groups \
+                --group-claim-name groups --admin-group forgejo_admins \
+                --required-claim-name groups --required-claim-value forgejo_users \
+                --skip-local-2fa
+              id=$(fj admin auth list | awk '$2 == "PocketID" { print $1 }')
+              if [ -n "$id" ]; then
+                fj admin auth update-oauth --id "$id" "$@" && echo "updated auth source $id"
+              else
+                fj admin auth add-oauth "$@" && echo "created auth source"
+              fi
+          envFrom:
+            - configMapRef:
+                name: forgejo-env
+          env:
+            - name: FORGEJO__database__HOST
+              valueFrom: {secretKeyRef: {name: forgejo-pg-app, key: host}}
+            - name: FORGEJO__database__NAME
+              valueFrom: {secretKeyRef: {name: forgejo-pg-app, key: dbname}}
+            - name: FORGEJO__database__USER
+              valueFrom: {secretKeyRef: {name: forgejo-pg-app, key: username}}
+            - name: FORGEJO__database__PASSWD
+              valueFrom: {secretKeyRef: {name: forgejo-pg-app, key: password}}
+            - name: FORGEJO__security__SECRET_KEY
+              valueFrom: {secretKeyRef: {name: forgejo-secrets, key: SECRET_KEY}}
+            - name: FORGEJO__security__INTERNAL_TOKEN
+              valueFrom: {secretKeyRef: {name: forgejo-secrets, key: INTERNAL_TOKEN}}
+            - name: OIDC_CLIENT_ID
+              valueFrom: {secretKeyRef: {name: forgejo-secrets, key: OIDC_CLIENT_ID}}
+            - name: OIDC_CLIENT_SECRET
+              valueFrom: {secretKeyRef: {name: forgejo-secrets, key: OIDC_CLIENT_SECRET}}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: work
+              mountPath: /work
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: work
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

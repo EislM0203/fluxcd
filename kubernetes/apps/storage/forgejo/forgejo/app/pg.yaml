@@ -1,0 +1,77 @@
+---
+# Dedicated Postgres for Forgejo (CNPG). The operator creates Secret
+# forgejo-pg-app (host, dbname, username, password) consumed by the deployment.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: forgejo-pg
+  annotations:
+    cnpg.io/skipEmptyWalArchiveCheck: "enabled"
+spec:
+  inheritedMetadata:
+    labels:
+      app.kubernetes.io/part-of: forgejo
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.6-system-trixie
+  primaryUpdateStrategy: unsupervised
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: forgejo-pg
+        serverName: forgejo-pg
+  # Fresh database. For a rebuild, switch to `recovery` from the ObjectStore
+  # (see paperless-ngx pg.yaml for the pattern).
+  bootstrap:
+    initdb:
+      database: forgejo
+      owner: forgejo
+  storage:
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+      storageClassName: longhorn-storage
+      volumeMode: Filesystem
+  monitoring:
+    enablePodMonitor: true
+  managed:
+    services:
+      disabledDefaultServices: ["ro", "r"]
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: forgejo-pg
+spec:
+  retentionPolicy: 20d
+  configuration:
+    destinationPath: s3://cnpg-backups/forgejo
+    endpointURL: http://10.0.0.154:9000
+    s3Credentials:
+      accessKeyId:
+        name: s3-forgejo-pg-backup
+        key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        name: s3-forgejo-pg-backup
+        key: AWS_SECRET_ACCESS_KEY
+    data:
+      compression: bzip2
+    wal:
+      compression: bzip2
+      maxParallel: 8
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: forgejo-pg-backup
+spec:
+  schedule: "0 0 */6 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: forgejo-pg
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io

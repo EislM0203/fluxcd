@@ -1,0 +1,41 @@
+---
+# Forgejo app.ini via environment (FORGEJO__<section>__<KEY>); the image's
+# entrypoint writes these into /var/lib/gitea/custom/conf/app.ini on start.
+# Secrets (DB password, SECRET_KEY, INTERNAL_TOKEN) come from Secrets in deployment.yaml.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forgejo-env
+data:
+  FORGEJO__server__DOMAIN: git.cloud.traunseenet.com
+  FORGEJO__server__ROOT_URL: https://git.cloud.traunseenet.com/
+  FORGEJO__server__HTTP_PORT: "3000"
+  # git over SSH isn't exposed (edge forwards HTTPS only); clone over HTTPS.
+  FORGEJO__server__DISABLE_SSH: "true"
+  FORGEJO__server__LFS_START_SERVER: "true"
+  FORGEJO__database__DB_TYPE: postgres
+  FORGEJO__database__SSL_MODE: disable
+  FORGEJO__security__INSTALL_LOCK: "true"
+  # Client IP from Traefik's X-Forwarded-For (pod CIDR); used for logs/rate limits.
+  FORGEJO__security__REVERSE_PROXY_LIMIT: "1"
+  FORGEJO__security__REVERSE_PROXY_TRUSTED_PROXIES: 10.42.0.0/16
+  FORGEJO__session__COOKIE_SECURE: "true"
+  # Accounts only via Pocket ID (auth source created by job-oidc.yaml);
+  # no local sign-up, no OpenID 2.0. Public repos stay readable anonymously.
+  FORGEJO__service__DISABLE_REGISTRATION: "false"
+  FORGEJO__service__ALLOW_ONLY_EXTERNAL_REGISTRATION: "true"
+  FORGEJO__service__SHOW_REGISTRATION_BUTTON: "false"
+  FORGEJO__service__REQUIRE_SIGNIN_VIEW: "false"
+  FORGEJO__service__DEFAULT_KEEP_EMAIL_PRIVATE: "true"
+  FORGEJO__service__ENABLE_NOTIFY_MAIL: "false"
+  FORGEJO__openid__ENABLE_OPENID_SIGNIN: "false"
+  FORGEJO__openid__ENABLE_OPENID_SIGNUP: "false"
+  FORGEJO__oauth2_client__ENABLE_AUTO_REGISTRATION: "true"
+  FORGEJO__oauth2_client__USERNAME: nickname
+  FORGEJO__oauth2_client__UPDATE_AVATAR: "true"
+  FORGEJO__oauth2_client__ACCOUNT_LINKING: login
+  # TEMPORARY for the Gitea -> Forgejo repo migration (Gitea is only reachable
+  # on private IPs from inside the cluster). Remove once migrated.
+  FORGEJO__migrations__ALLOW_LOCALNETWORKS: "true"
+  FORGEJO__migrations__ALLOWED_DOMAINS: gitea.storage.svc.cluster.local,gitea.cloud.traunseenet.com
+  FORGEJO__log__LEVEL: Info

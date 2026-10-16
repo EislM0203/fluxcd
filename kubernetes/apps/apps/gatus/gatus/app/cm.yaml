@@ -261,6 +261,29 @@ data:
             failure-threshold: 2
             send-on-resolved: true
       ###########################
+      # Public edge (edge/)
+      ###########################
+      - name: Edge public path
+        # Full internet path, as an outside user hits it: public DNS (forced via
+        # 1.1.1.1, so split-horizon can't short-circuit it) -> VPS HAProxy ->
+        # wg-outer -> edge-home DNAT -> traefik-public (10.0.0.44:9443) ->
+        # oauth2-proxy /ping. Fails if any hop is down: VPS, either WireGuard
+        # end, the home VM nft, the public LB/entrypoint, or oauth2-proxy.
+        url: "https://oauth.cloud.traunseenet.com/ping"
+        interval: 1m
+        client:
+          dns-resolver: "udp://1.1.1.1:53"
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 1500"
+          - "[CERTIFICATE_EXPIRATION] > 240h"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "public edge path failed (VPS / WireGuard / edge-home / traefik-public / oauth2-proxy)"
+            failure-threshold: 5
+            send-on-resolved: true
+      ###########################
       # Networking
       ###########################
       - name: Technitium DNS

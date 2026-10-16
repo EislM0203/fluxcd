@@ -15,6 +15,12 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: oauth2-forward-auth-observability
       backendRefs:
         - name: prometheus-stack-kube-prom-prometheus
           port: 9090
@@ -35,6 +41,12 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: oauth2-forward-auth-observability
       backendRefs:
         - name: prometheus-stack-kube-prom-alertmanager
           port: 9093

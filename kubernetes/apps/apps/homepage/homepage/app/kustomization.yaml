@@ -7,3 +7,4 @@ resources:
   - ./deployment.yaml
   - ./service.yaml
   - ./httproute.yaml
+  - ./middleware-oauth2.yaml

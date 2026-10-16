@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
 - cm.yaml
 - httproute.yaml
+- middleware-oauth2.yaml
 - deployment.yaml
 - service.yaml
 - servicemonitor.yaml

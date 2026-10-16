@@ -15,6 +15,12 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: oauth2-forward-auth-gatus
       backendRefs:
         - name: gatus
           port: 8080

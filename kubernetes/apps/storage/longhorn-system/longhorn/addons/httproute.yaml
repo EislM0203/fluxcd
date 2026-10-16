@@ -7,14 +7,20 @@ spec:
   parentRefs:
     - name: traefik
       namespace: networking
-      sectionName: websecure-local
+      sectionName: websecure-cloud
   hostnames:
-    - longhorn.local.traunseenet.com
+    - longhorn.cloud.traunseenet.com
   rules:
     - matches:
         - path:
             type: PathPrefix
             value: /
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: oauth2-forward-auth-longhorn
       backendRefs:
         - name: longhorn-frontend
           port: 80

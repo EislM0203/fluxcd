@@ -11,3 +11,6 @@ tls-san:
 {% endfor %}
 node-ip: "{{ ansible_host }}"
 advertise-address: "{{ ansible_host }}"
+# Fixed upstream DNS (written by maintenance/configure-dns.yml); avoids the
+# 8.8.8.8 fallback that breaks the *.cloud / *.local split horizon.
+resolv-conf: "/etc/rancher/rke2/resolv.conf"

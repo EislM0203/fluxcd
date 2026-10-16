@@ -1,3 +1,6 @@
 server: {{ rke2_server_url }}
 token: {{ rke2_node_token }}
 node-ip: "{{ ansible_host }}"
+# Fixed upstream DNS (written by maintenance/configure-dns.yml); avoids the
+# 8.8.8.8 fallback that breaks the *.cloud / *.local split horizon.
+resolv-conf: "/etc/rancher/rke2/resolv.conf"

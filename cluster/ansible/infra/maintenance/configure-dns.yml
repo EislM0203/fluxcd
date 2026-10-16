@@ -1,0 +1,71 @@
+---
+# Pin the resolver RKE2 hands to kubelet (and thus CoreDNS + every pod).
+# Without `resolv-conf`, RKE2 falls back to 8.8.8.8 / 2001:4860:4860::8888
+# whenever it finds no usable nameserver at start (systemd-resolved stub, DHCP
+# not up yet). Google answers *.cloud with the public IP and knows no *.local,
+# so pods lose the split-horizon view. Only 10.0.0.99 is correct (see
+# vm_dns_servers in cluster/tf/modules/proxmox/variables.tf).
+#
+# Runs before RKE2 install in bootstrap-infra (config.yaml absent -> only the
+# resolv file is written; the config templates carry `resolv-conf` already).
+# On live nodes it adds the line and restarts RKE2 one node at a time; then
+# restart CoreDNS so it re-reads its upstreams.
+- name: Pin RKE2 resolv.conf
+  hosts: rke2_server:rke2_agents
+  become: yes
+  serial: 1
+  vars:
+    node_dns_servers: ["10.0.0.99"]
+    rke2_service: "{{ 'rke2-server' if inventory_hostname in groups['rke2_server'] else 'rke2-agent' }}"
+
+  tasks:
+    - name: Ensure RKE2 config dir exists (fresh nodes)
+      ansible.builtin.file:
+        path: /etc/rancher/rke2
+        state: directory
+        mode: '0755'
+      tags: [maintenance, dns]
+
+    - name: Write RKE2 resolv.conf
+      ansible.builtin.copy:
+        dest: /etc/rancher/rke2/resolv.conf
+        mode: '0644'
+        content: |
+          # Managed by Ansible (configure-dns.yml)
+          {% for s in node_dns_servers %}
+          nameserver {{ s }}
+          {% endfor %}
+      register: resolv_file
+      tags: [maintenance, dns]
+
+    - name: Check for an existing RKE2 config
+      ansible.builtin.stat:
+        path: /etc/rancher/rke2/config.yaml
+      register: rke2_config
+      tags: [maintenance, dns]
+
+    - name: Point RKE2 at it
+      ansible.builtin.lineinfile:
+        path: /etc/rancher/rke2/config.yaml
+        regexp: '^resolv-conf:'
+        line: 'resolv-conf: "/etc/rancher/rke2/resolv.conf"'
+      when: rke2_config.stat.exists
+      register: rke2_config_line
+      tags: [maintenance, dns]
+
+    - name: Restart RKE2 to apply
+      ansible.builtin.systemd:
+        name: "{{ rke2_service }}"
+        state: restarted
+      when: rke2_config.stat.exists and (resolv_file.changed or rke2_config_line.changed)
+      tags: [maintenance, dns]
+
+    - name: Wait for kubelet to be healthy again
+      ansible.builtin.uri:
+        url: http://127.0.0.1:10248/healthz
+      register: kubelet_health
+      until: kubelet_health.status == 200
+      retries: 30
+      delay: 10
+      when: rke2_config.stat.exists and (resolv_file.changed or rke2_config_line.changed)
+      tags: [maintenance, dns]

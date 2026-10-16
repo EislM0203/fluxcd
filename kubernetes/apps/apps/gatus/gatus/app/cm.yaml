@@ -27,6 +27,9 @@ data:
         # Server-side renders every tile on request, so it is meaningfully
         # slower than a bare health endpoint -- 1s rather than the usual 500ms.
         url: "http://homepage.apps.svc.cluster.local:3000"
+        # v2 answers 400 unless Host is in HOMEPAGE_ALLOWED_HOSTS
+        headers:
+          Host: homepage.cloud.traunseenet.com
         interval: 1m
         conditions:
           - "[STATUS] == 200"

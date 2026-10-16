@@ -32,6 +32,9 @@ spec:
               value: "true"
             - name: GITEA__openid__ENABLE_OPENID_SIGNUP
               value: "false"
+            # Legacy OpenID 2.0 login button (Pocket ID uses OAuth2/OIDC, unaffected)
+            - name: GITEA__openid__ENABLE_OPENID_SIGNIN
+              value: "false"
           volumeMounts:
             - name: gitea-data
               mountPath: /data

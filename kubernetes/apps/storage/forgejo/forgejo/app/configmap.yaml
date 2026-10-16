@@ -28,6 +28,9 @@ data:
   FORGEJO__service__REQUIRE_SIGNIN_VIEW: "false"
   FORGEJO__service__DEFAULT_KEEP_EMAIL_PRIVATE: "true"
   FORGEJO__service__ENABLE_NOTIFY_MAIL: "false"
+  # Hide the username/password form: accounts come from Pocket ID and have no
+  # password. Break-glass if Pocket ID is down: forgejo admin CLI in the pod.
+  FORGEJO__service__ENABLE_INTERNAL_SIGNIN: "false"
   FORGEJO__openid__ENABLE_OPENID_SIGNIN: "false"
   FORGEJO__openid__ENABLE_OPENID_SIGNUP: "false"
   FORGEJO__oauth2_client__ENABLE_AUTO_REGISTRATION: "true"

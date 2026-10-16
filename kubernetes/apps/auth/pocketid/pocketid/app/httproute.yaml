@@ -3,11 +3,19 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: pocket-id
+  annotations:
+    # Required by ValidatingAdmissionPolicy httproute-public-edge: the IdP itself
+    # can't sit behind oauth2-proxy. Passkey-only login; AppSec + CrowdSec in front.
+    edge.traunseenet.com/public-unauthenticated: "Identity provider login for all SSO apps (passkeys)"
 spec:
   parentRefs:
     - name: traefik
       namespace: networking
       sectionName: websecure-cloud
+    # Public via the edge (VPS -> home VM -> traefik-public); DNS by external-dns-public.
+    - name: traefik-public
+      namespace: networking
+      sectionName: websecure-public
   hostnames:
     - pocketid.cloud.traunseenet.com
   rules:

@@ -57,6 +57,14 @@ spec:
             - --source=service
             - --source=gateway-httproute
             - --source=gateway-grpcroute
+            # Route endpoints ONLY from the internal Gateway. traefik-public carries
+            # external-dns.alpha.kubernetes.io/target=<edge VPS IP> for the public
+            # (Cloudflare) instance; without this filter routes attached to both
+            # Gateways would also get the VPS IP here. Split horizon stays:
+            # internal DNS → traefik (10.0.0.50). Routes attached ONLY to
+            # traefik-public get no internal record — attach them to both.
+            - --gateway-name=traefik
+            - --gateway-namespace=networking
             # - --source=gateway-tlsroute  # CRD not installed
             # - --source=gateway-tcproute  # CRD not installed
             # - --source=gateway-udproute

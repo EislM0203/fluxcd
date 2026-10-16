@@ -5,6 +5,10 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: oauth2-proxy
+  annotations:
+    # Required by ValidatingAdmissionPolicy httproute-public-edge: this route is
+    # public WITHOUT forward-auth on purpose (it IS the auth endpoint).
+    edge.traunseenet.com/public-unauthenticated: "OIDC callback/sign-in endpoint for all SSO apps"
 spec:
   parentRefs:
     - name: traefik

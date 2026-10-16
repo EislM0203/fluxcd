@@ -5,3 +5,5 @@ resources:
   - certificates.yaml
   - gateway.yaml
   - gateway-public.yaml
+  # - middleware-crowdsec.yaml   # enabled in rollout step 3, together with base/release.yaml
+  - secret-crowdsec-bouncer.yaml

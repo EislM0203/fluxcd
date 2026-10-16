@@ -1,0 +1,113 @@
+# external-dns → Cloudflare, for the PUBLIC edge only.
+#
+# Scope (every flag below narrows it; flags verified against v0.23.0):
+#  - only HTTPRoutes attached to Gateway networking/traefik-public
+#    (--gateway-name/--gateway-namespace); the record target is the Gateway's
+#    external-dns.alpha.kubernetes.io/target annotation (the edge VPS IP), not
+#    its status address.
+#  - only single-label names under cloud.traunseenet.com (regex below). NOT
+#    --domain-filter=cloud.traunseenet.com: the Cloudflare provider matches the
+#    ZONE name (traunseenet.com) against the domain filter with Match(), not
+#    MatchParent(), so a sub-domain filter finds no zone at all. The regex also
+#    matches the bare zone name (required for zone discovery); the apex can never
+#    be a desired record (route hosts must match the listener *.cloud...).
+#    Excludes cloud.traunseenet.com itself (Pangolin dashboard A record, owned by
+#    lighthouse/tf) and wildcard names.
+#  - upsert-only + TXT registry: never deletes, and never updates/claims a record
+#    it does not own (no TXT with owner edge-public) — e.g. lighthouse/tf's
+#    Pangolin CNAMEs (x.cloud → cloud.traunseenet.com) and TF-created A records
+#    are skipped, not overwritten.
+#  - unproxied (TLS passthrough to the cluster; Cloudflare must not terminate).
+#    Default is unproxied; kingpin rejects `--cloudflare-proxied=false`, hence
+#    `--no-cloudflare-proxied`. Per-route `cloudflare-proxied` annotations on
+#    public routes are rejected by the httproute-public-edge admission policy.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &name external-dns-public
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: *name
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: external-dns
+        app: *name
+    spec:
+      automountServiceAccountToken: true
+      serviceAccountName: external-dns-public
+      securityContext:
+        fsGroup: 65534
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: external-dns
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 65532
+            runAsNonRoot: true
+            runAsUser: 65532
+          env:
+            - name: CF_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflare-api-token
+                  key: CF_API_TOKEN
+          image: registry.k8s.io/external-dns/external-dns:v0.23.0@sha256:1854499e2b08cee47c40a08e356bff20dcb192dbcfde8378fc3f900f12cad5a3
+          imagePullPolicy: IfNotPresent
+          args:
+            - --log-level=info
+            - --log-format=json
+            - --interval=1m
+            - --source=gateway-httproute
+            - --gateway-name=traefik-public
+            - --gateway-namespace=networking
+            # same prefix as the rest of the repo (v0.22+ default is external-dns.kubernetes.io/)
+            - --annotation-prefix=external-dns.alpha.kubernetes.io/
+            - --provider=cloudflare
+            - --no-cloudflare-proxied
+            - --regex-domain-filter=^([a-z0-9-]+\.cloud\.)?traunseenet\.com$
+            - --policy=upsert-only
+            - --registry=txt
+            - --txt-owner-id=edge-public
+            # TXT lives at edge-public-a-<host>.cloud.traunseenet.com — never at the
+            # record's own name, so it can't collide with a CNAME there
+            - --txt-prefix=edge-public-
+          ports:
+            - name: http
+              protocol: TCP
+              containerPort: 7979
+          livenessProbe:
+            failureThreshold: 2
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 6
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi

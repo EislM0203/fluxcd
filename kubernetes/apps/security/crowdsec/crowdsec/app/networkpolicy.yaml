@@ -1,0 +1,106 @@
+---
+# Default-deny for the whole namespace; the policies below open exactly:
+#   Traefik pods  -> LAPI :8080 (bouncer decision stream) and AppSec :7422
+#   agent/appsec  -> LAPI :8080 (machine registration, alerts)
+#   all pods      -> DNS, and HTTPS to the internet (hub items, CAPI blocklist)
+# Calico evaluates after kube-proxy DNAT (backend pod IP + container port), so
+# in-cluster targets are always selected by podSelector, never by Service VIP.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress", "Egress"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: crowdsec-lapi
+spec:
+  podSelector:
+    matchLabels:
+      k8s-app: crowdsec
+      type: lapi
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        # agent + appsec pods of this release
+        - podSelector:
+            matchLabels:
+              k8s-app: crowdsec
+        # Traefik bouncer plugin (stream mode)
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: crowdsec-appsec
+spec:
+  podSelector:
+    matchLabels:
+      k8s-app: crowdsec
+      type: appsec
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 7422
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: crowdsec-egress
+spec:
+  podSelector:
+    matchLabels:
+      k8s-app: crowdsec
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # agent/appsec -> LAPI (incl. the wait-for-lapi init containers)
+    - to:
+        - podSelector:
+            matchLabels:
+              k8s-app: crowdsec
+              type: lapi
+      ports:
+        - protocol: TCP
+          port: 8080
+    # hub-data.crowdsec.net (collections at startup), api.crowdsec.net (CAPI)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443

@@ -1,0 +1,74 @@
+---
+# Guard rail for the public edge (Gateway networking/traefik-public, see
+# edge/README.md). An HTTPRoute that names `traefik-public` in spec.parentRefs
+# is admitted only if
+#   (a) EVERY rule carries a rule-level filter
+#         type: ExtensionRef
+#         extensionRef: {group: traefik.io, kind: Middleware, name: oauth2-forward-auth*}
+#       (backendRef-level filters do not count), or
+#   (b) it carries the annotation edge.traunseenet.com/public-unauthenticated
+#       with a non-empty reason (deliberately public, e.g. oauth2-proxy itself).
+# Additionally a public route may not ask external-dns for a Cloudflare-proxied
+# record (*cloudflare-proxied annotation != "false"): the edge needs TLS passthrough.
+#
+# Matching is by parentRef NAME only (any namespace/kind) — stricter than
+# needed and harmless: no internal route uses that name. Only CREATE/UPDATE of
+# the main resource; the httproutes/status subresource (Traefik status updates)
+# is not matched. failurePolicy Fail: a CEL evaluation error denies.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: httproute-public-edge
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    # matchPolicy Equivalent (default): requests via other served versions are
+    # converted to v1 and evaluated too.
+    resourceRules:
+      - apiGroups: ["gateway.networking.k8s.io"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["httproutes"]
+  variables:
+    - name: annotations
+      expression: "object.metadata.?annotations.orValue({})"
+    - name: isPublic
+      expression: >-
+        object.?spec.parentRefs.orValue([]).exists(p, p.name == 'traefik-public')
+    - name: hasForwardAuth
+      expression: >-
+        object.?spec.rules.orValue([]).size() > 0 &&
+        object.?spec.rules.orValue([]).all(r,
+          r.?filters.orValue([]).exists(f,
+            f.type == 'ExtensionRef' &&
+            f.?extensionRef.group.orValue('') == 'traefik.io' &&
+            f.?extensionRef.kind.orValue('') == 'Middleware' &&
+            f.?extensionRef.name.orValue('').startsWith('oauth2-forward-auth')))
+    - name: unauthReason
+      expression: >-
+        variables.annotations[?'edge.traunseenet.com/public-unauthenticated'].orValue('').trim()
+    - name: proxied
+      expression: >-
+        variables.annotations.exists(k,
+          k.endsWith('/cloudflare-proxied') && variables.annotations[k].lowerAscii() != 'false')
+  validations:
+    - expression: >-
+        !variables.isPublic || variables.hasForwardAuth || variables.unauthReason != ''
+      messageExpression: >-
+        'HTTPRoute ' + object.metadata.namespace + '/' + object.metadata.name +
+        ' references Gateway traefik-public: every rule needs an ExtensionRef filter to a traefik.io Middleware named oauth2-forward-auth*, or set annotation edge.traunseenet.com/public-unauthenticated to a non-empty reason'
+      reason: Forbidden
+    - expression: "!variables.isPublic || !variables.proxied"
+      message: >-
+        HTTPRoutes on Gateway traefik-public must not request a Cloudflare-proxied
+        record (the public edge needs TLS passthrough): remove the
+        *cloudflare-proxied annotation or set it to "false"
+      reason: Forbidden
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: httproute-public-edge
+spec:
+  policyName: httproute-public-edge
+  validationActions: [Deny]

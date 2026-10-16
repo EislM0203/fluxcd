@@ -1,0 +1,44 @@
+---
+# CrowdSec bouncer (+ in-band AppSec WAF) for the PUBLIC entrypoint only.
+# Attached globally to entrypoint websecure-pub in base/release.yaml
+# (ports.websecure-pub.http.middlewares: networking-crowdsec-public@kubernetescrd);
+# never reference it from internal routes.
+#
+# Client IP: on websecure-pub, Traefik decodes PROXY protocol (req.RemoteAddr =
+# real client) and strips any client-supplied X-Forwarded-For (the client is not
+# in forwardedHeaders.trustedIPs). With forwardedHeadersTrustedIps empty the
+# plugin finds no XFF and falls back to req.RemoteAddr -> the real client IP.
+# clientTrustedIps is deliberately empty: on this entrypoint a private source IP
+# can only come from a forged PROXY header (compromised VPS), so nobody bypasses.
+#
+# Fail-closed behaviour (plugin v1.7.1, verified in source):
+#   key file missing/unreadable      -> middleware build error -> public routers dropped (404)
+#   LAPI unreachable / bad key       -> stream pull fails, updateMaxFailure 0 -> 403 for all
+#   AppSec unreachable / 5xx         -> 403 (crowdsecAppsecUnreachableBlock / FailureBlock)
+# Global plugin state (stream ticker, appsec host, intervals) is taken from the
+# FIRST successfully built instance; after changing these values or the key,
+# restart Traefik (kubectl -n networking rollout restart ds/traefik).
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: crowdsec-public
+spec:
+  plugin:
+    bouncer:
+      enabled: true
+      logLevel: INFO
+      crowdsecMode: stream
+      crowdsecLapiScheme: http
+      crowdsecLapiHost: crowdsec-service.crowdsec.svc.cluster.local:8080
+      # mounted from Secret networking/crowdsec-bouncer-key (base/release.yaml)
+      crowdsecLapiKeyFile: /etc/traefik/crowdsec/lapi-key
+      updateIntervalSeconds: 60
+      updateMaxFailure: 0
+      # block startup until the first decision stream is loaded
+      streamStartupBlock: true
+      crowdsecAppsecEnabled: true
+      crowdsecAppsecHost: crowdsec-appsec-service.crowdsec.svc.cluster.local:7422
+      crowdsecAppsecFailureBlock: true
+      crowdsecAppsecUnreachableBlock: true
+      # first 10 MiB of a body are inspected (and buffered in Traefik memory)
+      crowdsecAppsecBodyLimit: 10485760

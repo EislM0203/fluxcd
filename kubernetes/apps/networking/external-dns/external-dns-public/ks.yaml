@@ -1,0 +1,34 @@
+---
+# Public DNS (Cloudflare) for routes attached to Gateway networking/traefik-public.
+# Records point at the edge VPS via the Gateway's external-dns target annotation
+# (traefik/addons/gateway-public.yaml). The Technitium instance (../external-dns)
+# is restricted to Gateway networking/traefik so it never publishes the VPS IP
+# internally. See edge/README.md "Public DNS (external-dns)".
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: externaldns-public-app
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: traefik-addons            # Gateway traefik-public (+ target annotation)
+  path: ./kubernetes/apps/networking/external-dns/external-dns-public/app
+  prune: true
+  wait: true
+  # Suspended until app/secret.yaml exists (see app/secret.yaml.example), is
+  # sops-encrypted and listed in app/kustomization.yaml. Cutover order: edge/README.md.
+  suspend: true
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: external-dns-public
+      namespace: networking
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: networking

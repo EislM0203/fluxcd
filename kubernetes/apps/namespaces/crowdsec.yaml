@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: crowdsec
+  # No edge.traunseenet.com/public label: nothing in here is ever routed
+  # publicly. The agent DaemonSet mounts hostPath /var/log (pod logs), so this
+  # namespace must stay at PSA "privileged" (RKE2 default, no labels needed).

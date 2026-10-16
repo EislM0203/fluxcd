@@ -1,0 +1,172 @@
+---
+# CrowdSec for the PUBLIC edge only (Traefik entrypoint websecure-pub):
+#   agent  (DaemonSet)  tails the Traefik pod logs; Traefik writes access logs
+#                       for websecure-pub ONLY (see traefik base/release.yaml)
+#   lapi   (Deployment) decisions DB + CAPI community blocklist, PVC-backed
+#   appsec (Deployment) WAF, queried in-band by the Traefik bouncer plugin
+# The bouncer key is pre-registered from Secret crowdsec-bouncer-key
+# (BOUNCER_KEY_traefik -> bouncer name "traefik"), no manual cscli step.
+# Rotating it: change the Secret here AND in networking, then
+#   kubectl -n crowdsec exec deploy/crowdsec-lapi -- cscli bouncers delete traefik
+# and restart LAPI (start script only registers a bouncer name that does not exist yet)
+# and Traefik (the plugin reads the key file once per middleware build).
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: crowdsec
+spec:
+  interval: 30m
+  timeout: 10m
+  chart:
+    spec:
+      chart: crowdsec
+      version: 0.24.2
+      sourceRef:
+        kind: HelmRepository
+        name: crowdsec
+        namespace: flux-system
+      interval: 2h
+  maxHistory: 2
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    # RKE2 = containerd -> CRI log format (crowdsecurity/cri-logs parser)
+    container_runtime: containerd
+    image:
+      repository: harbor.cloud.traunseenet.com/docker.io/crowdsecurity/crowdsec
+      # v1.8.1 = chart 0.24.2 appVersion; multi-arch index digest
+      tag: v1.8.1@sha256:0f2523fa61ef507f15d953045cface490cc880670c62f2755ced17524107f71a
+      pullPolicy: IfNotPresent
+
+    config:
+      parsers:
+        s02-enrich:
+          # Internal sources never get banned. Traefik only logs websecure-pub,
+          # where the client IP is the PROXY-protocol address, so these only
+          # matter if something internal ever shows up there.
+          whitelists.yaml: |
+            name: custom/internal-whitelist
+            description: "LAN, pod, service and tunnel ranges - never ban"
+            whitelist:
+              reason: "internal source"
+              cidr:
+                - "10.0.0.0/24"   # LAN
+                - "10.42.0.0/16"  # pods
+                - "10.43.0.0/16"  # services
+                - "10.99.0.0/16"  # edge WireGuard tunnels
+      # Same escalation as the lighthouse (Pangolin) stack, minus notifications.
+      profiles.yaml: |
+        name: repeat_offender_remediation
+        filters:
+         - Alert.Remediation == true && Alert.GetScope() == "Ip" && GetDecisionsCount(Alert.GetValue()) > 0
+        decisions:
+         - type: ban
+           duration: 720h
+        duration_expr: Sprintf('%dh', 168 * (1 + GetDecisionsCount(Alert.GetValue())))
+        on_success: break
+        ---
+        name: appsec_ip_remediation
+        filters:
+         - Alert.Remediation == true && Alert.GetScope() == "Ip" && Alert.GetScenario() startsWith "crowdsecurity/appsec"
+        decisions:
+         - type: ban
+           duration: 168h
+        on_success: break
+        ---
+        name: default_ip_remediation
+        filters:
+         - Alert.Remediation == true && Alert.GetScope() == "Ip"
+        decisions:
+         - type: ban
+           duration: 24h
+        on_success: break
+        ---
+        name: default_range_remediation
+        filters:
+         - Alert.Remediation == true && Alert.GetScope() == "Range"
+        decisions:
+         - type: ban
+           duration: 24h
+        on_success: break
+      config.yaml.local: |
+        db_config:
+          use_wal: true
+        api:
+          server:
+            auto_registration:
+              enabled: true
+              token: "${REGISTRATION_TOKEN}" # /!\ handled by the chart, do not change
+              # agent + appsec pods register themselves; pod CIDR only
+              allowed_ranges:
+                - "10.42.0.0/16"
+
+    lapi:
+      replicas: 1
+      envFrom:
+        # BOUNCER_KEY_traefik -> registers bouncer "traefik" on startup
+        - secretRef:
+            name: crowdsec-bouncer-key
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 500Mi
+      persistentVolume:
+        data:
+          enabled: true
+          storageClassName: longhorn-storage
+          size: 1Gi
+        config:
+          enabled: true
+          storageClassName: longhorn-storage
+          size: 100Mi
+      metrics:
+        enabled: true
+
+    agent:
+      acquisition:
+        - namespace: networking
+          podName: traefik-*
+          program: traefik
+      env:
+        - name: COLLECTIONS
+          value: "crowdsecurity/traefik crowdsecurity/http-cve crowdsecurity/base-http-scenarios"
+        - name: PARSERS
+          value: "crowdsecurity/cri-logs"
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 250Mi
+      metrics:
+        enabled: true
+
+    appsec:
+      enabled: true
+      acquisitions:
+        - source: appsec
+          listen_addr: "0.0.0.0:7422"
+          path: /
+          appsec_config: crowdsecurity/appsec-default
+          labels:
+            type: appsec
+      env:
+        - name: COLLECTIONS
+          value: "crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules"
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 500Mi
+      metrics:
+        enabled: true

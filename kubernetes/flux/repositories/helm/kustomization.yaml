@@ -17,3 +17,4 @@ resources:
   - ./prometheus.yaml
   - ./external-secrets.yaml
   - ./hashicorp.yaml
+  - ./crowdsec.yaml

@@ -37,12 +37,23 @@ spec:
       tls:
         enabled: false
       route:
+        annotations:
+          # Required by ValidatingAdmissionPolicy httproute-public-edge: docker/helm
+          # clients can't do oauth2-proxy's browser flow. Harbor enforces its own
+          # auth (OIDC via Pocket ID + robot accounts); AppSec + CrowdSec in front.
+          edge.traunseenet.com/public-unauthenticated: "Registry with native OIDC/robot auth"
         hosts:
           - harbor.cloud.traunseenet.com
         parentRefs:
           - name: traefik
             namespace: networking
             sectionName: websecure-cloud
+            group: gateway.networking.k8s.io
+            kind: Gateway
+          # Public via the edge (VPS -> home VM -> traefik-public); DNS by external-dns-public.
+          - name: traefik-public
+            namespace: networking
+            sectionName: websecure-public
             group: gateway.networking.k8s.io
             kind: Gateway
     persistence:

@@ -179,9 +179,9 @@ spec:
             - "${EDGE_HOME_IP:=192.0.2.1}/32"
         transport:
           respondingTimeouts:
-            # internet-facing: shorter than websecure's 360s (slowloris);
-            # bump if a public app needs long uploads
-            readTimeout: 60
+            # same as websecure: Harbor blob uploads stream the whole layer
+            # inside one request; 60s cut off big pushes from slow uplinks
+            readTimeout: 360
     tracing:
       otlp:
         enabled: true

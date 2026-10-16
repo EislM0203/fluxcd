@@ -4,6 +4,5 @@ kind: Kustomization
 resources:
   - deployment.yaml
   - homeNetworkPolicy.yaml
-  - k8sNetworkPolicy.yaml
   - secret.yaml
   - sites.yaml

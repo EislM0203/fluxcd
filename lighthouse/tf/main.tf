@@ -44,26 +44,14 @@ provider "cloudflare" {
   api_token = var.cloudflare_token
 }
 
-data "external" "k8s_public_domains" {
-  program = [
-    "bash", "${path.module}/extract-domains.sh",
-    "${path.module}/../../kubernetes/apps/networking/newt/newt/app/sites.yaml"
-  ]
-}
-
 locals {
   # Derive the DNS record name relative to the Cloudflare zone.
   # e.g. pangolin_base_domain="pg.traunseenet.com", cloudflare_zone_domain="traunseenet.com" → "pg"
   pangolin_dns_name = trimsuffix(var.pangolin_base_domain, ".${var.cloudflare_zone_domain}")
 
-  # Extract public domain names from the SOPS-encrypted newt blueprint.
-  # Only domain names (public DNS records) enter Terraform state -- no auth
-  # credentials or internal IPs are exposed.
-  k8s_public_dns_names = toset([
-    for domain in split(",", data.external.k8s_public_domains.result.domains) :
-    trimsuffix(domain, ".${var.cloudflare_zone_domain}")
-    if endswith(domain, ".${var.cloudflare_zone_domain}")
-  ])
+  # All k8s apps moved to the stateless edge (edge/, external-dns-public); the
+  # k8s newt blueprint is gone, so no Pangolin CNAMEs are managed anymore.
+  k8s_public_dns_names = toset([])
 }
 
 data "cloudflare_zones" "main" {

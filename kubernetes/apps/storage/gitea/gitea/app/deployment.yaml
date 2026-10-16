@@ -26,6 +26,12 @@ spec:
               value: "1000"
             - name: USER_GID
               value: "1000"
+            # Publicly reachable via the edge: no self-service accounts.
+            # (environment-to-ini writes these into app.ini on start)
+            - name: GITEA__service__DISABLE_REGISTRATION
+              value: "true"
+            - name: GITEA__openid__ENABLE_OPENID_SIGNUP
+              value: "false"
           volumeMounts:
             - name: gitea-data
               mountPath: /data

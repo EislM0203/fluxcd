@@ -8,4 +8,6 @@ resources:
   - externalsecret.yaml
   - secret.yaml
   - httproute.yaml
+  - httproute-public.yaml
+  - middleware-oauth2.yaml
   - pvc.yaml

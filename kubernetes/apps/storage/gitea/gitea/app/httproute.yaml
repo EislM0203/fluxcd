@@ -3,11 +3,20 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: gitea
+  annotations:
+    # Required by ValidatingAdmissionPolicy httproute-public-edge:
+    # public repos must be readable anonymously and git clients can't do
+    # oauth2-proxy's browser flow. Native auth, registration off; AppSec + CrowdSec in front.
+    edge.traunseenet.com/public-unauthenticated: "Public repos (anonymous read), git over HTTPS; native auth, registration disabled"
 spec:
   parentRefs:
     - name: traefik
       namespace: networking
       sectionName: websecure-cloud
+    # Public via the edge (VPS -> home VM -> traefik-public); DNS by external-dns-public.
+    - name: traefik-public
+      namespace: networking
+      sectionName: websecure-public
   hostnames:
     - gitea.cloud.traunseenet.com
   rules:

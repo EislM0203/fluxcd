@@ -1,0 +1,25 @@
+---
+# Forward-auth via the shared oauth2-proxy (auth namespace); used ONLY by the
+# public route (httproute-public.yaml). Users need the global edge_users group
+# AND one of: trek,trek_admins. Not logged in -> 302 to Pocket ID; wrong group -> 403.
+# Name must start with oauth2-forward-auth (ValidatingAdmissionPolicy httproute-public-edge).
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: oauth2-forward-auth-trek
+spec:
+  forwardAuth:
+    address: http://oauth2-proxy.auth.svc.cluster.local:4180/?allowed_groups=trek,trek_admins
+    # Traefik sets X-Forwarded-* itself from the (PROXY-decoded) connection.
+    trustForwardHeader: false
+    authResponseHeaders:
+      - X-Auth-Request-User
+      - X-Auth-Request-Email
+      - X-Auth-Request-Groups
+    # Session refreshes arrive as Set-Cookie on the 202; incl. split variants.
+    addAuthCookiesToResponse:
+      - __Secure-oauth2-proxy
+      - __Secure-oauth2-proxy_0
+      - __Secure-oauth2-proxy_1
+      - __Secure-oauth2-proxy_2
+      - __Secure-oauth2-proxy_3

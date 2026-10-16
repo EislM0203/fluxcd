@@ -50,6 +50,36 @@ spec:
         resource.opentelemetry.io/service.namespace: traefik
       additionalContainers: []
       initContainers: []
+      # CrowdSec bouncer key (crowdsecLapiKeyFile in addons/middleware-crowdsec.yaml).
+      # A file instead of the plugin's inline key / urn:k8s:secret: the resolved
+      # plugin config is visible in the (unauthenticated) Traefik API/dashboard.
+      # optional: Traefik must start without it (internal traffic); a missing
+      # key only fails the public entrypoint closed (see middleware comments).
+      additionalVolumes:
+        - name: crowdsec-bouncer-key
+          secret:
+            secretName: crowdsec-bouncer-key
+            optional: true
+            defaultMode: 0444   # Traefik runs as 65532 without fsGroup
+            items:
+              - key: BOUNCER_KEY_traefik
+                path: lapi-key
+    additionalVolumeMounts:
+      - name: crowdsec-bouncer-key
+        mountPath: /etc/traefik/crowdsec
+        readOnly: true
+    experimental:
+      # Remote plugins are fetched from plugins.traefik.io (+ GitHub) at EVERY
+      # pod start into the chart's /plugins-storage emptyDir. Traefik v3.7 with
+      # abortOnPluginFailure=false (chart default): if ANY plugin fails to
+      # download/compile, Traefik still starts and serves everything, but ALL
+      # plugins are disabled -> the public entrypoint's crowdsec middleware
+      # cannot be built -> websecure-pub routers are dropped (404, fail-closed).
+      # Internal entrypoints are unaffected. Keep the plugin list short.
+      plugins:
+        bouncer:
+          moduleName: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
+          version: v1.7.1
     resources:
       requests:
         memory: '1Mi'
@@ -57,8 +87,24 @@ spec:
       limits:
         memory: '2Gi'
         cpu: '3000m'
+    # Access logs feed CrowdSec (agent tails the Traefik pod logs). JSON is what
+    # crowdsecurity/traefik-logs parses best; ClientHost is the PROXY-protocol
+    # client on websecure-pub. Enabled globally but switched off per entrypoint
+    # (ports.*.observability.accessLogs) so ONLY websecure-pub is logged:
+    # public traffic only, negligible volume, internal clients never scored.
+    accessLog:
+      enabled: true
+      format: json
+      fields:
+        headers:
+          defaultMode: drop       # never log Cookie/Authorization
+          names:
+            User-Agent: keep      # http-bad-user-agent & co. need it
+            Referer: keep
     ports:
       web:
+        observability:
+          accessLogs: false
         http:
           redirections:
             entryPoint:
@@ -76,6 +122,8 @@ spec:
         expose:
           default: true
         exposedPort: 443
+        observability:
+          accessLogs: false   # internal traffic: not logged, not seen by CrowdSec
         http:
           tls:
             enabled: true
@@ -109,6 +157,15 @@ spec:
           # Reject requests carrying header-name aliases (e.g. X_Forwarded_For
           # vs X-Forwarded-For) instead of passing them to backends (v3.7.12+).
           aliasHeadersStrategy: reject
+          # CrowdSec bouncer + AppSec in front of EVERY router on this entrypoint
+          # (Traefik prepends entrypoint middlewares per entrypoint, so routes
+          # that are also on the internal `traefik` Gateway are unaffected there).
+          # <namespace>-<name>@kubernetescrd; defined in addons/middleware-crowdsec.yaml.
+          # Fail-closed: middleware missing / key file missing / plugin not loaded
+          # -> routers on this entrypoint are dropped (404); LAPI unreachable ->
+          # 403 for every request; AppSec unreachable -> 403.
+          middlewares:
+            - networking-crowdsec-public@kubernetescrd
         # The public Service is externalTrafficPolicy: Local, so the TCP peer
         # Traefik sees is the home VM itself (no kube-proxy SNAT) -> trust
         # exactly that /32. No LAN host or pod can forge a PROXY header.

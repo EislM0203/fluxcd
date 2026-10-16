@@ -1,0 +1,20 @@
+---
+# Kernel limits for the RKE2 nodes. Ubuntu ships fs.inotify.max_user_instances=128,
+# which kubelet/containerd/log shippers nearly exhaust on their own; CrowdSec's LAPI
+# then dies with "couldn't initialize inotify: too many open files".
+- name: Configure node sysctls
+  hosts: rke2_server:rke2_agents
+  become: yes
+
+  tasks:
+    - name: Raise inotify limits (persistent, applied immediately)
+      ansible.posix.sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        sysctl_file: /etc/sysctl.d/90-k8s-inotify.conf
+        state: present
+        reload: yes
+      loop:
+        - { name: fs.inotify.max_user_instances, value: "8192" }
+        - { name: fs.inotify.max_user_watches, value: "524288" }
+      tags: [maintenance, sysctl]

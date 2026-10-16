@@ -14,7 +14,7 @@ SECRETS_FILE = secrets.yaml
 TFVARS_FILE = cluster/tf/terraform.tfvars
 SOPS_AGE_KEY_FILE = $(HOME)/.config/sops/age/keys.txt
 
-.PHONY: bootstrap-infra plan-tf apply-tf destroy-tf wait-for-nodes configure-hosts-file update-packages \
+.PHONY: bootstrap-infra plan-tf apply-tf destroy-tf wait-for-nodes configure-hosts-file update-packages configure-sysctl \
 	install-longhorn-dependencies install-tns-csi-dependencies reboot-if-required install-rke2-server install-rke2-agent cluster-readiness-check \
 	lighthouse-init lighthouse-plan lighthouse-apply lighthouse-bootstrap lighthouse-setup lighthouse-configure lighthouse-redeploy lighthouse-destroy \
 	sandbox-init sandbox-plan sandbox-apply sandbox-destroy sandbox-deploy sandbox-up \
@@ -24,6 +24,7 @@ bootstrap-infra: apply-tf \
 	wait-for-nodes \
 	configure-hosts-file \
 	update-packages \
+	configure-sysctl \
 	install-longhorn-dependencies \
 	reboot-if-required \
 	install-rke2-server \
@@ -50,6 +51,9 @@ configure-hosts-file:
 
 update-packages:
 	ansible-playbook -i "${INVENTORY}" "${MAINTENANCE_DIR}/update-packages.yml"
+
+configure-sysctl:
+	ansible-playbook -i "${INVENTORY}" "${MAINTENANCE_DIR}/configure-sysctl.yml"
 
 install-longhorn-dependencies:
 	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/install-longhorn-dependencies.yml"

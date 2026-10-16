@@ -9,7 +9,12 @@ data:
   NTFY_CACHE_FILE: "/etc/ntfy/cache/cache.db"
   NTFY_CACHE_DURATION: "12h"
   NTFY_AUTH_FILE: "/etc/ntfy/auth/auth.db"
-  NTFY_DEFAULT_ACCESS: deny-all
+  # Public via the edge: nobody reads or writes without login...
+  NTFY_AUTH_DEFAULT_ACCESS: deny-all
+  # ...except the in-cluster publishers, which post anonymously (Gatus: topic
+  # gatus, Alertmanager: am-*). Write-only: anyone can post there, nobody
+  # anonymous can read. Declarative ACL (ntfy auth-access, user:topic:perm).
+  NTFY_AUTH_ACCESS: "*:gatus:wo,*:am-*:wo"
   NTFY_ATTACHMENT_CACHE_DIR: "/etc/ntfy/cache/attachments"
   NTFY_TEMPLATE_DIR: "/etc/ntfy/templates"
   NTFY_UPSTREAM_BASE_URL: "https://ntfy.sh"

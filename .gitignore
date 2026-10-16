@@ -3,7 +3,6 @@
 **/.terraform.tfstate.lock.info
 **/terraform.tfstate.backup
 **/inventory.ini
-lighthouse/credentials-*.yml
 compose/**
 # sops leaves plaintext decrypted copies behind; never commit them
 .decrypted~*

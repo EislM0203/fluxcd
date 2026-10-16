@@ -11,12 +11,11 @@
 #    MatchParent(), so a sub-domain filter finds no zone at all. The regex also
 #    matches the bare zone name (required for zone discovery); the apex can never
 #    be a desired record (route hosts must match the listener *.cloud...).
-#    Excludes cloud.traunseenet.com itself (Pangolin dashboard A record, owned by
-#    lighthouse/tf) and wildcard names.
+#    Excludes cloud.traunseenet.com itself (carries the CAA, edge/tf/infra) and
+#    wildcard names.
 #  - upsert-only + TXT registry: never deletes, and never updates/claims a record
-#    it does not own (no TXT with owner edge-public) — e.g. lighthouse/tf's
-#    Pangolin CNAMEs (x.cloud → cloud.traunseenet.com) and TF-created A records
-#    are skipped, not overwritten.
+#    it does not own (no TXT with owner edge-public) — records created by hand or
+#    by tofu are skipped, not overwritten.
 #  - unproxied (TLS passthrough to the cluster; Cloudflare must not terminate).
 #    Default is unproxied; kingpin rejects `--cloudflare-proxied=false`, hence
 #    `--no-cloudflare-proxied`. Per-route `cloudflare-proxied` annotations on

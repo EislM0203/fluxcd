@@ -32,8 +32,8 @@ spec:
         app: oauth2-proxy
     spec:
       automountServiceAccountToken: false
-      # Cluster DNS resolves pocketid.cloud to the public (Pangolin) IP, which the egress
-      # NetworkPolicy blocks. Pin it to the internal Traefik LB instead: kube-proxy short-
+      # Public DNS resolves pocketid.cloud to the edge VPS, which the egress NetworkPolicy
+      # blocks (and cluster DNS did too while nodes fell back to 8.8.8.8). Pin it to the internal Traefik LB instead: kube-proxy short-
       # circuits the VIP to the Traefik pods (:8443, allowed below) and the *.cloud wildcard
       # cert matches. Keeps OIDC discovery/token calls in-cluster and independent of the edge.
       hostAliases:

@@ -1,47 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": [
+    "config:recommended"
+  ],
   "pinDigests": true,
   "registryAliases": {
     "harbor.cloud.traunseenet.com/docker.io": "index.docker.io",
     "harbor.cloud.traunseenet.com/ghcr.io": "ghcr.io"
-  },
-  "customManagers": [
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^lighthouse/tf/variables\\.tf$/"],
-      "matchStrings": [
-        "variable\\s+\"image_pangolin\"\\s*\\{[^}]*?default\\s*=\\s*\"(?<currentValue>[^\"@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
-      ],
-      "datasourceTemplate": "docker",
-      "depNameTemplate": "fosrl/pangolin"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^lighthouse/tf/variables\\.tf$/"],
-      "matchStrings": [
-        "variable\\s+\"image_gerbil\"\\s*\\{[^}]*?default\\s*=\\s*\"(?<currentValue>[^\"@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
-      ],
-      "datasourceTemplate": "docker",
-      "depNameTemplate": "fosrl/gerbil"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^lighthouse/tf/variables\\.tf$/"],
-      "matchStrings": [
-        "variable\\s+\"image_traefik\"\\s*\\{[^}]*?default\\s*=\\s*\"(?<currentValue>[^\"@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
-      ],
-      "datasourceTemplate": "docker",
-      "depNameTemplate": "traefik"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^lighthouse/tf/variables\\.tf$/"],
-      "matchStrings": [
-        "variable\\s+\"image_crowdsec\"\\s*\\{[^}]*?default\\s*=\\s*\"(?<currentValue>[^\"@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
-      ],
-      "datasourceTemplate": "docker",
-      "depNameTemplate": "crowdsecurity/crowdsec"
-    }
-  ]
+  }
 }

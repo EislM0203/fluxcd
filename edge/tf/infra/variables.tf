@@ -1,5 +1,4 @@
-# Credential / shared variable names intentionally match lighthouse/tf so the
-# existing SOPS .env (TF_VAR_*) satisfies this module without new secrets.
+# Credential / shared variable names match the existing SOPS .env (TF_VAR_*).
 
 variable "hetzner_token" {
   description = "Hetzner Cloud API token"
@@ -36,9 +35,8 @@ variable "edge_location" {
   default     = "nbg1"
 }
 
-# edge_* names on purpose: lighthouse already uploads ~/.ssh/hetzner.pub to the same
-# Hetzner project (duplicate keys are rejected), and the shared TF_VAR_ssh_* names in
-# .env collide between modules.
+# edge_* names on purpose: the shared TF_VAR_ssh_* names in .env collide between
+# modules.
 variable "edge_ssh_public_key_path" {
   description = "Path to the SSH public key uploaded to Hetzner and authorized for the edge user"
   type        = string
@@ -63,11 +61,9 @@ variable "edge_wg_home_public_key" {
 }
 
 variable "acme_account_uri" {
-  # WARNING: the CAA sits on cloud.traunseenet.com, which also covers Pangolin's
-  # names (lighthouse: cloud.traunseenet.com itself + x.cloud CNAMEs to it). Pangolin's
-  # Traefik has its OWN Let's Encrypt account, so setting this breaks Pangolin
-  # certificate renewals. Leave it null until lighthouse/ is retired.
-  description = "Optional: cert-manager's ACME account URI (kubectl get clusterissuer letsencrypt-prod -o jsonpath='{.status.acme.uri}'). When set, the CAA on cloud.<zone> also pins accounturi, so only that account can issue for *.cloud names. Breaks Pangolin (lighthouse) renewals while it still serves *.cloud names."
+  # Every issuer for *.cloud must use this ACME account once set (today: only
+  # cert-manager letsencrypt-prod).
+  description = "Optional: cert-manager's ACME account URI (kubectl get clusterissuer letsencrypt-prod -o jsonpath='{.status.acme.uri}'). When set, the CAA on cloud.<zone> also pins accounturi, so only that account can issue for *.cloud names."
   type        = string
   default     = null
 

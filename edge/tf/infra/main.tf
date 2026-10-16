@@ -2,8 +2,7 @@ data "cloudflare_zones" "main" {
   name = var.cloudflare_zone_domain
 }
 
-# Own key + own name: lighthouse already uploads ~/.ssh/hetzner.pub to the same
-# Hetzner project and Hetzner rejects duplicate public keys.
+# Own key + own name (Hetzner rejects duplicate public keys per project).
 resource "hcloud_ssh_key" "edge" {
   name       = "edge"
   public_key = trimspace(file(var.edge_ssh_public_key_path))
@@ -96,16 +95,12 @@ removed {
 
 # CAA on the `cloud` label (NOT the apex). A CA checks the CAA of the requested name
 # and climbs to its parents, so this one RRset covers every *.cloud name without its
-# own CAA (incl. names external-dns creates later, names CNAMEd to
-# cloud.traunseenet.com by lighthouse/Pangolin, and the *.cloud wildcard — whose CAA
+# own CAA (incl. names external-dns creates later, and the *.cloud wildcard — whose CAA
 # lookup starts at cloud.traunseenet.com). Only Let's Encrypt, only via DNS-01 (and,
 # if acme_account_uri is set, only for that ACME account). The VPS terminates :80/:443
 # for these names, so without this a compromised VPS could obtain a certificate via
 # HTTP-01 / TLS-ALPN-01. Verified before moving it here: every issuer for *.cloud uses
-# DNS-01 (cluster ClusterIssuer letsencrypt-prod: dns01/cloudflare; Pangolin Traefik
-# (lighthouse/ansible/templates/traefik_config.yml.j2): dnsChallenge/cloudflare).
-# The record shares its name with lighthouse/tf's Pangolin A record
-# (cloud.traunseenet.com); different type, so neither stack touches the other's record.
+# DNS-01 (cluster ClusterIssuer letsencrypt-prod: dns01/cloudflare).
 locals {
   caa_value = "letsencrypt.org; validationmethods=dns-01${var.acme_account_uri == null ? "" : "; accounturi=${var.acme_account_uri}"}"
 }

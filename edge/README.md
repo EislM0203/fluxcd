@@ -25,7 +25,8 @@ The edge side and the Flux side must agree on two IPs:
 `ingress_ip` ships as the placeholder `REPLACE_WITH_PUBLIC_LB_IP`; the playbook's
 preflight refuses to run until it is a valid IPv4 address. The port stays `9443`.
 
-Pangolin (`lighthouse/`) is untouched and keeps running until apps are migrated.
+Pangolin (`lighthouse/`) was the previous public path; all apps moved here and it was
+destroyed on 2026-10-16.
 
 ## Topology
 
@@ -104,8 +105,7 @@ cloud.traunseenet.com. CAA 0 issuewild "letsencrypt.org; validationmethods=dns-0
 
 A CA looks up CAA at the requested name and climbs to its parents, so this one RRset
 covers **every** `*.cloud` name that has no CAA of its own: all names external-dns
-creates (no per-host records needed any more), Pangolin's `x.cloud` CNAMEs (a CNAME's
-CAA lookup follows to `cloud.traunseenet.com`), and the `*.cloud` wildcard certificate
+creates (no per-host records needed any more) and the `*.cloud` wildcard certificate
 (its CAA check starts at `cloud.traunseenet.com`).
 
 Since the VPS terminates `:80`/`:443` for these names, a compromised VPS could otherwise
@@ -114,14 +114,11 @@ CAA, only Let's Encrypt may issue, only via DNS-01 (which needs a Cloudflare tok
 VPS never sees).
 
 Everything issuing for `*.cloud` today uses DNS-01 (checked when the CAA moved here):
-the cluster's only ACME issuer `ClusterIssuer letsencrypt-prod` (`dns01.cloudflare`) and
-Pangolin's Traefik (`lighthouse/ansible/templates/traefik_config.yml.j2`,
-`dnsChallenge: cloudflare`). Anything new under `*.cloud` **must** use DNS-01 too.
+the cluster's only ACME issuer `ClusterIssuer letsencrypt-prod` (`dns01.cloudflare`).
+Anything new under `*.cloud` **must** use DNS-01 too.
 
-Optionally pin the cluster's ACME account (`accounturi`) — **but not while
-lighthouse/Pangolin still serves `*.cloud` names** (`cloud.traunseenet.com` itself and
-its `x.cloud` CNAMEs): Pangolin has its own Let's Encrypt account and its renewals would
-fail. Once lighthouse is gone, get the URI with
+Optionally pin the cluster's ACME account (`accounturi`); every issuer for `*.cloud`
+must then use that account. Get the URI with
 
 ```sh
 kubectl get clusterissuer letsencrypt-prod -o jsonpath='{.status.acme.uri}'
@@ -150,8 +147,8 @@ Public A records are created by a second external-dns instance,
 |---|---|
 | `--source=gateway-httproute --gateway-name=traefik-public --gateway-namespace=networking` | only routes on the public Gateway |
 | Gateway annotation `external-dns.alpha.kubernetes.io/target: "195.201.24.122"` | record content = edge VPS IP (the Gateway's status address is the shared LAN VIP). **Update it if the VPS is rebuilt with a new IP** (`hcloud_server.edge`). |
-| `--regex-domain-filter=^([a-z0-9-]+\.cloud\.)?traunseenet\.com$` | only `<one-label>.cloud.traunseenet.com` (never `cloud.traunseenet.com` itself = Pangolin's A record, never wildcards). A plain `--domain-filter=cloud.traunseenet.com` does not work with Cloudflare: the zone `traunseenet.com` itself is matched against the filter and would be skipped. |
-| `--policy=upsert-only`, `--registry=txt --txt-owner-id=edge-public --txt-prefix=edge-public-` | never deletes; only updates records it owns (TXT `edge-public-a-<host>.cloud…` with `external-dns/owner=edge-public`). Unowned records — lighthouse's Pangolin CNAMEs, anything created by hand or tofu — are skipped, never overwritten. The TXT sits at a different name than the record, so it can't clash with a CNAME. |
+| `--regex-domain-filter=^([a-z0-9-]+\.cloud\.)?traunseenet\.com$` | only `<one-label>.cloud.traunseenet.com` (never `cloud.traunseenet.com` itself, which only carries the CAA; never wildcards). A plain `--domain-filter=cloud.traunseenet.com` does not work with Cloudflare: the zone `traunseenet.com` itself is matched against the filter and would be skipped. |
+| `--policy=upsert-only`, `--registry=txt --txt-owner-id=edge-public --txt-prefix=edge-public-` | never deletes; only updates records it owns (TXT `edge-public-a-<host>.cloud…` with `external-dns/owner=edge-public`). Unowned records — anything created by hand or tofu — are skipped, never overwritten. The TXT sits at a different name than the record, so it can't clash with a CNAME. |
 | `--no-cloudflare-proxied` | DNS-only (grey cloud): the edge needs TLS passthrough. |
 
 Because the policy is upsert-only, **removing a public route does not remove its
@@ -239,8 +236,8 @@ recreate it within a minute (short gap, see above).
 
 ## Prerequisites
 
-1. **SSH keypair** dedicated to edge (Hetzner rejects duplicates of lighthouse's
-   `~/.ssh/hetzner.pub` in the same project):
+1. **SSH keypair** dedicated to edge (Hetzner rejects duplicate public keys in the
+   same project):
    ```sh
    ssh-keygen -t ed25519 -f ~/.ssh/edge -C edge
    ```
@@ -469,9 +466,8 @@ spec:
   ```
   (oauth2-proxy's own route uses this). It also rejects a `*cloudflare-proxied`
   annotation other than `"false"` on public routes.
-- Don't reuse a hostname that lighthouse/Pangolin already has (its `x.cloud` CNAMEs):
-  external-dns will not touch an unowned record, so the name keeps pointing at Pangolin.
-  Remove it from the newt blueprint (lighthouse tofu) first.
+- Don't reuse a hostname that already has a record not owned by external-dns (e.g.
+  created by hand): external-dns will not touch it, so delete it in Cloudflare first.
 - Removing the route does **not** remove the record (upsert-only) — delete it by hand.
 
 Nothing changes on the VPS or edge-home — they forward all of 443 blindly.
@@ -480,4 +476,4 @@ Nothing changes on the VPS or edge-home — they forward all of 443 blindly.
 
 - CrowdSec in the cluster (Traefik bouncer)
 - GeoIP filtering
-- Migrating apps off Pangolin and removing `lighthouse/`
+- ~~Migrating apps off Pangolin and removing `lighthouse/`~~ (done 2026-10-16)

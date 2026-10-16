@@ -1,4 +1,4 @@
-# Proxmox credential names match sandbox/tf and cluster/tf so the existing SOPS .env
+# Proxmox credential names match cluster/tf so the existing SOPS .env
 # (TF_VAR_proxmox_*) satisfies this module without new secrets.
 
 variable "proxmox_api_url" {

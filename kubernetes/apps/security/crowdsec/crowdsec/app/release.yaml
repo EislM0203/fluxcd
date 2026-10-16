@@ -61,7 +61,7 @@ spec:
                 - "10.42.0.0/16"  # pods
                 - "10.43.0.0/16"  # services
                 - "10.99.0.0/16"  # edge WireGuard tunnels
-      # Same escalation as the lighthouse (Pangolin) stack, minus notifications.
+      # Repeat offenders get escalating ban durations; no notifications.
       profiles.yaml: |
         name: repeat_offender_remediation
         filters:

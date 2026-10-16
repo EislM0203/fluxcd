@@ -11,10 +11,13 @@ data:
   NTFY_AUTH_FILE: "/etc/ntfy/auth/auth.db"
   # Public via the edge: nobody reads or writes without login...
   NTFY_AUTH_DEFAULT_ACCESS: deny-all
-  # ...except the in-cluster publishers, which post anonymously (Gatus: topic
-  # gatus, Alertmanager: am-*). Write-only: anyone can post there, nobody
-  # anonymous can read. Declarative ACL (ntfy auth-access, user:topic:perm).
-  NTFY_AUTH_ACCESS: "*:gatus:wo,*:am-*:wo"
+  # ...except the in-cluster publishers (Gatus: topic gatus, Alertmanager:
+  # am-*), which post as the write-only user `alerts` with a token. User and
+  # token are declarative too (NTFY_AUTH_USERS / NTFY_AUTH_TOKENS from Vault
+  # apps/ntfy via ntfy-secrets); the same token is ALERTS_NTFY_TOKEN there,
+  # read by gatus (deployment env) and alertmanager (ExternalSecret).
+  # Declarative ACL (ntfy auth-access, user:topic:perm).
+  NTFY_AUTH_ACCESS: "alerts:gatus:wo,alerts:am-*:wo"
   NTFY_ATTACHMENT_CACHE_DIR: "/etc/ntfy/cache/attachments"
   NTFY_TEMPLATE_DIR: "/etc/ntfy/templates"
   NTFY_UPSTREAM_BASE_URL: "https://ntfy.sh"

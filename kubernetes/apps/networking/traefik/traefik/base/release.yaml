@@ -36,7 +36,7 @@ spec:
       checkNewVersion: false
     additionalArguments:
       - '--serversTransport.insecureSkipVerify=true'
-      - '--log.level=DEBUG'
+      - '--log.level=INFO'
       - "--api.insecure=true"
     deployment:
       enabled: true
@@ -164,8 +164,11 @@ spec:
           # Fail-closed: middleware missing / key file missing / plugin not loaded
           # -> routers on this entrypoint are dropped (404); LAPI unreachable ->
           # 403 for every request; AppSec unreachable -> 403.
+          # security-headers-public: HSTS (addons/middleware-security-headers.yaml),
+          # same fail-closed lifecycle as crowdsec-public.
           middlewares:
             - networking-crowdsec-public@kubernetescrd
+            - networking-security-headers-public@kubernetescrd
         # The public Service is externalTrafficPolicy: Local, so the TCP peer
         # Traefik sees is the home VM itself (no kube-proxy SNAT) -> trust
         # exactly that /32. No LAN host or pod can forge a PROXY header.
@@ -206,13 +209,15 @@ spec:
               name: traefik
               targetPort: 8080
               protocol: TCP
-      # Public ingress
+      # Dashboard ingress (LAN only: websecure)
       - apiVersion: networking.k8s.io/v1
         kind: Ingress
         metadata:
           name: traefik-dashboard
           annotations:
             traefik.ingress.kubernetes.io/router.entrypoints: websecure
+            # api.insecure has no auth of its own (addons/middleware-oauth2.yaml)
+            traefik.ingress.kubernetes.io/router.middlewares: networking-oauth2-forward-auth-traefik@kubernetescrd
             cert-manager.io/cluster-issuer: "letsencrypt-prod"
         spec:
           tls:
@@ -285,13 +290,16 @@ spec:
             # -> every node kube-vip may elect has a local endpoint. Keeps the
             # home VM's source IP for loadBalancerSourceRanges + trustedIPs.
             externalTrafficPolicy: Local
+            # No NodePort: loadBalancerSourceRanges doesn't filter it, so it
+            # was a LAN shortcut to websecure-pub (kube-vip doesn't need it).
+            allocateLoadBalancerNodePorts: false
             # kube-proxy drops LB traffic from anyone but the home VM
             loadBalancerSourceRanges:
               - "${EDGE_HOME_IP:=192.0.2.1}/32"
           annotations:
-            # Static IP via kube-vip-cloud-provider (same as the observability
-            # LBs). NOT loadBalancerIP "0.0.0.0" = DHCP mode, which leased a
-            # LAN IP in use before. Pick a free IP; kube-vip's pool is
-            # 10.0.0.40-49 (kube-system/kubevip configmap; .41-.43 taken).
+            # Static IP via kube-vip-cloud-provider. NOT loadBalancerIP
+            # "0.0.0.0" = DHCP mode, which leased a LAN IP in use before. Pick
+            # a free IP; kube-vip's pool is 10.0.0.40-49 (kube-system/kubevip
+            # configmap).
             kube-vip.io/loadbalancerIPs: "${EDGE_PUBLIC_LB_IP}"
             kube-vip.io/loadbalancerHostname: traefik-public

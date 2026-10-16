@@ -32,10 +32,6 @@ spec:
             path: /mnt/nvmepool/kubernetes/media/data
       containers:
         - env:
-            - name: ND_REVERSEPROXYUSERHEADER
-              value: 'X-Forwarded-User'
-            - name: ND_REVERSEPROXYWHITELIST
-              value: '0.0.0.0/0'
             - name: PGID
               value: "1000" # < ASCII code for '65541'
             - name: PUID

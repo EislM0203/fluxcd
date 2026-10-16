@@ -22,6 +22,13 @@ spec:
         image: harbor.cloud.traunseenet.com/ghcr.io/twin/gatus:v5.37.0@sha256:094eb186e55235db367e90e9d56140e5897b7044c41de23cde4cc18e6da1242e
         ports:
         - containerPort: 8080
+        env:
+        # ntfy publish token (alerting.ntfy.token in cm.yaml; ntfy/app/cm.yaml)
+        - name: NTFY_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: ntfy-secrets
+              key: ALERTS_NTFY_TOKEN
         resources:
           limits:
             memory: "512Mi"

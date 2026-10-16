@@ -6,4 +6,6 @@ resources:
   - gateway.yaml
   - gateway-public.yaml
   - middleware-crowdsec.yaml
+  - middleware-oauth2.yaml
+  - middleware-security-headers.yaml
   - secret-crowdsec-bouncer.yaml

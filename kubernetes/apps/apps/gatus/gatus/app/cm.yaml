@@ -343,6 +343,7 @@ data:
       ntfy:
         topic: "gatus"
         url: "http://ntfy.apps.svc.cluster.local"
+        token: "${NTFY_TOKEN}"
         priority: 4
     storage:
       type: sqlite

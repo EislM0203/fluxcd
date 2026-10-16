@@ -17,13 +17,6 @@ spec:
           podSelector:
             matchLabels:
               app.kubernetes.io/name: traefik
-        # public, via Pangolin (k8s-newt-blueprint)
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: networking
-          podSelector:
-            matchLabels:
-              app: k8s-newt
         # Euro-Office fetches and saves documents via StorageUrl
         - podSelector:
             matchLabels:
@@ -86,12 +79,6 @@ spec:
           podSelector:
             matchLabels:
               app.kubernetes.io/name: traefik
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: networking
-          podSelector:
-            matchLabels:
-              app: k8s-newt
         - podSelector:
             matchLabels:
               app: nextcloud

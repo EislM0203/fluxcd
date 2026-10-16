@@ -251,7 +251,7 @@ spec:
         ruleSelectorNilUsesHelmValues: false
         scrapeConfigSelectorNilUsesHelmValues: false
         serviceMonitorSelectorNilUsesHelmValues: false
-        enableAdminAPI: true
+        enableAdminAPI: false
         walCompression: true
         enableFeatures:
           - memory-snapshot-on-shutdown
@@ -307,6 +307,10 @@ spec:
       forceDeployDashboards: true
     alertmanager:
       alertmanagerSpec:
+        # ntfy publish token -> /etc/alertmanager/secrets/alertmanager-ntfy/token
+        # (externalsecret.yaml; used by the ntfy-* receivers below)
+        secrets:
+          - alertmanager-ntfy
         podMetadata:
           annotations:
             "resource.opentelemetry.io/service.name": "alertmanager"
@@ -370,14 +374,23 @@ spec:
             webhook_configs:
               - url: "http://ntfy.apps.svc.cluster.local/am-default?template=alertmanager"
                 send_resolved: true
+                http_config:
+                  authorization:
+                    credentials_file: /etc/alertmanager/secrets/alertmanager-ntfy/token
           - name: ntfy-warning
             webhook_configs:
               - url: "http://ntfy.apps.svc.cluster.local/am-warning?template=alertmanager"
                 send_resolved: true
+                http_config:
+                  authorization:
+                    credentials_file: /etc/alertmanager/secrets/alertmanager-ntfy/token
           - name: ntfy-critical
             webhook_configs:
               - url: "http://ntfy.apps.svc.cluster.local/am-critical?template=alertmanager"
                 send_resolved: true
+                http_config:
+                  authorization:
+                    credentials_file: /etc/alertmanager/secrets/alertmanager-ntfy/token
     additionalPrometheusRulesMap:
       demo-alerts.yml:
         groups:

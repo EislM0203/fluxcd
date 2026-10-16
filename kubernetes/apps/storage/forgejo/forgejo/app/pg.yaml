@@ -69,6 +69,8 @@ metadata:
   name: forgejo-pg-backup
 spec:
   schedule: "0 0 */6 * * *"
+  # first backup right away; otherwise CNPGBackupTooOld fires on a new cluster
+  immediate: true
   backupOwnerReference: self
   cluster:
     name: forgejo-pg

@@ -1,10 +1,8 @@
 # Ingress-only. Namespace comes from the Flux Kustomization's targetNamespace,
 # like every other file in this directory.
 #
-# Three callers must survive, or this policy breaks them silently:
+# Two callers must survive, or this policy breaks them silently:
 #   - Traefik      HTTPRoute gitea.cloud.traunseenet.com -> :3000
-#   - k8s-newt     reaches the pod directly (see newt/app/k8sNetworkPolicy.yaml),
-#                  NOT through Traefik, so Pangolin dies without this rule
 #   - gatus        polls /api/healthz every 1m (gatus/app/cm.yaml)
 #
 # The deployment has no probes, so there is no kubelet path to allow.
@@ -30,19 +28,6 @@ spec:
       ports:
         - protocol: TCP
           port: 3000
-    # Pangolin, via newt's direct pod-to-pod path
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: networking
-          podSelector:
-            matchLabels:
-              app: k8s-newt
-      ports:
-        - protocol: TCP
-          port: 3000
-        - protocol: TCP
-          port: 22
     # Healthcheck
     - from:
         - namespaceSelector:

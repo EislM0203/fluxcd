@@ -1,0 +1,12 @@
+---
+# HSTS for every router on the PUBLIC entrypoint (attached in base/release.yaml
+# next to crowdsec-public). Without it, whoever answers :80 for a first visit
+# (e.g. a compromised edge VPS) could strip TLS. No includeSubDomains/preload:
+# HSTS is pinned per hostname only, so nothing else in the zone is affected.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: security-headers-public
+spec:
+  headers:
+    stsSeconds: 31536000

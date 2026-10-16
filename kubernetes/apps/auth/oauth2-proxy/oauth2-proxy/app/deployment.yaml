@@ -80,6 +80,10 @@ spec:
             # the per-app allowed_groups query (both must pass).
             - --allowed-group=edge_users
             - --reverse-proxy=true
+            # X-Forwarded-* (host/uri/proto for the redirect, client IP) only
+            # from pods = Traefik (the NetworkPolicy admits nothing else anyway).
+            # Default would be "trust everyone".
+            - --trusted-proxy-ip=10.42.0.0/16
             - --set-xauthrequest=true
             - --upstream=static://202
             # unauthenticated browser requests to "/" get a 302 straight to Pocket ID

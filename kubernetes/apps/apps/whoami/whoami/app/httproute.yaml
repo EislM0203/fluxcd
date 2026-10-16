@@ -21,7 +21,7 @@ spec:
           extensionRef:
             group: traefik.io
             kind: Middleware
-            name: oauth2-forward-auth-whoami_users
+            name: oauth2-forward-auth-whoami-users
       backendRefs:
         - name: whoami
           port: 80

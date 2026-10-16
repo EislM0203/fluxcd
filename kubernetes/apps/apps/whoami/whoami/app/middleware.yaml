@@ -17,7 +17,7 @@
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: oauth2-forward-auth-whoami_users
+  name: oauth2-forward-auth-whoami-users
 spec:
   forwardAuth:
     address: http://oauth2-proxy.auth.svc.cluster.local:4180/?allowed_groups=whoami_users

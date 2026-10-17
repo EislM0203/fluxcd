@@ -81,11 +81,12 @@ spec:
             - name: HOME
               value: /tmp
           resources:
+            # No CPU limit: the loop spawns curl/jq/kubectl every poll; these short bursts
+            # hit the CFS quota (CPUThrottlingHigh at ~35m average use).
             requests:
               cpu: 20m
               memory: 64Mi
             limits:
-              cpu: 500m
               memory: 256Mi
           securityContext:
             allowPrivilegeEscalation: false

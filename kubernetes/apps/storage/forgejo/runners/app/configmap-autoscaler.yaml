@@ -123,11 +123,18 @@ data:
     }
 
     # Runner records for jobs that are done are removed here; successful ones are
-    # already gone (404), failed ones are not.
+    # already gone (404), failed ones are not. Finished Jobs linger until their
+    # ttl, so each one is handled (and logged) only once: REPORTED remembers them
+    # and forgets them again once the Job is gone.
+    declare -A REPORTED=()
     cleanup_finished() {
-      local existing_json="$1" runner_id runner_name failed base
+      local existing_json="$1" runner_id runner_name failed base key
+      local -A seen=()
       while IFS=$'\t' read -r job_name runner_id failed base; do
         [[ -z "${job_name:-}" ]] && continue
+        seen["$job_name"]=1
+        [[ -n "${REPORTED[$job_name]:-}" ]] && continue
+        REPORTED["$job_name"]=1
         if [[ "${failed:-0}" -gt 0 ]]; then
           log "runner job ${job_name} failed without running a job, it will be re-dispatched once its ttl expires"
         else
@@ -140,6 +147,10 @@ data:
         | [.metadata.name, (.metadata.annotations["forgejo.run/runner-id"] // ""), (.status.failed // 0),
            (.metadata.annotations["forgejo.run/runners-api"] // "")]
         | @tsv')
+      for key in "${!REPORTED[@]}"; do
+        [[ -z "${seen[$key]:-}" ]] && unset 'REPORTED[$key]'
+      done
+      return 0
     }
 
     # Ephemeral runner records whose pod is gone (autoscaler restart, deleted

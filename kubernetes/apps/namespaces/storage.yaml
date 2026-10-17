@@ -4,7 +4,7 @@ metadata:
   name: storage
   labels:
     # May attach HTTPRoutes to the public Gateway networking/traefik-public
-    # (Harbor). Other routes here (gitea, minio) stay internal unless they add
+    # (Harbor, Forgejo). Other routes here (minio) stay internal unless they add
     # a traefik-public parentRef — and the admission policy still applies.
     edge.traunseenet.com/public: "true"
   annotations:

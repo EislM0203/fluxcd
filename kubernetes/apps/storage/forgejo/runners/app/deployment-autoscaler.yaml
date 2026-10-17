@@ -59,9 +59,9 @@ spec:
             - name: RECONCILE_EVERY
               value: "6"
             - name: RUNNER_IMAGE
-              value: code.forgejo.org/forgejo/runner:13.2.0
+              value: code.forgejo.org/forgejo/runner:13.2.0@sha256:ca3d5eea46004789a175d1369eec6829d3ea9bfbe2011a06625b4bdaa55f7552
             - name: DIND_IMAGE
-              value: harbor.cloud.traunseenet.com/docker.io/library/docker:29.9.0-dind
+              value: harbor.cloud.traunseenet.com/docker.io/library/docker:29.9.0-dind@sha256:0b6d18a4a222e71c88be6034926b4f6cde2fc33c2218643d03ccfddc65995470
             # "false" = experimental user-namespace mode (README.md)
             - name: HOST_USERS
               value: "true"

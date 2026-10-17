@@ -53,6 +53,13 @@ works, so it is not least privilege) and `/api/v1/admin/actions/runners` (`write
 
 ## Workflow labels
 
+**Docker access is opt-in.** Every job runs as a container on the pod's privileged
+dockerd, but only jobs with a label in `DOCKER_LABELS` (default `ubuntu-latest-docker`,
+`docker`) get `DOCKER_HOST` + the TLS client certs (`config.yaml`). All other jobs use
+`config-nodocker.yaml` and cannot talk to the daemon — so tests and linters cannot
+take over the node; only image-build jobs (`runs-on: ubuntu-latest-docker`) can.
+
+
 `runs-on` labels must **all** be mapped in `labels.txt` (`label=docker://image`),
 otherwise the job is left queued and the reason is logged. `ubuntu-latest` maps to
 `node:22-bookworm` because GitHub-style JS actions (`actions/checkout@v4`) need node.

@@ -1,0 +1,11 @@
+---
+# CI runner pods are the first to go: below every app (default priority 0),
+# and they never preempt anything to get scheduled (they wait instead).
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: forgejo-runner-low
+value: -100
+preemptionPolicy: Never
+globalDefault: false
+description: Forgejo Actions runner pods (storage/forgejo/runners)

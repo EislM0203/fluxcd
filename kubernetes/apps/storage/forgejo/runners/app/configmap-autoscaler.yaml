@@ -12,13 +12,15 @@ data:
   # otherwise it stays queued and the reason is logged.
   labels.txt: |
     # label=image
-    k8s=docker://harbor.cloud.traunseenet.com/docker.io/library/alpine:3.22
-    alpine=docker://harbor.cloud.traunseenet.com/docker.io/library/alpine:3.22
-    ubuntu-latest=docker://harbor.cloud.traunseenet.com/docker.io/library/node:22-bookworm
-    debian-latest=docker://harbor.cloud.traunseenet.com/docker.io/library/debian:trixie
-    node=docker://harbor.cloud.traunseenet.com/docker.io/library/node:22-bookworm
-    go=docker://harbor.cloud.traunseenet.com/docker.io/library/golang:1.25-bookworm
-    docker=docker://harbor.cloud.traunseenet.com/docker.io/library/docker:29-cli
+    k8s=docker://harbor.cloud.traunseenet.com/docker.io/library/alpine:3.22@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8
+    alpine=docker://harbor.cloud.traunseenet.com/docker.io/library/alpine:3.22@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8
+    ubuntu-latest=docker://harbor.cloud.traunseenet.com/docker.io/library/node:22-bookworm@sha256:0e5f906573693feaa1e21057ebdcfdb5bd5021f050b2dc7c9deceb629c7da2a8
+    # same image, but the job may use the pod's dockerd (DOCKER_LABELS)
+    ubuntu-latest-docker=docker://harbor.cloud.traunseenet.com/docker.io/library/node:22-bookworm@sha256:0e5f906573693feaa1e21057ebdcfdb5bd5021f050b2dc7c9deceb629c7da2a8
+    debian-latest=docker://harbor.cloud.traunseenet.com/docker.io/library/debian:trixie@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5
+    node=docker://harbor.cloud.traunseenet.com/docker.io/library/node:22-bookworm@sha256:0e5f906573693feaa1e21057ebdcfdb5bd5021f050b2dc7c9deceb629c7da2a8
+    go=docker://harbor.cloud.traunseenet.com/docker.io/library/golang:1.25-bookworm@sha256:3b4a11519ad929d1e1d261a12cff056f0c85b735253d7d861346b9c6f8b36437
+    docker=docker://harbor.cloud.traunseenet.com/docker.io/library/docker:29-cli@sha256:6fae2214c3121a28d5aa639d09032f61310b7c9c75ffbad1025f261a1b621800
 
   autoscaler.sh: |
     #!/usr/bin/env bash
@@ -69,6 +71,18 @@ data:
     # pod's userns. dockerd then cannot manage the pod netns (owned by the host
     # userns), so it runs without bridge/iptables; jobs use network: host anyway
     # (configmap-runner.yaml).
+    # Disk caps: a build must not fill the node's disk (Longhorn and every other
+    # pod share it). dockerd's /var/lib/docker and the job workspace are emptyDirs
+    # with sizeLimit (pod evicted when exceeded); each container's own writable
+    # layer + logs is capped by an ephemeral-storage limit.
+    DOCKER_DISK_LIMIT="${DOCKER_DISK_LIMIT:-30Gi}"
+    WORKSPACE_DISK_LIMIT="${WORKSPACE_DISK_LIMIT:-10Gi}"
+    CONTAINER_DISK_LIMIT="${CONTAINER_DISK_LIMIT:-2Gi}"
+    # Lowest scheduling priority, never preempts (priorityclass.yaml).
+    RUNNER_PRIORITY_CLASS="${RUNNER_PRIORITY_CLASS:-forgejo-runner-low}"
+    # Labels whose jobs may talk to the pod's privileged dockerd (image builds).
+    # All other jobs get config-nodocker.yaml: no DOCKER_* env, no client certs.
+    DOCKER_LABELS="${DOCKER_LABELS:-ubuntu-latest-docker docker}"
     HOST_USERS="${HOST_USERS:-true}"
     DIND_ARGS=""
     if [[ "$HOST_USERS" == "false" ]]; then
@@ -222,6 +236,7 @@ data:
 
         label_args=""
         skip=0
+        runner_config="config-nodocker.yaml"
         while read -r label; do
           img="$(image_for_label "$label")"
           if [[ -z "$img" ]]; then
@@ -230,6 +245,9 @@ data:
             break
           fi
           label_args+=" --label \"${label}:${img}\""
+          if [[ " ${DOCKER_LABELS} " == *" ${label} "* ]]; then
+            runner_config="config.yaml"
+          fi
         done < <(jq -r '.runs_on[]?' <<<"$job")
         [[ $skip -eq 1 ]] && continue
         if [[ -z "$label_args" ]]; then
@@ -296,6 +314,7 @@ data:
           serviceAccountName: ${RUNNER_SERVICEACCOUNT}
           automountServiceAccountToken: false
           hostUsers: ${HOST_USERS}
+          priorityClassName: ${RUNNER_PRIORITY_CLASS}
           initContainers:
             # Native sidecar: started before the runner and terminated by
             # kubelet as soon as the runner container exits. As a regular
@@ -319,12 +338,16 @@ data:
                 requests:
                   cpu: ${RUNNER_CPU_REQUEST}
                   memory: ${RUNNER_MEMORY_REQUEST}
+                  ephemeral-storage: 256Mi
                 limits:
                   cpu: ${RUNNER_CPU_LIMIT}
                   memory: ${RUNNER_MEMORY_LIMIT}
+                  ephemeral-storage: ${CONTAINER_DISK_LIMIT}
               volumeMounts:
                 - name: docker-certs
                   mountPath: /certs
+                - name: docker-data
+                  mountPath: /var/lib/docker
           containers:
             - name: runner
               image: ${RUNNER_IMAGE}
@@ -335,7 +358,7 @@ data:
                     echo "waiting for the docker sidecar"
                     sleep 2
                   done
-                  exec /bin/forgejo-runner --config /etc/runner/config.yaml one-job \\
+                  exec /bin/forgejo-runner --config /etc/runner/${runner_config} one-job \\
                     --url "${FORGEJO_URL}" \\
                     --uuid "${uuid}" \\
                     --token-url "file:/etc/forgejo-runner-token/token" \\
@@ -358,9 +381,11 @@ data:
                 requests:
                   cpu: ${RUNNER_CPU_REQUEST}
                   memory: ${RUNNER_MEMORY_REQUEST}
+                  ephemeral-storage: 256Mi
                 limits:
                   cpu: ${RUNNER_CPU_LIMIT}
                   memory: ${RUNNER_MEMORY_LIMIT}
+                  ephemeral-storage: ${CONTAINER_DISK_LIMIT}
               volumeMounts:
                 - name: runner-config
                   mountPath: /etc/runner
@@ -383,7 +408,11 @@ data:
             - name: docker-certs
               emptyDir: {}
             - name: runner-data
-              emptyDir: {}
+              emptyDir:
+                sizeLimit: ${WORKSPACE_DISK_LIMIT}
+            - name: docker-data
+              emptyDir:
+                sizeLimit: ${DOCKER_DISK_LIMIT}
     EOF
 
         job_uid="$(kubectl get job --namespace "$NAMESPACE" "$name" -o jsonpath='{.metadata.uid}')"

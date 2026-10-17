@@ -8,6 +8,7 @@ labels:
     includeSelectors: false
 resources:
   - rbac.yaml
+  - priorityclass.yaml
   - networkpolicy.yaml
   - configmap-runner.yaml
   - configmap-autoscaler.yaml

@@ -28,7 +28,7 @@ spec:
         - name: mdmem
           # Pin tag AND digest. Renovate does not track library/*, so the digest
           # is bumped by hand in the same commit that pushes a build (§13a.2).
-          image: harbor.cloud.traunseenet.com/library/mdmem:0.1.5
+          image: harbor.cloud.traunseenet.com/library/mdmem:0.1.6@sha256:476d6e78cf02c18e3fd6085871bb0850670f67262b0064eaf86776d8d3434b5a
           imagePullPolicy: IfNotPresent
           args: ["serve"]
           securityContext:

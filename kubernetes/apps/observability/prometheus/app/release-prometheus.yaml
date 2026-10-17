@@ -258,10 +258,14 @@ spec:
           - exemplar-storage
           - auto-gomemlimit
           - new-service-discovery-manager
-        # Size-bound: keep as much history as fits. retentionSize counts blocks + WAL;
-        # ~13% of the 20Gi PVC stays free for compaction's temporary blocks.
-        retention: 365d
-        retentionSize: 17GB
+        # Time-bound 30d (~1.7 GB/day in Oct 2026 = ~51 GB + WAL). retention also caps the
+        # largest compacted block at 10% of it (3d); with 365d a compaction could merge
+        # weeks of blocks and needs that much free space for its temporary output.
+        # 17GB on 20Gi ran the disk full that way (2026-10-16) and corrupted a WAL segment.
+        # retentionSize (blocks + WAL, not compaction temp) is only the safety net.
+        # The operator does not resize the PVC: patch it.
+        retention: 30d
+        retentionSize: 58GB
         storageSpec:
           volumeClaimTemplate:
             spec:
@@ -269,7 +273,7 @@ spec:
               accessModes: ["ReadWriteOnce"]
               resources:
                 requests:
-                  storage: 20Gi
+                  storage: 64Gi
         # thanos:
         #   objectStorageConfig:
         #     existingSecret:

@@ -33,7 +33,14 @@ spec:
     tempo:
       reportingEnabled: false
       streamOverHttpEnabled: true
-      retention: 12h
+      retention: 720h
+      # The chart renders `retention` only into backend_scheduler, but the retention
+      # job runs on the backend worker with ITS block_retention (default 336h): keep
+      # both equal. With 12h here and 336h there nothing was deleted and the 5Gi PVC
+      # filled up (live store: "no space left", TempoDiscardingSpans live_traces_exceeded).
+      backendWorker:
+        compaction:
+          block_retention: 720h
       overrides:
         defaults:
           metrics_generator:
@@ -103,8 +110,8 @@ spec:
   storageClassName: longhorn-storage
   resources:
     requests:
-      # 12h retention; current volume of traces is small
-      storage: 5Gi
+      # 30d retention at ~0.55 GB/day (Oct 2026) = ~17 GB + live store + compaction headroom
+      storage: 25Gi
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1

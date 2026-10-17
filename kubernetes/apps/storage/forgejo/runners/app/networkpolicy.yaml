@@ -1,0 +1,110 @@
+---
+# Runner pods run workflow code next to a privileged dockerd: no inbound
+# connections at all, outbound only what a CI job needs. Everything else in the
+# LAN (Proxmox, NAS, databases, Vault, ...) is unreachable.
+#   DNS            kube-dns
+#   Forgejo        task fetch/report (FORGEJO_URL, in-cluster :3000)
+#   Traefik        git.cloud (checkout) and harbor.cloud (job images) resolve to
+#                  the LAN VIP 10.0.0.50; Calico checks post-DNAT, so allow the
+#                  Traefik pods, never an ipBlock on the VIP
+#   Internet       actions, package registries, code.forgejo.org (RFC1918 excluded)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forgejo-runner
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: forgejo-runner
+  policyTypes: ["Ingress", "Egress"]
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: storage
+          podSelector:
+            matchLabels:
+              app: forgejo
+      ports:
+        - protocol: TCP
+          port: 3000
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 8443
+        - protocol: TCP
+          port: 8000
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 100.64.0.0/10
+              - 169.254.0.0/16
+---
+# Autoscaler: holds the Forgejo API token, so it may only talk to Forgejo and
+# the Kubernetes API (to create runner Jobs/Secrets). Nothing inbound.
+# Kubernetes API: kubectl uses the kubernetes Service (10.43.0.1:443), which
+# Calico sees post-DNAT as the control-plane endpoint(s) on :6443 — update the
+# ipBlock if the control plane changes (kubectl get endpointslices -n default
+# -l kubernetes.io/service-name=kubernetes).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forgejo-runner-autoscaler
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: autoscaler
+  policyTypes: ["Ingress", "Egress"]
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: storage
+          podSelector:
+            matchLabels:
+              app: forgejo
+      ports:
+        - protocol: TCP
+          port: 3000
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.201/32   # rke2-node-1 (control plane)
+      ports:
+        - protocol: TCP
+          port: 6443

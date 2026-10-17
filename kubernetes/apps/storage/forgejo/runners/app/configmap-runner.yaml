@@ -1,0 +1,63 @@
+---
+# Runner configuration mounted read-only into every ephemeral runner pod.
+# Reference: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml
+#
+# The connection (url / uuid / token / labels) is deliberately NOT part of this
+# file: it is passed on the command line by the autoscaler, once per job.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forgejo-runner-config
+data:
+  config.yaml: |
+    log:
+      level: info
+      job_level: info
+
+    runner:
+      file: .runner
+      # One job per pod, that is the whole point of the ephemeral setup.
+      capacity: 1
+      timeout: 1h
+      shutdown_timeout: 10m
+      fetch_interval: 2s
+      fetch_timeout: 30s
+      report_interval: 1s
+      insecure: false
+      labels: []
+      # Environment handed to every job container. Together with the
+      # /certs/client bind mount below this is what lets workflows talk to the
+      # DinD sidecar (docker build, buildx, ...). Delete these three entries to
+      # hide the daemon from workflows entirely.
+      envs:
+        DOCKER_HOST: tcp://127.0.0.1:2376
+        DOCKER_TLS_VERIFY: "1"
+        DOCKER_CERT_PATH: /certs/client
+
+    cache:
+      # Per-pod cache server; actions/cache talks to it through the
+      # ACTIONS_CACHE_URL the runner injects into the job.
+      enabled: true
+      port: 0
+      dir: ""
+      external_server: ""
+
+    container:
+      # host = job containers share the pod network namespace, which is how
+      # they reach the DinD sidecar on 127.0.0.1:2376.
+      network: host
+      enable_ipv6: false
+      # The DinD sidecar is privileged; the job containers themselves are not.
+      privileged: false
+      options: -v /certs/client:/certs/client
+      workdir_parent: /data/workspace
+      valid_volumes:
+        - /certs/client
+      # "-" = do not mount a docker socket into the job container; jobs reach
+      # the daemon through DOCKER_HOST above.
+      docker_host: "-"
+      force_pull: false
+      force_rebuild: false
+
+    host:
+      workdir_parent: /data/host

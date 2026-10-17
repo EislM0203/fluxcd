@@ -1,0 +1,427 @@
+---
+# Autoscaler: polls Forgejo for queued jobs and starts one ephemeral runner
+# pod per job. See README.md in this directory for the design and the API calls
+# it relies on.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forgejo-runner-autoscaler
+data:
+  # Workflow label -> container image used for that label.
+  # A job is only dispatched when every label it asks for is listed here,
+  # otherwise it stays queued and the reason is logged.
+  labels.txt: |
+    # label=image
+    k8s=docker://harbor.cloud.traunseenet.com/docker.io/library/alpine:3.22
+    alpine=docker://harbor.cloud.traunseenet.com/docker.io/library/alpine:3.22
+    ubuntu-latest=docker://harbor.cloud.traunseenet.com/docker.io/library/node:22-bookworm
+    debian-latest=docker://harbor.cloud.traunseenet.com/docker.io/library/debian:trixie
+    node=docker://harbor.cloud.traunseenet.com/docker.io/library/node:22-bookworm
+    go=docker://harbor.cloud.traunseenet.com/docker.io/library/golang:1.25-bookworm
+    docker=docker://harbor.cloud.traunseenet.com/docker.io/library/docker:29-cli
+
+  autoscaler.sh: |
+    #!/usr/bin/env bash
+    #
+    # Forgejo Actions runner autoscaler.
+    #
+    # Loop:
+    #   1. GET  <scope>/jobs   -> jobs in state waiting/running
+    #   2. POST <scope>        -> single-use ephemeral runner at that level
+    # RUNNERS_API is a space-separated list of scopes, each served in turn:
+    # /api/v1/orgs/<org>/actions/runners (org owner, write:organization),
+    # /api/v1/user/actions/runners (token owner's repos, write:user) or
+    # /api/v1/admin/actions/runners (instance-wide, write:admin).
+    # MAX_RUNNERS is shared across all scopes.
+    #   3. kubectl apply                             -> one Job running `forgejo-runner one-job --handle <handle>`
+    #   4. Forgejo deletes the runner record once the job ran; ttlSecondsAfterFinished
+    #      removes the Job and, through ownerReferences, its token secret.
+    #   5. finished jobs and orphaned runner records are reconciled every loop.
+    #
+    # The Forgejo API token stays in this pod. Runner pods only ever see the
+    # single-use runner token of their own job.
+    set -uo pipefail
+
+    : "${FORGEJO_URL:?FORGEJO_URL is required}"
+    : "${NAMESPACE:?NAMESPACE is required}"
+    : "${FORGEJO_API_TOKEN:?FORGEJO_API_TOKEN is required}"
+    : "${RUNNER_IMAGE:?RUNNER_IMAGE is required}"
+    : "${DIND_IMAGE:?DIND_IMAGE is required}"
+    RUNNERS_API="${RUNNERS_API:-/api/v1/user/actions/runners}"
+    read -r -a RUNNERS_APIS <<<"$RUNNERS_API"
+    # Scope the api calls below act on; set per scope in the main loop.
+    CURRENT_API="${RUNNERS_APIS[0]}"
+
+    POLL_INTERVAL="${POLL_INTERVAL:-10}"
+    MAX_RUNNERS="${MAX_RUNNERS:-5}"
+    RECONCILE_EVERY="${RECONCILE_EVERY:-6}"
+    RUNNER_CONFIGMAP="${RUNNER_CONFIGMAP:-forgejo-runner-config}"
+    RUNNER_SERVICEACCOUNT="${RUNNER_SERVICEACCOUNT:-forgejo-runner}"
+    LABEL_MAP="${LABEL_MAP:-/etc/forgejo-runner/labels.txt}"
+    ACTIVE_DEADLINE_SECONDS="${ACTIVE_DEADLINE_SECONDS:-3600}"
+    TTL_SECONDS_AFTER_FINISHED="${TTL_SECONDS_AFTER_FINISHED:-120}"
+    RUNNER_CPU_REQUEST="${RUNNER_CPU_REQUEST:-100m}"
+    RUNNER_MEMORY_REQUEST="${RUNNER_MEMORY_REQUEST:-256Mi}"
+    RUNNER_CPU_LIMIT="${RUNNER_CPU_LIMIT:-2}"
+    RUNNER_MEMORY_LIMIT="${RUNNER_MEMORY_LIMIT:-4Gi}"
+    # Experimental (README.md): HOST_USERS=false runs runner pods in a user
+    # namespace (hostUsers: false), so "privileged" DinD is only root inside the
+    # pod's userns. dockerd then cannot manage the pod netns (owned by the host
+    # userns), so it runs without bridge/iptables; jobs use network: host anyway
+    # (configmap-runner.yaml).
+    HOST_USERS="${HOST_USERS:-true}"
+    DIND_ARGS=""
+    if [[ "$HOST_USERS" == "false" ]]; then
+      DIND_ARGS='"--bridge=none", "--iptables=false", "--ip6tables=false"'
+    fi
+
+    NAME_PREFIX="forgejo-runner-"
+    COMPONENT_LABEL="app.kubernetes.io/component=forgejo-runner"
+    TMP_DIR="$(mktemp -d)"
+    trap 'rm -rf "$TMP_DIR"' EXIT
+
+    log() { printf '%s %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" "$*"; }
+
+    # api METHOD PATH [BODY] -> response body on stdout, non-zero on HTTP error
+    api() {
+      local method="$1" path="$2" body="${3:-}"
+      local -a curl_args=(
+        --silent --show-error --max-time 30
+        --output "$TMP_DIR/response.json" --write-out '%{http_code}'
+        --request "$method"
+        --header "Authorization: token ${FORGEJO_API_TOKEN}"
+      )
+      [[ -n "$body" ]] && curl_args+=(--header 'Content-Type: application/json' --data "$body")
+      curl_args+=("${FORGEJO_URL}${path}")
+
+      local code
+      code="$(curl "${curl_args[@]}")"
+      case "$code" in
+        2??) cat "$TMP_DIR/response.json" ;;
+        *)
+          log "forgejo ${method} ${path} -> HTTP ${code}: $(head -c 200 "$TMP_DIR/response.json" 2>/dev/null)"
+          return 1
+          ;;
+      esac
+    }
+
+    delete_runner() {
+      local runner_id="$1" reason="$2" base="${3:-$CURRENT_API}" code
+      code="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 30 \
+        --request DELETE --header "Authorization: token ${FORGEJO_API_TOKEN}" \
+        "${FORGEJO_URL}${base}/${runner_id}")"
+      case "$code" in
+        2??) log "deleted runner ${runner_id} (${reason})" ;;
+        404) ;; # Forgejo already removed the ephemeral runner after the job ran
+        *) log "could not delete runner ${runner_id} (${reason}): HTTP ${code}" ;;
+      esac
+    }
+
+    list_runner_jobs() {
+      kubectl get jobs --namespace "$NAMESPACE" --selector "$COMPONENT_LABEL" --output json 2>/dev/null \
+        || printf '{"items":[]}'
+    }
+
+    # Runner records for jobs that are done are removed here; successful ones are
+    # already gone (404), failed ones are not.
+    cleanup_finished() {
+      local existing_json="$1" runner_id runner_name failed base
+      while IFS=$'\t' read -r job_name runner_id failed base; do
+        [[ -z "${job_name:-}" ]] && continue
+        if [[ "${failed:-0}" -gt 0 ]]; then
+          log "runner job ${job_name} failed without running a job, it will be re-dispatched once its ttl expires"
+        else
+          log "runner job ${job_name} completed"
+        fi
+        [[ -n "$runner_id" ]] && delete_runner "$runner_id" "job ${job_name} finished" "${base:-$CURRENT_API}"
+      done < <(printf '%s\n' "$existing_json" | jq -r '
+        .items[]
+        | select(((.status.failed // 0) > 0) or ((.status.succeeded // 0) > 0))
+        | [.metadata.name, (.metadata.annotations["forgejo.run/runner-id"] // ""), (.status.failed // 0),
+           (.metadata.annotations["forgejo.run/runners-api"] // "")]
+        | @tsv')
+    }
+
+    # Ephemeral runner records whose pod is gone (autoscaler restart, deleted
+    # job, ...) would linger until the Forgejo offline-runner cron removes them.
+    reconcile_orphans() {
+      local existing_names="$1"
+      local page=1 page_json count runners="" runner_id runner_name
+      while :; do
+        if ! page_json="$(api GET "${CURRENT_API}?limit=100&page=${page}")"; then
+          break
+        fi
+        count="$(jq 'length' <<<"$page_json")"
+        runners+="${page_json}"$'\n'
+        [[ "$count" -lt 100 ]] && break
+        page=$(( page + 1 ))
+      done
+
+      while IFS=$'\t' read -r runner_id runner_name; do
+        [[ -z "${runner_id:-}" ]] && continue
+        [[ -n "$existing_names" ]] && grep -qxF -- "$runner_name" <<<"$existing_names" && continue
+        delete_runner "$runner_id" "no runner job references it anymore"
+      done < <(printf '%s\n' "$runners" | jq -rs '
+        add // []
+        | .[]
+        | select(.ephemeral == true)
+        | select(.status == "offline")
+        | select(.name | startswith("forgejo-runner-"))
+        | [.id, .name]
+        | @tsv')
+    }
+
+    image_for_label() {
+      awk -F= -v key="$1" '
+        /^[[:space:]]*#/ { next }
+        $1 == key { sub(/^[^=]*=/, ""); print; exit }
+      ' "$LABEL_MAP"
+    }
+
+    dispatch() {
+      local jobs_json="$1" existing_json="$2"
+      local active free handle name job job_name job_id label_args img skip runner_id uuid token job_uid
+      local -a handles=() existing_names=()
+
+      active="$(jq '[.items[] | select((.status.active // 0) > 0)] | length' <<<"$existing_json")"
+      free=$(( MAX_RUNNERS - active ))
+      mapfile -t handles < <(jq -r '. // [] | .[] | select(.status == "waiting") | .handle' <<<"$jobs_json")
+      mapfile -t existing_names < <(jq -r '.items[].metadata.name' <<<"$existing_json")
+
+      if [[ ${#handles[@]} -eq 0 ]]; then
+        return 0
+      fi
+      log "${#handles[@]} job(s) waiting, ${active} runner(s) active, ${free} slot(s) free"
+
+      for handle in "${handles[@]}"; do
+        [[ -z "$handle" ]] && continue
+        name="${NAME_PREFIX}${handle}"
+
+        if printf '%s\n' "${existing_names[@]}" | grep -qxF -- "$name"; then
+          continue
+        fi
+        if [[ $free -le 0 ]]; then
+          log "MAX_RUNNERS (${MAX_RUNNERS}) reached, remaining jobs stay queued"
+          return 0
+        fi
+
+        job="$(jq -c --arg handle "$handle" '. // [] | .[] | select(.handle == $handle)' <<<"$jobs_json")"
+        job_name="$(jq -r '.name // "unknown"' <<<"$job")"
+        job_id="$(jq -r '.id // ""' <<<"$job")"
+
+        label_args=""
+        skip=0
+        while read -r label; do
+          img="$(image_for_label "$label")"
+          if [[ -z "$img" ]]; then
+            log "job '${job_name}' (${handle}): no image mapping for label '${label}' in ${LABEL_MAP}, leaving it queued"
+            skip=1
+            break
+          fi
+          label_args+=" --label \"${label}:${img}\""
+        done < <(jq -r '.runs_on[]?' <<<"$job")
+        [[ $skip -eq 1 ]] && continue
+        if [[ -z "$label_args" ]]; then
+          log "job '${job_name}' (${handle}) requests no labels, cannot match it to a runner, leaving it queued"
+          continue
+        fi
+
+        local registration
+        if ! registration="$(api POST "${CURRENT_API}" \
+          "$(jq -nc --arg name "$name" '{name: $name, description: "ephemeral runner managed by the forgejo-runner autoscaler", ephemeral: true}')")"; then
+          continue
+        fi
+        runner_id="$(jq -r '.id' <<<"$registration")"
+        uuid="$(jq -r '.uuid' <<<"$registration")"
+        token="$(jq -r '.token' <<<"$registration")"
+        if [[ -z "$uuid" || "$uuid" == "null" ]]; then
+          log "registration for ${handle} returned no uuid, skipping"
+          continue
+        fi
+
+        kubectl apply --namespace "$NAMESPACE" --filename - >/dev/null <<EOF
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ${name}
+      labels:
+        app.kubernetes.io/name: forgejo-runner
+        app.kubernetes.io/component: forgejo-runner
+        app.kubernetes.io/managed-by: forgejo-runner-autoscaler
+        forgejo.run/handle: ${handle}
+    type: Opaque
+    stringData:
+      token: ${token}
+    EOF
+
+        kubectl apply --namespace "$NAMESPACE" --filename - >/dev/null <<EOF
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: ${name}
+      labels:
+        app.kubernetes.io/name: forgejo-runner
+        app.kubernetes.io/component: forgejo-runner
+        app.kubernetes.io/managed-by: forgejo-runner-autoscaler
+        forgejo.run/handle: ${handle}
+      annotations:
+        forgejo.run/runner-id: "${runner_id}"
+        forgejo.run/runners-api: "${CURRENT_API}"
+        forgejo.run/forgejo-job-id: "${job_id}"
+        forgejo.run/forgejo-job-name: "${job_name}"
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: ${ACTIVE_DEADLINE_SECONDS}
+      ttlSecondsAfterFinished: ${TTL_SECONDS_AFTER_FINISHED}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: forgejo-runner
+            app.kubernetes.io/component: forgejo-runner
+            app.kubernetes.io/managed-by: forgejo-runner-autoscaler
+            forgejo.run/handle: ${handle}
+        spec:
+          restartPolicy: Never
+          serviceAccountName: ${RUNNER_SERVICEACCOUNT}
+          automountServiceAccountToken: false
+          hostUsers: ${HOST_USERS}
+          initContainers:
+            # Native sidecar: started before the runner and terminated by
+            # kubelet as soon as the runner container exits. As a regular
+            # container dockerd would keep the Job Running until
+            # activeDeadlineSeconds, since it never exits on its own.
+            - name: docker
+              image: ${DIND_IMAGE}
+              restartPolicy: Always
+              args: [${DIND_ARGS}]
+              startupProbe:
+                tcpSocket:
+                  port: 2376
+                periodSeconds: 2
+                failureThreshold: 60
+              securityContext:
+                privileged: true
+              env:
+                - name: DOCKER_TLS_CERTDIR
+                  value: /certs
+              resources:
+                requests:
+                  cpu: ${RUNNER_CPU_REQUEST}
+                  memory: ${RUNNER_MEMORY_REQUEST}
+                limits:
+                  cpu: ${RUNNER_CPU_LIMIT}
+                  memory: ${RUNNER_MEMORY_LIMIT}
+              volumeMounts:
+                - name: docker-certs
+                  mountPath: /certs
+          containers:
+            - name: runner
+              image: ${RUNNER_IMAGE}
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  until nc -z 127.0.0.1 2376; do
+                    echo "waiting for the docker sidecar"
+                    sleep 2
+                  done
+                  exec /bin/forgejo-runner --config /etc/runner/config.yaml one-job \\
+                    --url "${FORGEJO_URL}" \\
+                    --uuid "${uuid}" \\
+                    --token-url "file:/etc/forgejo-runner-token/token" \\
+                    --handle "${handle}"${label_args}
+              env:
+                - name: DOCKER_HOST
+                  value: tcp://127.0.0.1:2376
+                - name: DOCKER_TLS_VERIFY
+                  value: "1"
+                - name: DOCKER_CERT_PATH
+                  value: /certs/client
+              securityContext:
+                allowPrivilegeEscalation: false
+                privileged: false
+                capabilities:
+                  drop: ["ALL"]
+                seccompProfile:
+                  type: RuntimeDefault
+              resources:
+                requests:
+                  cpu: ${RUNNER_CPU_REQUEST}
+                  memory: ${RUNNER_MEMORY_REQUEST}
+                limits:
+                  cpu: ${RUNNER_CPU_LIMIT}
+                  memory: ${RUNNER_MEMORY_LIMIT}
+              volumeMounts:
+                - name: runner-config
+                  mountPath: /etc/runner
+                  readOnly: true
+                - name: runner-token
+                  mountPath: /etc/forgejo-runner-token
+                  readOnly: true
+                - name: docker-certs
+                  mountPath: /certs
+                  readOnly: true
+                - name: runner-data
+                  mountPath: /data
+          volumes:
+            - name: runner-config
+              configMap:
+                name: ${RUNNER_CONFIGMAP}
+            - name: runner-token
+              secret:
+                secretName: ${name}
+            - name: docker-certs
+              emptyDir: {}
+            - name: runner-data
+              emptyDir: {}
+    EOF
+
+        job_uid="$(kubectl get job --namespace "$NAMESPACE" "$name" -o jsonpath='{.metadata.uid}')"
+        kubectl patch secret --namespace "$NAMESPACE" "$name" --type merge \
+          --patch "{\"metadata\":{\"ownerReferences\":[{\"apiVersion\":\"batch/v1\",\"kind\":\"Job\",\"name\":\"${name}\",\"uid\":\"${job_uid}\",\"blockOwnerDeletion\":false}]}}" \
+          >/dev/null
+
+        existing_names+=("$name")
+        free=$(( free - 1 ))
+        log "dispatched job '${job_name}' (${handle}) to runner ${runner_id} as job ${name}"
+      done
+    }
+
+    log "autoscaler started for ${FORGEJO_URL} (scopes: ${RUNNERS_APIS[*]}; max ${MAX_RUNNERS} runners, poll ${POLL_INTERVAL}s)"
+
+    # This script is a ConfigMap key, so editing it never restarts the pod and
+    # bash keeps running the copy it parsed at startup. Track its hash and exit
+    # when it changes, so the Deployment restarts and loads the new version.
+    script_file="${AUTOSCALER_SCRIPT:-/etc/forgejo-runner/autoscaler.sh}"
+    script_hash=""
+    if [[ -f "$script_file" ]]; then
+      script_hash="$(sha256sum "$script_file" | cut -d' ' -f1)"
+      log "script ${script_hash:0:12}"
+    fi
+
+    iteration=0
+    while :; do
+      iteration=$(( iteration + 1 ))
+
+      if [[ -n "$script_hash" && "$(sha256sum "$script_file" | cut -d' ' -f1)" != "$script_hash" ]]; then
+        log "script changed, exiting so the new version is loaded"
+        exit 0
+      fi
+
+      cleanup_finished "$(list_runner_jobs)"
+
+      for CURRENT_API in "${RUNNERS_APIS[@]}"; do
+        # Re-list per scope so MAX_RUNNERS counts what earlier scopes dispatched.
+        existing_json="$(list_runner_jobs)"
+        existing_names="$(jq -r '.items[].metadata.name' <<<"$existing_json")"
+
+        if [[ $(( iteration % RECONCILE_EVERY )) -eq 0 ]]; then
+          reconcile_orphans "$existing_names"
+        fi
+
+        if jobs_json="$(api GET "${CURRENT_API}/jobs")"; then
+          dispatch "$jobs_json" "$existing_json"
+        fi
+      done
+
+      sleep "$POLL_INTERVAL"
+    done

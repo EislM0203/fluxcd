@@ -1,0 +1,40 @@
+---
+# Identity used by the autoscaler pods. It may only create runner jobs and
+# their single-use token secrets inside this namespace.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: forgejo-runner-autoscaler
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: forgejo-runner-autoscaler
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "get", "list", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: forgejo-runner-autoscaler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: forgejo-runner-autoscaler
+subjects:
+  - kind: ServiceAccount
+    name: forgejo-runner-autoscaler
+    namespace: forgejo-runners
+---
+# Identity used by the ephemeral runner pods. Workflows run untrusted code, so
+# the pods get an identity with no permissions and no automounted token.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: forgejo-runner
+automountServiceAccountToken: false

@@ -1,0 +1,15 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: forgejo-runners
+    includeSelectors: false
+resources:
+  - rbac.yaml
+  - networkpolicy.yaml
+  - configmap-runner.yaml
+  - configmap-autoscaler.yaml
+  - externalsecret.yaml
+  - deployment-autoscaler.yaml

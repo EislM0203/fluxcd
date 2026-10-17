@@ -1,0 +1,10 @@
+---
+# Ephemeral Forgejo Actions runners (storage/forgejo/runners). Own namespace on
+# purpose: runner pods carry a privileged DinD sidecar and run workflow code,
+# so they stay away from storage (Harbor, databases). Not public (no
+# edge.traunseenet.com/public label); egress is locked down in
+# runners/app/networkpolicy.yaml.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: forgejo-runners

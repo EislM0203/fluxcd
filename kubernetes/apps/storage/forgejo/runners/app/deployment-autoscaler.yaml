@@ -1,0 +1,108 @@
+---
+# Polls Forgejo's job queue and starts one ephemeral runner Job per waiting job
+# (script + label map: configmap-autoscaler.yaml, design: README.md).
+# The Forgejo API token stays in this pod; runner pods only get the single-use
+# token of their own job.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forgejo-runner-autoscaler
+  labels:
+    app.kubernetes.io/name: forgejo-runner-autoscaler
+    app.kubernetes.io/component: autoscaler
+spec:
+  replicas: 1
+  # Only one autoscaler may poll and dispatch at a time (Job name = idempotency key).
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: forgejo-runner-autoscaler
+      app.kubernetes.io/component: autoscaler
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: forgejo-runner-autoscaler
+        app.kubernetes.io/component: autoscaler
+    spec:
+      serviceAccountName: forgejo-runner-autoscaler
+      containers:
+        - name: autoscaler
+          # bash + curl + jq + kubectl; tag = cluster version (v1.35)
+          image: harbor.cloud.traunseenet.com/docker.io/alpine/k8s:1.35.0@sha256:18bc02c1e0df04451f4f9194eb7b7341c1165da5495459b52f85f72fb9545032
+          command: ["/bin/bash", "/etc/forgejo-runner/autoscaler.sh"]
+          env:
+            # In-cluster, plain HTTP (forgejo/app/networkpolicy.yaml admits this
+            # namespace). Jobs still check out via ROOT_URL (git.cloud).
+            - name: FORGEJO_URL
+              value: http://forgejo.storage.svc.cluster.local:3000
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            # From Vault storage/forgejo-runners (externalsecret.yaml): token of the
+            # NON-admin bot ci-runner-bot (owner of both orgs), scope write:organization.
+            - name: FORGEJO_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-runner-autoscaler-token
+                  key: FORGEJO_API_TOKEN
+            # Concurrent runner pods; each pod's two containers may burst to the limits below.
+            # Org-level runners (tightest scope that fits, Forgejo security docs):
+            # only repos in these orgs get CI. Space-separated; MAX_RUNNERS is shared.
+            - name: RUNNERS_API
+              value: /api/v1/orgs/traunseenet/actions/runners /api/v1/orgs/traunseenet-lab/actions/runners
+            - name: MAX_RUNNERS
+              value: "2"
+            - name: POLL_INTERVAL
+              value: "10"
+            - name: RECONCILE_EVERY
+              value: "6"
+            - name: RUNNER_IMAGE
+              value: code.forgejo.org/forgejo/runner:13.2.0
+            - name: DIND_IMAGE
+              value: harbor.cloud.traunseenet.com/docker.io/library/docker:29.9.0-dind
+            # "false" = experimental user-namespace mode (README.md)
+            - name: HOST_USERS
+              value: "true"
+            - name: ACTIVE_DEADLINE_SECONDS
+              value: "3600"
+            - name: TTL_SECONDS_AFTER_FINISHED
+              value: "120"
+            - name: RUNNER_CPU_REQUEST
+              value: 100m
+            - name: RUNNER_MEMORY_REQUEST
+              value: 256Mi
+            - name: RUNNER_CPU_LIMIT
+              value: "2"
+            - name: RUNNER_MEMORY_LIMIT
+              value: 3Gi
+            # kubectl writes its discovery cache to $HOME
+            - name: HOME
+              value: /tmp
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: config
+              mountPath: /etc/forgejo-runner
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: forgejo-runner-autoscaler
+            defaultMode: 0755
+        - name: tmp
+          emptyDir: {}

@@ -12,10 +12,17 @@ spec:
     - fin.cloud.traunseenet.com
   rules:
     # longest-prefix wins automatically in Gateway API — /api before /
+    # Both rules behind Pocket ID (middleware-oauth2.yaml): no login in the app itself.
     - matches:
         - path:
             type: PathPrefix
             value: /api
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: oauth2-forward-auth-fin
       backendRefs:
         - name: fin-api
           port: 8000
@@ -23,6 +30,12 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: oauth2-forward-auth-fin
       backendRefs:
         - name: fin-web
           port: 80

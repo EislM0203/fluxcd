@@ -6,5 +6,6 @@ resources:
   - pvc.yaml
   - service.yaml
   - mcp-networkpolicy.yaml
+  - middleware-oauth2.yaml
   - httproute.yaml
   - secret.yaml

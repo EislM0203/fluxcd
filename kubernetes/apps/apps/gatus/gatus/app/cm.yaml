@@ -4,230 +4,222 @@ metadata:
   name: gatus-config
 data:
   config.yaml: |
+    # Every endpoint alerts through ntfy with the same settings (YAML anchor on the
+    # first endpoint, reused with *ntfy-alert). `group` sets the section in the UI;
+    # renaming a group resets that endpoint's history (the key is group_name).
     endpoints:
+      ###########################
+      # Edge & Network
+      ###########################
+      - name: Edge public path
+        group: Edge & Network
+        # Full internet path, as an outside user hits it: public DNS (forced via
+        # 1.1.1.1, so split-horizon can't short-circuit it) -> VPS HAProxy ->
+        # wg-outer -> edge-home DNAT -> traefik-public (10.0.0.44:9443) ->
+        # oauth2-proxy /ping. Fails if any hop is down: VPS, either WireGuard
+        # end, the home VM nft, the public LB/entrypoint, or oauth2-proxy.
+        url: "https://oauth.cloud.traunseenet.com/ping"
+        interval: 1m
+        client:
+          dns-resolver: "udp://1.1.1.1:53"
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 1500"
+          - "[CERTIFICATE_EXPIRATION] > 240h"
+        alerts:
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "public edge path failed (VPS / WireGuard / edge-home / traefik-public / oauth2-proxy)"
+            failure-threshold: 5
+            send-on-resolved: true
+      - name: Traefik
+        group: Edge & Network
+        url: "http://traefik-api.networking.svc.cluster.local:8080/ping"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY] == OK"
+          - "[RESPONSE_TIME] < 500"
+        alerts: &ntfy-alert
+          - type: "ntfy"
+            minimum-reminder-interval: "30m"
+            description: "healthcheck failed"
+            failure-threshold: 5
+            send-on-resolved: true
+      - name: Technitium DNS
+        group: Edge & Network
+        # A real DNS query against the server itself (LXC at 10.0.0.99), not the
+        # admin UI -- technitium.local.traunseenet.com resolves to NPM on
+        # 10.0.0.103, so an HTTP check there would pass while DNS was down.
+        # Querying the zone apex proves Technitium is answering AND is
+        # authoritative for traunseenet.com without depending on any individual
+        # record: an apex with no A record still returns NOERROR, while a missing
+        # or broken zone returns NXDOMAIN or REFUSED and fails the check.
+        # external-dns writes every cluster record here over RFC2136, so this
+        # failing means new ingress hostnames stop resolving cluster-wide.
+        url: "10.0.0.99"
+        interval: 1m
+        dns:
+          query-name: "traunseenet.com"
+          query-type: "A"
+        conditions:
+          - "[DNS_RCODE] == NOERROR"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
+
       ###########################
       # Auth
       ###########################
       - name: PocketID
-        url: "http://pocket-id.auth.svc.cluster.local:1411"
+        group: Auth
+        # Pocket ID's own health endpoint (204 No Content when healthy).
+        url: "http://pocket-id.auth.svc.cluster.local:1411/healthz"
         interval: 1m
         conditions:
-          - "[STATUS] == 200"
+          - "[STATUS] == 204"
           - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
+        alerts: *ntfy-alert
+
       ###########################
-      # Apps
+      # Platform
       ###########################
-      - name: Homepage
-        # Server-side renders every tile on request, so it is meaningfully
-        # slower than a bare health endpoint -- 1s rather than the usual 500ms.
-        url: "http://homepage.apps.svc.cluster.local:3000"
-        # v2 answers 400 unless Host is in HOMEPAGE_ALLOWED_HOSTS
-        headers:
-          Host: homepage.cloud.traunseenet.com
+      - name: Harbor
+        group: Platform
+        # Core's health API aggregates all components (core, database, jobservice,
+        # portal, redis, registry, registryctl); the portal alone is static nginx.
+        url: "http://harbor-core.storage.svc.cluster.local/api/v2.0/health"
         interval: 1m
         conditions:
           - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 1000"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
-      - name: TREK
-        # /api/health is unauthenticated and is what upstream's own container
-        # healthcheck polls. SQLite means the check also fails if the data PVC
-        # goes read-only, which a bare TCP probe would miss.
-        url: "http://trek.apps.svc.cluster.local:3000/api/health"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 700"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
-      - name: Jellyfin
-        url: "http://jellyfin.apps.svc.cluster.local:8096/health"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[BODY] == Healthy"
-          - "[RESPONSE_TIME] < 700"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
-      - name: Navidrome
-        url: "http://navidrome.apps.svc.cluster.local:4533/rest/ping"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
+          - "[BODY].status == healthy"
           - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
-      - name: Ntfy
-        url: "http://ntfy.apps.svc.cluster.local/v1/health"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[BODY].healthy == true"
-          - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
-      - name: Obsidian LiveSync
-        # /_up is the only unauthenticated route (require_valid_user_except_for_up),
-        # and it reports the node's own health rather than just TCP reachability.
-        url: "http://obsidian-livesync.apps.svc.cluster.local:5984/_up"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[BODY].status == ok"
-          - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
-      - name: Paperless NGX
-        url: "http://paperless.apps.svc.cluster.local/accounts/login/?next=/"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
-      ###########################
-      # Storage
-      ###########################
-      - name: MinIO S3
-        url: "http://minio-service.storage.svc.cluster.local:9001/health"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
-      - name: Harbor Portal
-        url: "http://harbor-portal.storage.svc.cluster.local/health"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
+        alerts: *ntfy-alert
       - name: Forgejo
+        group: Platform
         url: "http://forgejo.storage.svc.cluster.local:3000/api/healthz"
         interval: 1m
         conditions:
           - "[STATUS] == 200"
           - "[BODY].status == pass"
           - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
-      ###########################
-      # observability
-      ###########################
-      - name: Prometheus
-        url: "http://prometheus-operated.observability.svc.cluster.local:9090/-/healthy"
+        alerts: *ntfy-alert
+      - name: MinIO S3
+        group: Platform
+        # S3 API port: /minio/health/cluster is 200 only while the deployment has
+        # write quorum. (:9001/health was the console's SPA fallback page.)
+        url: "http://minio-service.storage.svc.cluster.local:9000/minio/health/cluster"
         interval: 1m
         conditions:
           - "[STATUS] == 200"
-          - "[BODY] == Prometheus Server is Healthy."
           - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
+        alerts: *ntfy-alert
+
+      ###########################
+      # Observability
+      ###########################
+      - name: Prometheus
+        group: Observability
+        # /-/ready (TSDB loaded, serving queries) rather than /-/healthy (process up).
+        url: "http://prometheus-operated.observability.svc.cluster.local:9090/-/ready"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY] == Prometheus Server is Ready."
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
       - name: Alertmanager
+        group: Observability
         url: "http://alertmanager-operated.observability.svc.cluster.local:9093/-/ready"
         interval: 1m
         conditions:
           - "[STATUS] == 200"
           - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
+        alerts: *ntfy-alert
       - name: Loki
+        group: Observability
         url: "http://grafana-loki-headless.observability.svc.cluster.local:3100/ready"
         interval: 1m
         conditions:
           - "[STATUS] == 200"
           - "[BODY] == ready"
           - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
+        alerts: *ntfy-alert
       - name: Tempo
+        group: Observability
         url: "http://grafana-tempo.observability.svc.cluster.local:3200/ready"
         interval: 1m
         conditions:
           - "[STATUS] == 200"
           - "[BODY] == ready"
           - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
+        alerts: *ntfy-alert
       - name: Grafana
+        group: Observability
         url: "http://grafana-service.observability.svc.cluster.local:3000/api/health"
         interval: 1m
         conditions:
           - "[STATUS] == 200"
           - "[BODY].database == ok"
           - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
+        alerts: *ntfy-alert
+      - name: Ntfy
+        group: Observability
+        url: "http://ntfy.apps.svc.cluster.local/v1/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].healthy == true"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
+
+      ###########################
+      # Media
+      ###########################
+      - name: Jellyfin
+        group: Media
+        url: "http://jellyfin.apps.svc.cluster.local:8096/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY] == Healthy"
+          - "[RESPONSE_TIME] < 700"
+        alerts: *ntfy-alert
+      - name: Navidrome
+        group: Media
+        url: "http://navidrome.apps.svc.cluster.local:4533/rest/ping"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
+      - name: Immich
+        group: Media
+        url: "http://immich-server.apps.svc.cluster.local:2283/api/server/ping"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].res == pong"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
+
+      ###########################
+      # Files & Documents
+      ###########################
+      - name: Nextcloud
+        group: Files & Documents
+        # status.php is what the pod probes use; it also reports maintenance mode
+        # and a pending DB upgrade (after an image bump), where the UI is unusable.
+        url: "http://nextcloud.apps.svc.cluster.local/status.php"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].installed == true"
+          - "[BODY].maintenance == false"
+          - "[BODY].needsDbUpgrade == false"
+          - "[RESPONSE_TIME] < 1000"
+        alerts: *ntfy-alert
       - name: oCIS
+        group: Files & Documents
         # End-to-end through nginx-proxy-manager, i.e. what a user actually
         # hits. Catches both oCIS being down and NPM/openresty being stopped.
         url: "https://ocis.local.traunseenet.com"
@@ -235,13 +227,9 @@ data:
         conditions:
           - "[STATUS] == 200"
           - "[RESPONSE_TIME] < 1000"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
+        alerts: *ntfy-alert
       - name: oCIS Certificate
+        group: Files & Documents
         # Deliberately hits the LXC directly rather than the hostname: NPM
         # terminates TLS with its own Let's Encrypt cert, so checking
         # ocis.local.traunseenet.com would watch the wrong certificate and never
@@ -263,69 +251,142 @@ data:
             description: "oCIS TLS certificate expires in under 10 days"
             failure-threshold: 2
             send-on-resolved: true
-      ###########################
-      # Public edge (edge/)
-      ###########################
-      - name: Edge public path
-        # Full internet path, as an outside user hits it: public DNS (forced via
-        # 1.1.1.1, so split-horizon can't short-circuit it) -> VPS HAProxy ->
-        # wg-outer -> edge-home DNAT -> traefik-public (10.0.0.44:9443) ->
-        # oauth2-proxy /ping. Fails if any hop is down: VPS, either WireGuard
-        # end, the home VM nft, the public LB/entrypoint, or oauth2-proxy.
-        url: "https://oauth.cloud.traunseenet.com/ping"
-        interval: 1m
-        client:
-          dns-resolver: "udp://1.1.1.1:53"
-        conditions:
-          - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 1500"
-          - "[CERTIFICATE_EXPIRATION] > 240h"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "public edge path failed (VPS / WireGuard / edge-home / traefik-public / oauth2-proxy)"
-            failure-threshold: 5
-            send-on-resolved: true
-      ###########################
-      # Networking
-      ###########################
-      - name: Technitium DNS
-        # A real DNS query against the server itself (LXC at 10.0.0.99), not the
-        # admin UI -- technitium.local.traunseenet.com resolves to NPM on
-        # 10.0.0.103, so an HTTP check there would pass while DNS was down.
-        # Querying the zone apex proves Technitium is answering AND is
-        # authoritative for traunseenet.com without depending on any individual
-        # record: an apex with no A record still returns NOERROR, while a missing
-        # or broken zone returns NXDOMAIN or REFUSED and fails the check.
-        # external-dns writes every cluster record here over RFC2136, so this
-        # failing means new ingress hostnames stop resolving cluster-wide.
-        url: "10.0.0.99"
-        interval: 1m
-        dns:
-          query-name: "traunseenet.com"
-          query-type: "A"
-        conditions:
-          - "[DNS_RCODE] == NOERROR"
-          - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
-      - name: Traefik
-        url: "http://traefik-api.networking.svc.cluster.local:8080/ping"
+      - name: Paperless NGX
+        group: Files & Documents
+        url: "http://paperless.apps.svc.cluster.local/accounts/login/?next=/"
         interval: 1m
         conditions:
           - "[STATUS] == 200"
-          - "[BODY] == OK"
           - "[RESPONSE_TIME] < 500"
-        alerts:
-          - type: "ntfy"
-            minimum-reminder-interval: "30m"
-            description: "healthcheck failed"
-            failure-threshold: 5
-            send-on-resolved: true
+        alerts: *ntfy-alert
+
+      ###########################
+      # Notes & Knowledge
+      ###########################
+      - name: Obsidian LiveSync
+        group: Notes & Knowledge
+        # /_up is the only unauthenticated route (require_valid_user_except_for_up),
+        # and it reports the node's own health rather than just TCP reachability.
+        url: "http://obsidian-livesync.apps.svc.cluster.local:5984/_up"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].status == ok"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
+      - name: SilverBullet
+        group: Notes & Knowledge
+        # /.instance is what the pod probes use (unauthenticated).
+        url: "http://silverbullet.apps.svc.cluster.local:3000/.instance"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
+      - name: Memos
+        group: Notes & Knowledge
+        url: "http://memos-web.apps.svc.cluster.local:5230/healthz"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
+      - name: Karakeep
+        group: Notes & Knowledge
+        url: "http://karakeep.apps.svc.cluster.local:3000/api/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].status == ok"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
+      - name: mdmem
+        group: Notes & Knowledge
+        # /readyz on the UI port checks the index too (503 when not ready);
+        # /healthz is the deliberately dumb liveness endpoint.
+        url: "http://mdmem.apps.svc.cluster.local:8081/readyz"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].ready == true"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
+
+      ###########################
+      # Finance
+      ###########################
+      - name: Actual Budget
+        group: Finance
+        url: "http://actual-budget.apps.svc.cluster.local:5006/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].status == UP"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
+      - name: Fin
+        group: Finance
+        # Through the web frontend, which proxies /api to fin-api: one check
+        # covers both.
+        url: "http://fin-web.apps.svc.cluster.local/api/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].status == ok"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
+
+      ###########################
+      # AI
+      ###########################
+      - name: Open WebUI
+        group: AI
+        # /health/db also checks the database connection, /health only the process.
+        url: "http://open-webui.apps.svc.cluster.local:8080/health/db"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].status == true"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
+      - name: Bifrost
+        group: AI
+        url: "http://bifrost.apps.svc.cluster.local:8080/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].status == ok"
+          - "[BODY].components.db_pings == ok"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
+
+      ###########################
+      # Home
+      ###########################
+      - name: Homepage
+        group: Home
+        # Server-side renders every tile on request, so it is meaningfully
+        # slower than a bare health endpoint -- 1s rather than the usual 500ms.
+        url: "http://homepage.apps.svc.cluster.local:3000"
+        # v2 answers 400 unless Host is in HOMEPAGE_ALLOWED_HOSTS
+        headers:
+          Host: homepage.cloud.traunseenet.com
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 1000"
+        alerts: *ntfy-alert
+      - name: TREK
+        group: Home
+        # /api/health is unauthenticated and is what upstream's own container
+        # healthcheck polls. SQLite means the check also fails if the data PVC
+        # goes read-only, which a bare TCP probe would miss.
+        url: "http://trek.apps.svc.cluster.local:3000/api/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 700"
+        alerts: *ntfy-alert
     alerting:
       ntfy:
         topic: "gatus"

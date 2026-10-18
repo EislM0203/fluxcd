@@ -22,6 +22,10 @@ spec:
           podSelector:
             matchLabels:
               app.kubernetes.io/name: traefik
+        # Gatus health check (/.instance), same namespace
+        - podSelector:
+            matchLabels:
+              app: gatus
       ports:
         - protocol: TCP
           port: 3000

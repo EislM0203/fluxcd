@@ -21,6 +21,10 @@ spec:
         - podSelector:
             matchLabels:
               app: eurooffice
+        # Gatus health check (/status.php)
+        - podSelector:
+            matchLabels:
+              app: gatus
       ports:
         - protocol: TCP
           port: 80

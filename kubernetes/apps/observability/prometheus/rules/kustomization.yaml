@@ -13,3 +13,4 @@ resources:
   - services.yaml
   - observability.yaml
   - crowdsec.yaml
+  - external-secrets.yaml

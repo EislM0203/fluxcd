@@ -19,4 +19,4 @@ spec:
       yearly: 1
     copyMethod: Snapshot
     storageClassName: longhorn-storage
-    unlock: "something"
+    unlock: "2026-10-18"

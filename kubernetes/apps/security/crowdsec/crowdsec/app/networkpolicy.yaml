@@ -2,6 +2,7 @@
 # Default-deny for the whole namespace; the policies below open exactly:
 #   Traefik pods  -> LAPI :8080 (bouncer decision stream) and AppSec :7422
 #   agent/appsec  -> LAPI :8080 (machine registration, alerts)
+#   Prometheus    -> metrics :6060 on all CrowdSec pods
 #   all pods      -> DNS, and HTTPS to the internet (hub items, CAPI blocklist)
 # Calico evaluates after kube-proxy DNAT (backend pod IP + container port), so
 # in-cluster targets are always selected by podSelector, never by Service VIP.
@@ -61,6 +62,28 @@ spec:
       ports:
         - protocol: TCP
           port: 7422
+---
+# Prometheus -> metrics :6060 on lapi, agent and appsec (ServiceMonitors in release.yaml)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: crowdsec-metrics
+spec:
+  podSelector:
+    matchLabels:
+      k8s-app: crowdsec
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 6060
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

@@ -12,3 +12,4 @@ resources:
   - longhorn.yaml
   - services.yaml
   - observability.yaml
+  - crowdsec.yaml

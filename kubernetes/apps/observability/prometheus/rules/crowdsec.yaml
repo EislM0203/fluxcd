@@ -1,0 +1,72 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: crowdsec
+spec:
+  groups:
+    # CrowdSec protecting the public edge (security/crowdsec, Traefik websecure-pub).
+    # No alert per ban: thousands per day are normal background scanning. These rules
+    # only fire when the protection itself is broken.
+    - name: crowdsec
+      rules:
+        - alert: CrowdSecAppsecDown
+          # The Traefik bouncer fails closed (crowdsecAppsecUnreachableBlock): without AppSec
+          # every request on websecure-pub gets a 403. Uses kube-state-metrics, so it also
+          # fires when the pod is gone and there is nothing left to scrape.
+          expr: kube_deployment_status_replicas_available{namespace="crowdsec", deployment="crowdsec-appsec"} < 1
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: CrowdSec AppSec is down - all public apps answer 403
+            description: >-
+              The Traefik bouncer blocks every public request while AppSec is unreachable.
+              Check `kubectl -n crowdsec get pods -l type=appsec` and its logs.
+        - alert: CrowdSecLapiDown
+          # The bouncer keeps its cached decisions, but new bans are no longer delivered
+          # and agents cannot report alerts.
+          expr: kube_deployment_status_replicas_available{namespace="crowdsec", deployment="crowdsec-lapi"} < 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: CrowdSec LAPI is down - no new bans are enforced
+            description: Check `kubectl -n crowdsec get pods -l type=lapi` and its logs (PVC, CAPI login).
+        - alert: CrowdSecAgentUnavailable
+          expr: kube_daemonset_status_number_unavailable{namespace="crowdsec", daemonset="crowdsec-agent"} > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $value }} CrowdSec agent pod(s) unavailable"
+            description: Traefik logs on that node are not analysed. Check `kubectl -n crowdsec get pods -l type=agent -o wide`.
+        - alert: CrowdSecNoLogsParsed
+          # Summed over all agents: public traffic reaches Traefik on one node only, the
+          # other agents only see non-access-log lines (parse failures, no _ok series).
+          # Public bots scan around the clock, so 1h without a single parsed line means
+          # log acquisition is broken (renamed pods, log format, parser).
+          expr: >-
+            sum(rate(cs_parser_hits_ok_total{namespace="crowdsec"}[1h])) == 0
+            or absent(cs_parser_hits_ok_total{namespace="crowdsec"})
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: CrowdSec has not parsed any Traefik access log line for over 1h
+            description: >-
+              Detection is silently off. Check `kubectl -n crowdsec exec ds/crowdsec-agent -- cscli metrics show acquisition parsers`
+              and that Traefik still writes access logs for websecure-pub.
+        - alert: CrowdSecBouncerStale
+          # The Traefik plugin polls /v1/decisions/stream (one bouncer name per Traefik pod IP).
+          expr: >-
+            sum(rate(cs_lapi_bouncer_requests_total{namespace="crowdsec", bouncer=~"traefik.*", route="/v1/decisions/stream"}[15m])) == 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: The Traefik bouncer has stopped fetching CrowdSec decisions
+            description: >-
+              New bans are not enforced. Check the Traefik logs for the crowdsec plugin and
+              the bouncer key (`cscli bouncers list` in the LAPI pod).

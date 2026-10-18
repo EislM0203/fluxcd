@@ -139,6 +139,10 @@ spec:
         - namespace: networking
           podName: traefik-*
           program: traefik
+          # Poll with os.Stat: inotify on the /var/log/containers symlinks lost the file at
+          # a kubelet log rotation ("Waiting for ... to appear") and stopped all log-based
+          # detection for hours (2026-10-17, caught by CrowdSecNoLogsParsed).
+          poll_without_inotify: true
       env:
         - name: COLLECTIONS
           value: "crowdsecurity/traefik crowdsecurity/http-cve crowdsecurity/base-http-scenarios"

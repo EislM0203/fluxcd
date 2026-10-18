@@ -8,7 +8,7 @@ metadata:
 spec:
   sourcePVC: harbor-data
   trigger:
-    schedule: "0 */10 * * *"
+    schedule: "50 */10 * * *"
   restic:
     pruneIntervalDays: 1
     repository: restic-harbor

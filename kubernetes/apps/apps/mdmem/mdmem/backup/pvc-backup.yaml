@@ -7,7 +7,7 @@ metadata:
 spec:
   sourcePVC: mdmem-data
   trigger:
-    schedule: "0 */6 * * *"
+    schedule: "10 */6 * * *"
   restic:
     pruneIntervalDays: 1
     repository: restic-mdmem

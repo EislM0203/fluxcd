@@ -7,7 +7,7 @@ metadata:
 spec:
   sourcePVC: nextcloud-data
   trigger:
-    schedule: "0 */6 * * *"
+    schedule: "0 3-23/6 * * *"
   restic:
     pruneIntervalDays: 1
     repository: restic-nextcloud

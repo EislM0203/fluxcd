@@ -1,0 +1,22 @@
+# Backends reachable only from their own app (same namespace, podSelector: Calico
+# evaluates after DNAT, so never select by Service IP). Kubelet probes come from the
+# node and are not affected. After applying: pods stay Ready and the app still works.
+---
+# Valkey (semantic cache), no password.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bifrost-valkey-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: bifrost-valkey
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: bifrost
+      ports:
+        - protocol: TCP
+          port: 6379

@@ -10,3 +10,4 @@ resources:
   - server.yaml
   - httproute.yaml
   - machine-learning.yaml
+  - networkpolicy.yaml

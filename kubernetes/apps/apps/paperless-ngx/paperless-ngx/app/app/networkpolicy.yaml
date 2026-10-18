@@ -1,0 +1,110 @@
+# Backends reachable only from their own app (same namespace, podSelector: Calico
+# evaluates after DNAT, so never select by Service IP). Kubelet probes come from the
+# node and are not affected. After applying: pods stay Ready and the app still works.
+---
+# Redis without a password (Celery broker + results).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: paperless-redis-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: paperless-redis
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: paperless
+      ports:
+        - protocol: TCP
+          port: 6379
+---
+# Document parser.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: paperless-tika-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: paperless-tika
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: paperless
+      ports:
+        - protocol: TCP
+          port: 9998
+---
+# HTML/URL -> PDF converter: fetches arbitrary URLs on request.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: paperless-gotenberg-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: paperless-gotenberg
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: paperless
+      ports:
+        - protocol: TCP
+          port: 3000
+---
+# CNPG cluster paperless-pg: the app on 5432, its own instances (replication, instance manager),
+# the CNPG operator (instance manager API :8000; without it the cluster looks unhealthy
+# and cannot be managed) and Prometheus (PodMonitor :9187, CNPG alerts).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: paperless-pg-ingress
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: paperless-pg
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: paperless
+      ports:
+        - protocol: TCP
+          port: 5432
+    - from:
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: paperless-pg
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 8000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: storage
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: cloudnative-pg
+      ports:
+        - protocol: TCP
+          port: 8000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 9187

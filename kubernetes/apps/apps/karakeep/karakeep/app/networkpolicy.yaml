@@ -1,0 +1,41 @@
+# Backends reachable only from their own app (same namespace, podSelector: Calico
+# evaluates after DNAT, so never select by Service IP). Kubelet probes come from the
+# node and are not affected. After applying: pods stay Ready and the app still works.
+---
+# Chrome DevTools protocol, no auth: whoever reaches it controls the browser (and can make it fetch internal/LAN URLs).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: karakeep-chrome-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: karakeep-chrome
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: karakeep
+      ports:
+        - protocol: TCP
+          port: 9222
+---
+# Search index with the bookmark contents.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: karakeep-meilisearch-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: karakeep-meilisearch
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: karakeep
+      ports:
+        - protocol: TCP
+          port: 7700

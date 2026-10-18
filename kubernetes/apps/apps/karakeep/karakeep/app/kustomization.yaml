@@ -12,3 +12,4 @@ resources:
   - mcp-deployment.yaml
   - mcp-service.yaml
   - mcp-networkpolicy.yaml
+  - networkpolicy.yaml

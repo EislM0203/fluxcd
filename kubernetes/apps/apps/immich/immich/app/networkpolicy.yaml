@@ -1,0 +1,97 @@
+# Backends reachable only from their own app (same namespace, podSelector: Calico
+# evaluates after DNAT, so never select by Service IP). Kubelet probes come from the
+# node and are not affected. After applying: pods stay Ready and the app still works.
+---
+# Redis without a password (job queues). Both deployments set REDIS_HOSTNAME.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: immich-redis-master-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: immich-redis-master
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: immich-server
+        - podSelector:
+            matchLabels:
+              app: immich-machine-learning
+      ports:
+        - protocol: TCP
+          port: 6379
+---
+# ML inference API (CPU/RAM heavy).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: immich-machine-learning-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: immich-machine-learning
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: immich-server
+      ports:
+        - protocol: TCP
+          port: 3003
+---
+# CNPG cluster immich-pg: the app on 5432, its own instances (replication, instance manager),
+# the CNPG operator (instance manager API :8000; without it the cluster looks unhealthy
+# and cannot be managed) and Prometheus (PodMonitor :9187, CNPG alerts).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: immich-pg-ingress
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: immich-pg
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: immich-server
+        - podSelector:
+            matchLabels:
+              app: immich-machine-learning
+      ports:
+        - protocol: TCP
+          port: 5432
+    - from:
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: immich-pg
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 8000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: storage
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: cloudnative-pg
+      ports:
+        - protocol: TCP
+          port: 8000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 9187

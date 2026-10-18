@@ -10,6 +10,7 @@ resources:
   - service.yaml
   - httproute.yaml
   - servicemonitor.yaml
+  - networkpolicy.yaml
 
 configMapGenerator:
   - name: bifrost-env

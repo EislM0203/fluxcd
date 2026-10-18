@@ -12,3 +12,4 @@ resources:
 - pvc.yaml
 - gotenberg.yaml
 - tika.yaml
+- networkpolicy.yaml

@@ -27,6 +27,8 @@ spec:
         - name: forgejo-mcp
           # gitea/gitea-mcp-server 1.9.0 (distroless, nonroot), via the Harbor docker.io proxy
           image: harbor.cloud.traunseenet.com/docker.io/gitea/gitea-mcp-server:1.9.0@sha256:01b1f5f212959d870f5e9cd740dda62946c37ae87c59911cf62778836319a923
+          # The image has only CMD (no ENTRYPOINT): args alone would replace the binary.
+          command: ["/app/gitea-mcp"]
           args: ["-t", "http", "--port", "8080"]
           ports:
             - name: http

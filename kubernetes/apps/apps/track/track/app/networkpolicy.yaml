@@ -1,0 +1,52 @@
+---
+# Ingress-only. The API has no auth of its own and serves very personal data, so
+# only the web pod (nginx proxies /api) may call it; the outside world comes
+# through Traefik + Pocket ID to the web pod only. Kubelet probes are not affected.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: track-api-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: track
+      component: api
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: track
+              component: web
+      ports:
+        - protocol: TCP
+          port: 8000
+---
+# Traefik (forward-auth in front) and Gatus (/api/health through nginx).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: track-web-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: track
+      component: web
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps
+          podSelector:
+            matchLabels:
+              app: gatus
+      ports:
+        - protocol: TCP
+          port: 80

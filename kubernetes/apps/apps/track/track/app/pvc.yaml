@@ -1,0 +1,17 @@
+---
+# No dataSourceRef yet: a ReplicationDestination created before the first backup
+# exists initialises an empty restic repo and stays empty for good (bifrost,
+# 2026-07-07). Once track-backup has run, add the restore like fin's pvc.yaml.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: track-data
+  labels:
+    app: track
+    component: api
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: longhorn-storage
+  resources:
+    requests:
+      storage: 1Gi

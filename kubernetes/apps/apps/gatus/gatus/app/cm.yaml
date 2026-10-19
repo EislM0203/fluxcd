@@ -335,6 +335,17 @@ data:
           - "[BODY].status == ok"
           - "[RESPONSE_TIME] < 500"
         alerts: *ntfy-alert
+      - name: Track
+        group: Personal
+        # Through the web frontend (nginx proxies /api to track-api); the
+        # track-web NetworkPolicy admits Gatus.
+        url: "http://track-web.apps.svc.cluster.local/api/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].status == ok"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
 
       ###########################
       # AI

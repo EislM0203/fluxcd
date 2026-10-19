@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forgejo-mcp-env
+data:
+  # gitea-mcp (Gitea's official MCP server) against Forgejo. Forgejo reports
+  # "16.x+gitea-1.22.0"; the Actions tools call the REST paths directly (no version
+  # gating) and Forgejo 16 has /actions/runs, /runs/{id}/jobs and /jobs/{id}/logs.
+  # In-cluster, so no TLS hairpin through Traefik (Forgejo NP admits this pod).
+  GITEA_HOST: "http://forgejo.storage.svc.cluster.local:3000"
+  # Hides every Write tool server-wide, on top of the read-only bot token.
+  GITEA_READONLY: "true"
+  # Allow-list (same list as tools_to_execute in bifrost config.json). Left out on
+  # purpose: actions_config_read (Actions variables), notification/package/project/
+  # timetracking/user and team search. Within actions_run_read, list_jobs/get_job do
+  # not exist on Forgejo; download_job_log writes to $HOME - use get_job_log_preview.
+  GITEA_TOOLS: >-
+    get_me,list_my_repos,list_org_repos,search_repos,
+    get_repository_tree,get_dir_contents,get_file_contents,
+    list_branches,list_commits,get_commit,list_tags,get_tag,
+    list_releases,get_release,get_latest_release,
+    list_issues,search_issues,issue_read,label_read,milestone_read,
+    list_pull_requests,pull_request_read,
+    actions_run_read,wiki_read

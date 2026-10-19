@@ -1,0 +1,24 @@
+---
+# Ingress-only, same as github-mcp: called by Bifrost only. The server answers
+# without auth and holds its own (read-only) Forgejo token, so the network is
+# the gate. Kubelet probes come from the node and are not affected.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forgejo-mcp-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: forgejo-mcp
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps
+          podSelector:
+            matchLabels:
+              app: bifrost
+      ports:
+        - protocol: TCP
+          port: 8080

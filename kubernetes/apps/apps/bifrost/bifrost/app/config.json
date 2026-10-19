@@ -107,6 +107,16 @@
         "tools_to_execute": ["*"]
       },
       {
+        "name": "forgejo",
+        "connection_type": "http",
+        "connection_string": "http://forgejo-mcp.apps.svc.cluster.local:8080/mcp",
+        "auth_type": "none",
+        "is_ping_available": false,
+        "is_code_mode_client": true,
+        "_comment": "gitea-mcp against git.cloud Forgejo (apps/mcp/mcp/app/forgejo). Holds its own read-only bot token and runs with GITEA_READONLY; this allow-list mirrors its GITEA_TOOLS. Action logs: actions_run_read with method get_job_log_preview.",
+        "tools_to_execute": ["get_me", "list_my_repos", "list_org_repos", "search_repos", "get_repository_tree", "get_dir_contents", "get_file_contents", "list_branches", "list_commits", "get_commit", "list_tags", "get_tag", "list_releases", "get_release", "get_latest_release", "list_issues", "search_issues", "issue_read", "label_read", "milestone_read", "list_pull_requests", "pull_request_read", "actions_run_read", "wiki_read"]
+      },
+      {
         "name": "grafana",
         "connection_type": "http",
         "connection_string": "http://grafana-mcp.observability.svc.cluster.local:8000/mcp",

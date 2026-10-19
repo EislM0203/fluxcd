@@ -1,5 +1,5 @@
 ---
-# Ingress-only: Traefik (both gateways share the same pods), Gatus, and the
+# Ingress-only: Traefik (both gateways share the same pods), Gatus, forgejo-mcp, and the
 # Actions runner namespace (autoscaler API calls + runner task fetch/report).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -28,6 +28,17 @@ spec:
           podSelector:
             matchLabels:
               app: gatus
+      ports:
+        - protocol: TCP
+          port: 3000
+    # forgejo-mcp (gitea-mcp, read-only bot token), reached by Bifrost only
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps
+          podSelector:
+            matchLabels:
+              app: forgejo-mcp
       ports:
         - protocol: TCP
           port: 3000

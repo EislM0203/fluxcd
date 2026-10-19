@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forgejo-mcp
+  labels:
+    app: forgejo-mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: forgejo-mcp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: mcp
+        app: forgejo-mcp
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: forgejo-mcp
+          # gitea/gitea-mcp-server 1.9.0 (distroless, nonroot), via the Harbor docker.io proxy
+          image: harbor.cloud.traunseenet.com/docker.io/gitea/gitea-mcp-server:1.9.0@sha256:01b1f5f212959d870f5e9cd740dda62946c37ae87c59911cf62778836319a923
+          args: ["-t", "http", "--port", "8080"]
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: forgejo-mcp-env
+          env:
+            - name: GITEA_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-mcp
+                  key: GITEA_ACCESS_TOKEN
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            # healthcheck file (GITEA_MCP_HEALTHCHECK_FILE=/tmp/...)
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi

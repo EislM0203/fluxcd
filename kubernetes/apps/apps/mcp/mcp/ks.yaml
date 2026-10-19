@@ -26,6 +26,10 @@ spec:
       kind: Deployment
       name: kubernetes-mcp
       namespace: apps
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: forgejo-mcp
+      namespace: apps
   interval: 15m
   retryInterval: 15m
   timeout: 15m

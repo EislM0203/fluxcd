@@ -18,40 +18,39 @@ spec:
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
-        # distroless USER is the name "nonroot"; kubelet can only verify a numeric UID
         runAsUser: 65532
         runAsGroup: 65532
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: forgejo-mcp
-          # gitea/gitea-mcp-server 1.9.0 (distroless, nonroot), via the Harbor docker.io proxy
-          image: harbor.cloud.traunseenet.com/docker.io/gitea/gitea-mcp-server:1.9.0@sha256:01b1f5f212959d870f5e9cd740dda62946c37ae87c59911cf62778836319a923
-          # The image has only CMD (no ENTRYPOINT): args alone would replace the binary.
-          command: ["/app/gitea-mcp"]
-          args: ["-t", "http", "--port", "8080"]
+          # b4mad forgejo-mcp (Forgejo-native, incl. Forgejo 16 Actions jobs/logs). Not
+          # proxied by Harbor: pulled directly, pinned by digest (cosign-signed upstream).
+          image: git.b4mad.industries/agentic-forges/forgejo-mcp:v3.3.0@sha256:9ffdde38b9825666227676d1abbe410646014272fe9c317cb3435c0a6f3e5ad2
+          # Passthrough auth and no token here: every request must carry its own
+          # Authorization header (Bifrost sends the read-only bot token, FORGEJO_AUTH_HEADER),
+          # anything else gets 401. Do NOT enable --allow-operator-token-fallback.
+          # No read-only switch in this server: write tools exist but the bot token has
+          # read scopes only, and Bifrost's tools_to_execute is the allow-list.
+          # In-cluster URL, so no TLS hairpin through Traefik (Forgejo NP admits this pod).
+          args:
+            - --transport=http
+            - --http-port=8080
+            - --host=0.0.0.0
+            - --allowed-hosts=forgejo-mcp.apps.svc.cluster.local
+            - --url=http://forgejo.storage.svc.cluster.local:3000
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
-          envFrom:
-            - configMapRef:
-                name: forgejo-mcp-env
-          env:
-            - name: GITEA_ACCESS_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: forgejo-mcp
-                  key: GITEA_ACCESS_TOKEN
+          # No health endpoint (every path answers 401 without a token): TCP probes.
           livenessProbe:
-            httpGet:
-              path: /healthz
+            tcpSocket:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 15
           readinessProbe:
-            httpGet:
-              path: /healthz
+            tcpSocket:
               port: http
             initialDelaySeconds: 3
             periodSeconds: 10
@@ -60,17 +59,9 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
-          volumeMounts:
-            # healthcheck file (GITEA_MCP_HEALTHCHECK_FILE=/tmp/...)
-            - name: tmp
-              mountPath: /tmp
           resources:
             requests:
               cpu: 20m
               memory: 32Mi
             limits:
               memory: 128Mi
-      volumes:
-        - name: tmp
-          emptyDir:
-            sizeLimit: 16Mi

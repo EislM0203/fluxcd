@@ -31,7 +31,7 @@ spec:
       ports:
         - protocol: TCP
           port: 3000
-    # forgejo-mcp (gitea-mcp, read-only bot token), reached by Bifrost only
+    # forgejo-mcp (b4mad forgejo-mcp, Bifrost sends the read-only bot token), reached by Bifrost only
     - from:
         - namespaceSelector:
             matchLabels:

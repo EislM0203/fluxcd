@@ -20,12 +20,23 @@ spec:
       parameters:
         barmanObjectName: forgejo-pg
         serverName: forgejo-pg
-  # Fresh database. For a rebuild, switch to `recovery` from the ObjectStore
-  # (see paperless-ngx pg.yaml for the pattern).
+  # Only read when the cluster is created: a rebuild recovers from the ObjectStore
+  # (same pattern as paperless-ngx pg.yaml). The first install used initdb.
   bootstrap:
-    initdb:
+    # initdb:
+    #   database: forgejo
+    #   owner: forgejo
+    recovery:
+      source: &name forgejo-pg
       database: forgejo
       owner: forgejo
+  externalClusters:
+    - name: *name
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: *name
+          serverName: *name
   storage:
     pvcTemplate:
       accessModes:

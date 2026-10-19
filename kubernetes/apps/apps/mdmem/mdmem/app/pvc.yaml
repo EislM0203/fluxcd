@@ -26,10 +26,10 @@ spec:
   storageClassName: longhorn-storage
   # Do NOT set numberOfReplicas: 1 here. The vault is the primary artefact of
   # this service; an hourly restic snapshot is not block-level redundancy.
-  # dataSourceRef:
-  #   kind: ReplicationDestination
-  #   apiGroup: volsync.backube
-  #   name: mdmem-restore
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: mdmem-restore
   resources:
     requests:
       storage: 5Gi

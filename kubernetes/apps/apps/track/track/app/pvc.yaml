@@ -1,7 +1,4 @@
 ---
-# No dataSourceRef yet: a ReplicationDestination created before the first backup
-# exists initialises an empty restic repo and stays empty for good (bifrost,
-# 2026-07-07). Once track-backup has run, add the restore like fin's pvc.yaml.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -12,6 +9,31 @@ metadata:
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: longhorn-storage
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: track-restore
   resources:
     requests:
       storage: 1Gi
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
+# Added after the first track-backup existed (an RD created before that initialises
+# an empty restic repo and stays empty). restore-once is one-shot: to refresh,
+# delete the RD and let Flux recreate it.
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: track-restore
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: restic-track
+    storageClassName: longhorn-storage
+    accessModes: ["ReadWriteOnce"]
+    copyMethod: Snapshot
+    capacity: 1Gi
+    enableFileDeletion: false
+    cleanupCachePVC: false
+    cleanupTempPVC: false

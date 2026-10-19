@@ -28,10 +28,10 @@ spec:
   # per space — each space is plain markdown with its own .silverbullet index.
   # An hourly restic snapshot is the backup; Longhorn keeps its replica count.
   # Back this volume properly: accounts and the OIDC client secret live here too.
-  # dataSourceRef:
-  #   kind: ReplicationDestination
-  #   apiGroup: volsync.backube
-  #   name: silverbullet-restore
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: silverbullet-restore
   resources:
     requests:
       storage: 5Gi

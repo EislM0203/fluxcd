@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: immich-server
-        image: harbor.cloud.traunseenet.com/ghcr.io/immich-app/immich-server:v3.3.1@sha256:db996e352359771c6a3db121a0ed8761516b22f727fc092a0f46dcfef82c1bc1
+        image: harbor.cloud.traunseenet.com/ghcr.io/immich-app/immich-server:v3.3.4@sha256:f6475c58b07a8d89ec845aa8782731d36656c3c17d943e0a101dc6ed99a2e53f
         env:
         - name: DB_HOSTNAME
           valueFrom:

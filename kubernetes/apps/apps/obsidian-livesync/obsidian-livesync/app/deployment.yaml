@@ -32,7 +32,7 @@ spec:
         # no output at all. Copying the file into a writable emptyDir instead lets
         # the entrypoint chown it and drop its own docker.ini beside it.
         - name: seed-config
-          image: harbor.cloud.traunseenet.com/docker.io/library/couchdb:3.5@sha256:5fc596110eac7f412173a7d9de14f70aa5d3e816790fb6e70642755d4a4cf464
+          image: harbor.cloud.traunseenet.com/docker.io/library/couchdb:3.5@sha256:3611ce43bd32fe2368997fd41ec6e7270ec8d84aa5fc13c9828e5b15fd6bafe8
           command:
             - sh
             - -c
@@ -46,7 +46,7 @@ spec:
               mountPath: /opt/couchdb/etc/local.d
       containers:
         - name: couchdb
-          image: harbor.cloud.traunseenet.com/docker.io/library/couchdb:3.5@sha256:5fc596110eac7f412173a7d9de14f70aa5d3e816790fb6e70642755d4a4cf464
+          image: harbor.cloud.traunseenet.com/docker.io/library/couchdb:3.5@sha256:3611ce43bd32fe2368997fd41ec6e7270ec8d84aa5fc13c9828e5b15fd6bafe8
           imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:

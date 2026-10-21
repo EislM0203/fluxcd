@@ -78,6 +78,11 @@ data:
     DOCKER_DISK_LIMIT="${DOCKER_DISK_LIMIT:-30Gi}"
     WORKSPACE_DISK_LIMIT="${WORKSPACE_DISK_LIMIT:-10Gi}"
     CONTAINER_DISK_LIMIT="${CONTAINER_DISK_LIMIT:-2Gi}"
+    # kubelet evicts a pod once ALL its local storage (emptyDirs included) exceeds
+    # the sum of the containers' limits, so each container's limit must include
+    # the emptyDir it writes to. All three values above must be in Gi.
+    DOCKER_CONTAINER_DISK_LIMIT="$(( ${DOCKER_DISK_LIMIT%Gi} + ${CONTAINER_DISK_LIMIT%Gi} ))Gi"
+    RUNNER_CONTAINER_DISK_LIMIT="$(( ${WORKSPACE_DISK_LIMIT%Gi} + ${CONTAINER_DISK_LIMIT%Gi} ))Gi"
     # Lowest scheduling priority, never preempts (priorityclass.yaml).
     RUNNER_PRIORITY_CLASS="${RUNNER_PRIORITY_CLASS:-forgejo-runner-low}"
     # Labels whose jobs may talk to the pod's privileged dockerd (image builds).
@@ -342,7 +347,11 @@ data:
                 limits:
                   cpu: ${RUNNER_CPU_LIMIT}
                   memory: ${RUNNER_MEMORY_LIMIT}
-                  ephemeral-storage: ${CONTAINER_DISK_LIMIT}
+                  # kubelet also counts emptyDir usage against the SUM of the
+                  # containers' limits; without the volume's share in here the
+                  # pod is evicted at 2x CONTAINER_DISK_LIMIT, long before the
+                  # docker-data sizeLimit.
+                  ephemeral-storage: ${DOCKER_CONTAINER_DISK_LIMIT}
               volumeMounts:
                 - name: docker-certs
                   mountPath: /certs
@@ -385,7 +394,8 @@ data:
                 limits:
                   cpu: ${RUNNER_CPU_LIMIT}
                   memory: ${RUNNER_MEMORY_LIMIT}
-                  ephemeral-storage: ${CONTAINER_DISK_LIMIT}
+                  # same as the docker sidecar: covers the runner-data emptyDir
+                  ephemeral-storage: ${RUNNER_CONTAINER_DISK_LIMIT}
               volumeMounts:
                 - name: runner-config
                   mountPath: /etc/runner

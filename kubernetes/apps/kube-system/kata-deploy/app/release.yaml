@@ -48,9 +48,21 @@ spec:
       # tag stays empty = chart appVersion, so image and chart move together.
       reference: harbor.cloud.traunseenet.com/ghcr.io/kata-containers/kata-deploy
     imagePullPolicy: IfNotPresent
-    # All nodes. Each one needs the containerd drop-in import first
-    # (cluster/ansible/infra/maintenance/configure-containerd-dropins.yml),
-    # otherwise the installer crash-loops there.
+    # Every node except rke2-node-2. Each one needs the containerd drop-in import
+    # first (cluster/ansible/infra/maintenance/configure-containerd-dropins.yml),
+    # otherwise the installer crash-loops there. rke2-node-2 (Intel N100, 3 CPU /
+    # 8 GiB): QEMU starts but the guest agent never answers on vsock, and the node
+    # is too small for VM-per-pod anyway. Removing the DaemonSet pod there also
+    # removes the runtime and its katacontainers.io/kata-runtime label.
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: NotIn
+                  values:
+                    - rke2-node-2
     # Only the Rust QEMU shim (the 4.x default); no Cloud Hypervisor, Firecracker,
     # confidential-computing or NVIDIA variants.
     shims:

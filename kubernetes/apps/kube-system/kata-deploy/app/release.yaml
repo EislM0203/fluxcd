@@ -1,0 +1,72 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/source.toolkit.fluxcd.io/ocirepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: kata-deploy
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    tag: 4.2.0
+    digest: sha256:bb4950dfd421c662f6f39ccb645174893a32e8d5aef89311af319bc4728233b0
+  url: oci://ghcr.io/kata-containers/kata-deploy-charts/kata-deploy
+---
+# Kata Containers: pods with runtimeClassName "kata" run in their own lightweight
+# QEMU VM (nested KVM; the Proxmox VMs expose svm/vmx and /dev/kvm). kata-deploy
+# copies the runtime onto each selected node, adds it to RKE2's containerd
+# (config-v3.toml.tmpl / drop-in) and restarts the RKE2 agent once. Nodes that
+# finish get katacontainers.io/kata-runtime=true; the RuntimeClasses select on
+# that label, so Kata pods only ever land on installed nodes.
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kata-deploy
+spec:
+  interval: 15m
+  chartRef:
+    kind: OCIRepository
+    name: kata-deploy
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    k8sDistribution: rke2
+    image:
+      # tag stays empty = chart appVersion, so image and chart move together.
+      reference: harbor.cloud.traunseenet.com/ghcr.io/kata-containers/kata-deploy
+    imagePullPolicy: IfNotPresent
+    # Pilot: one worker only. Widen (or drop) once a test pod and the first
+    # workloads run cleanly there. rke2-node-2 (3 CPU / 8 GiB) stays excluded.
+    nodeSelector:
+      kubernetes.io/hostname: rke2-node-3
+    # Only the Rust QEMU shim (the 4.x default); no Cloud Hypervisor, Firecracker,
+    # confidential-computing or NVIDIA variants.
+    shims:
+      disableAll: true
+      qemu-runtime-rs:
+        enabled: true
+    defaultShim:
+      amd64: qemu-runtime-rs
+    # Workloads opt in with runtimeClassName: kata (alias of kata-qemu-runtime-rs).
+    runtimeClasses:
+      enabled: true
+      createDefault: true
+      defaultName: kata
+      overheadEnabled: true
+    # Plain overlayfs images; no nydus/erofs snapshotter on the nodes.
+    snapshotter:
+      setup: []
+    node-feature-discovery:
+      enabled: false
+    nodeFeatureRules:
+      create: false

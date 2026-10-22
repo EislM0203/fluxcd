@@ -1,0 +1,8 @@
+# AI tooling (agents, harnesses). App-specific MCP servers stay with their app.
+# Not public (no edge.traunseenet.com/public label).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai
+  annotations:
+    volsync.backube/privileged-movers: "true"

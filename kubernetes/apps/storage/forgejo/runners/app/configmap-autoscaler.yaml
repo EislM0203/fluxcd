@@ -66,6 +66,13 @@ data:
     RUNNER_MEMORY_REQUEST="${RUNNER_MEMORY_REQUEST:-256Mi}"
     RUNNER_CPU_LIMIT="${RUNNER_CPU_LIMIT:-2}"
     RUNNER_MEMORY_LIMIT="${RUNNER_MEMORY_LIMIT:-4Gi}"
+    # The DinD sidecar runs the job's containers and builds, so it carries the
+    # load; defaults to the runner values. Under Kata the VM's RAM is the sum of
+    # both memory limits, so keep these close to real use.
+    DOCKER_CPU_REQUEST="${DOCKER_CPU_REQUEST:-$RUNNER_CPU_REQUEST}"
+    DOCKER_MEMORY_REQUEST="${DOCKER_MEMORY_REQUEST:-$RUNNER_MEMORY_REQUEST}"
+    DOCKER_CPU_LIMIT="${DOCKER_CPU_LIMIT:-$RUNNER_CPU_LIMIT}"
+    DOCKER_MEMORY_LIMIT="${DOCKER_MEMORY_LIMIT:-$RUNNER_MEMORY_LIMIT}"
     # Experimental (README.md): HOST_USERS=false runs runner pods in a user
     # namespace (hostUsers: false), so "privileged" DinD is only root inside the
     # pod's userns. dockerd then cannot manage the pod netns (owned by the host
@@ -364,12 +371,12 @@ data:
                   value: /certs
               resources:
                 requests:
-                  cpu: ${RUNNER_CPU_REQUEST}
-                  memory: ${RUNNER_MEMORY_REQUEST}
+                  cpu: ${DOCKER_CPU_REQUEST}
+                  memory: ${DOCKER_MEMORY_REQUEST}
                   ephemeral-storage: 256Mi
                 limits:
-                  cpu: ${RUNNER_CPU_LIMIT}
-                  memory: ${RUNNER_MEMORY_LIMIT}
+                  cpu: ${DOCKER_CPU_LIMIT}
+                  memory: ${DOCKER_MEMORY_LIMIT}
                   # kubelet also counts emptyDir usage against the SUM of the
                   # containers' limits; without the volume's share in here the
                   # pod is evicted at 2x CONTAINER_DISK_LIMIT, long before the

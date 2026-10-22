@@ -73,14 +73,25 @@ spec:
               value: "3600"
             - name: TTL_SECONDS_AFTER_FINISHED
               value: "120"
+            # Sized from 7d of real jobs (Prometheus, 2026-10-22): DinD peaked at
+            # 1.1 GB / ~0.6 CPU, the runner container at 43 MB. Under Kata the VM
+            # gets the sum of the memory limits (here 3 GiB) and 1 + the CPU limits.
             - name: RUNNER_CPU_REQUEST
-              value: 100m
+              value: 50m
             - name: RUNNER_MEMORY_REQUEST
-              value: 256Mi
+              value: 128Mi
             - name: RUNNER_CPU_LIMIT
-              value: "2"
+              value: 500m
             - name: RUNNER_MEMORY_LIMIT
-              value: 3Gi
+              value: 512Mi
+            - name: DOCKER_CPU_REQUEST
+              value: 250m
+            - name: DOCKER_MEMORY_REQUEST
+              value: 1Gi
+            - name: DOCKER_CPU_LIMIT
+              value: "2"
+            - name: DOCKER_MEMORY_LIMIT
+              value: 2560Mi
             # kubectl writes its discovery cache to $HOME
             - name: HOME
               value: /tmp

@@ -7,3 +7,4 @@ resources:
   - ./kubevip/ks.yaml
   - ./descheduler/ks.yaml
   - ./admission-policies/ks.yaml
+  - ./kata-deploy/ks.yaml

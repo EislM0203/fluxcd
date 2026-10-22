@@ -48,10 +48,9 @@ spec:
       # tag stays empty = chart appVersion, so image and chart move together.
       reference: harbor.cloud.traunseenet.com/ghcr.io/kata-containers/kata-deploy
     imagePullPolicy: IfNotPresent
-    # Pilot: one worker only. Widen (or drop) once a test pod and the first
-    # workloads run cleanly there. rke2-node-2 (3 CPU / 8 GiB) stays excluded.
-    nodeSelector:
-      kubernetes.io/hostname: rke2-node-3
+    # All nodes. Each one needs the containerd drop-in import first
+    # (cluster/ansible/infra/maintenance/configure-containerd-dropins.yml),
+    # otherwise the installer crash-loops there.
     # Only the Rust QEMU shim (the 4.x default); no Cloud Hypervisor, Firecracker,
     # confidential-computing or NVIDIA variants.
     shims:

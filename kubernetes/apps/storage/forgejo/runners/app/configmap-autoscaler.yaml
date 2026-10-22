@@ -93,6 +93,26 @@ data:
     if [[ "$HOST_USERS" == "false" ]]; then
       DIND_ARGS='"--bridge=none", "--iptables=false", "--ip6tables=false"'
     fi
+    # RUNTIME_CLASS=kata runs each runner pod in its own Kata VM, so the
+    # privileged dockerd is root in a throwaway guest kernel, not on the node
+    # (kube-system/kata-deploy; privileged_without_host_devices keeps host
+    # devices out). overlayfs does not work on Kata's virtio-fs emptyDirs, so the
+    # docker-data emptyDir holds a sparse ext4 image that dockerd mounts as
+    # /var/lib/docker inside the guest. The image is 1Gi below the emptyDir's
+    # sizeLimit, so ext4 reports "disk full" before kubelet would evict the pod.
+    RUNTIME_CLASS="${RUNTIME_CLASS:-}"
+    RUNTIME_CLASS_SPEC=""
+    DIND_COMMAND=""
+    DOCKER_DATA_MOUNT="/var/lib/docker"
+    if [[ -n "$RUNTIME_CLASS" ]]; then
+      if [[ "$HOST_USERS" == "false" ]]; then
+        echo "RUNTIME_CLASS and HOST_USERS=false cannot be combined" >&2
+        exit 1
+      fi
+      RUNTIME_CLASS_SPEC="runtimeClassName: ${RUNTIME_CLASS}"
+      DOCKER_DATA_MOUNT="/docker-disk"
+      DIND_COMMAND="\"/bin/sh\", \"-ec\", \"[ -e /dev/loop-control ] || mknod /dev/loop-control c 10 237; for i in 0 1 2 3; do [ -e /dev/loop\$i ] || mknod /dev/loop\$i b 7 \$i; done; apk add --no-cache --quiet e2fsprogs; rm -f /docker-disk/disk.img; truncate -s $(( ${DOCKER_DISK_LIMIT%Gi} - 1 ))G /docker-disk/disk.img; dev=\$(losetup -f); losetup \$dev /docker-disk/disk.img; mkfs.ext4 -q -F \$dev; mkdir -p /var/lib/docker; mount \$dev /var/lib/docker; exec dockerd-entrypoint.sh\""
+    fi
 
     NAME_PREFIX="forgejo-runner-"
     COMPONENT_LABEL="app.kubernetes.io/component=forgejo-runner"
@@ -319,6 +339,7 @@ data:
           serviceAccountName: ${RUNNER_SERVICEACCOUNT}
           automountServiceAccountToken: false
           hostUsers: ${HOST_USERS}
+          ${RUNTIME_CLASS_SPEC}
           priorityClassName: ${RUNNER_PRIORITY_CLASS}
           initContainers:
             # Native sidecar: started before the runner and terminated by
@@ -328,6 +349,8 @@ data:
             - name: docker
               image: ${DIND_IMAGE}
               restartPolicy: Always
+              # Both empty (= image entrypoint) unless RUNTIME_CLASS is set.
+              command: [${DIND_COMMAND}]
               args: [${DIND_ARGS}]
               startupProbe:
                 tcpSocket:
@@ -356,7 +379,7 @@ data:
                 - name: docker-certs
                   mountPath: /certs
                 - name: docker-data
-                  mountPath: /var/lib/docker
+                  mountPath: ${DOCKER_DATA_MOUNT}
           containers:
             - name: runner
               image: ${RUNNER_IMAGE}

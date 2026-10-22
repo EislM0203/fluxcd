@@ -73,13 +73,30 @@ dockerd `registry-mirrors` can't be used with Harbor's project-namespaced paths.
   egress only to Forgejo, DNS and the Kubernetes API. Runner pods get the
   single-use token of their own job and a ServiceAccount without permissions or token.
 - The DinD sidecar is **privileged**, and jobs get `DOCKER_HOST` + the TLS client
-  certs (so `docker build` works). A workflow can therefore take over the node its
-  pod runs on. Acceptable here because only members of `forgejo_users` (Pocket ID)
+  certs (so `docker build` works). With `RUNTIME_CLASS=kata` (default here, see
+  below) that root is confined to the job's own Kata VM; without it a workflow can
+  take over the node its pod runs on. Only members of `forgejo_users` (Pocket ID)
   have accounts and can trigger workflows; never point untrusted repos/forks at it.
   To hide the daemon from jobs, drop the three `runner.envs` entries and the
   `options`/`valid_volumes` lines in `configmap-runner.yaml` (no image builds then).
 - `app/networkpolicy.yaml` keeps runner pods out of the LAN even so (and pins the
   autoscaler to Forgejo + the API server; update its ipBlock if the control plane changes).
+
+### Kata VMs (`RUNTIME_CLASS=kata`)
+
+Each runner pod runs in its own QEMU VM (`kube-system/kata-deploy`, nodes
+rke2-node-1/-3; the RuntimeClass keeps pods off nodes without Kata). Privileged
+DinD is root in that guest only; containerd's `privileged_without_host_devices`
+keeps the node's devices out. The VM gets the sum of both containers' memory
+limits and 1 + their CPU limits.
+
+overlayfs does not work on Kata's virtio-fs shares, so in this mode the
+`docker-data` emptyDir is mounted at `/docker-disk` and the sidecar first creates
+a sparse ext4 image there (`DOCKER_DISK_LIMIT` − 1Gi), loop-mounts it inside the
+guest as `/var/lib/docker` and then starts `dockerd-entrypoint.sh`. It installs
+`e2fsprogs` with `apk` on every start (needs internet egress, ~2 s). Cannot be
+combined with `HOST_USERS=false` (the autoscaler refuses to start). Empty
+`RUNTIME_CLASS` = previous behaviour on the node kernel.
 
 ### Experimental: user namespaces (`HOST_USERS=false`)
 

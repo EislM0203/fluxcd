@@ -65,6 +65,10 @@ spec:
             # "false" = experimental user-namespace mode (README.md)
             - name: HOST_USERS
               value: "true"
+            # Each runner pod in its own Kata VM (kube-system/kata-deploy; nodes
+            # rke2-node-1/-3 only). Empty = node kernel. Requires HOST_USERS=true.
+            - name: RUNTIME_CLASS
+              value: kata
             - name: ACTIVE_DEADLINE_SECONDS
               value: "3600"
             - name: TTL_SECONDS_AFTER_FINISHED

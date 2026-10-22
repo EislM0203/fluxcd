@@ -101,6 +101,8 @@ spec:
         app.kubernetes.io/part-of: karakeep
         app: karakeep-chrome
     spec:
+      # Renders arbitrary web pages: own Kata VM instead of the node kernel.
+      runtimeClassName: kata
       containers:
         - name: chrome
           image: harbor.cloud.traunseenet.com/ghcr.io/karakeep-app/karakeep-chrome:154.0.8037.57-r1@sha256:c51a8c8e6c3c1040a50fa0ecfd0b2fc298401b4229262636552458151f6f18fa

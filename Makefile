@@ -10,7 +10,7 @@ SECRETS_FILE = secrets.yaml
 TFVARS_FILE = cluster/tf/terraform.tfvars
 
 .PHONY: bootstrap-infra plan-tf apply-tf destroy-tf wait-for-nodes configure-hosts-file update-packages configure-sysctl configure-dns \
-	install-longhorn-dependencies reboot-if-required install-rke2-server install-rke2-agent cluster-readiness-check \
+	install-longhorn-dependencies reboot-if-required install-rke2-server install-rke2-agent configure-containerd-dropins cluster-readiness-check \
 	edge-infra-init edge-infra-plan edge-infra-apply edge-home-init edge-home-plan edge-home-apply edge-deploy edge-up
 
 bootstrap-infra: apply-tf \
@@ -23,6 +23,7 @@ bootstrap-infra: apply-tf \
 	reboot-if-required \
 	install-rke2-server \
 	install-rke2-agent \
+	configure-containerd-dropins \
 	cluster-readiness-check
 
 init-tf:
@@ -63,6 +64,10 @@ install-rke2-server:
 
 install-rke2-agent:
 	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/install-rke2-agent.yml"
+
+# Needs RKE2 installed (restarts its service). Required by kata-deploy.
+configure-containerd-dropins:
+	ansible-playbook -i "${INVENTORY}" "${MAINTENANCE_DIR}/configure-containerd-dropins.yml"
 
 cluster-readiness-check:
 	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/cluster-readiness-check.yml"

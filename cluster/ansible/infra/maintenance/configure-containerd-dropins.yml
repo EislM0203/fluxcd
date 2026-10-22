@@ -1,0 +1,44 @@
+---
+# Make RKE2's containerd (2.x, config v3) import drop-in files from config-v3.toml.d.
+# kata-deploy only writes its runtime as a drop-in there and refuses to install
+# ("rendered config ... does not import the drop-in dir 'config-v3.toml.d'") when
+# the import is missing; RKE2's stock template has none. The template extends
+# RKE2's own base, so detected runtimes (crun, nvidia) and registries stay as-is.
+# imports must come before the base: it is a top-level key and the base ends in tables.
+# Restarts the RKE2 service only when the template changed, one node at a time
+# (rke2-node-1 is the only control plane; its restart pauses the API briefly).
+- name: Configure containerd drop-in imports
+  hosts: rke2_server:rke2_agents
+  become: yes
+  serial: 1
+  vars:
+    containerd_dir: /var/lib/rancher/rke2/agent/etc/containerd
+    rke2_service: "{{ 'rke2-server' if inventory_hostname in groups['rke2_server'] else 'rke2-agent' }}"
+
+  tasks:
+    - name: Create drop-in directory
+      ansible.builtin.file:
+        path: "{{ containerd_dir }}/config-v3.toml.d"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      tags: [maintenance, containerd]
+
+    - name: Template that imports the drop-in directory
+      ansible.builtin.copy:
+        dest: "{{ containerd_dir }}/config-v3.toml.tmpl"
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          imports = ["{{ containerd_dir }}/config-v3.toml.d/*.toml"]
+          {% raw %}{{ template "base" . }}{% endraw %}
+      notify: Restart RKE2
+      tags: [maintenance, containerd]
+
+  handlers:
+    - name: Restart RKE2
+      ansible.builtin.systemd:
+        name: "{{ rke2_service }}"
+        state: restarted

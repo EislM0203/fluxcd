@@ -26,8 +26,8 @@ spec:
         fsGroupChangePolicy: OnRootMismatch   # Longhorn: else /data comes up root-owned
       containers:
         - name: mdmem
-          # Pin tag AND digest. Renovate does not track library/*, so the digest
-          # is bumped by hand in the same commit that pushes a build (§13a.2).
+          # Pin tag AND digest. Renovate opens PRs for new vX.Y.Z releases
+          # (library/* pulls anonymously).
           image: harbor.cloud.traunseenet.com/library/mdmem:0.1.8@sha256:3dbe31816004549d6393896d51230fce5034e684a4d6f2c281881fb5e71c6668
           imagePullPolicy: IfNotPresent
           args: ["serve"]

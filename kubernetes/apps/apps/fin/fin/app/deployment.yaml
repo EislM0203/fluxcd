@@ -28,7 +28,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: api
-          image: harbor.cloud.traunseenet.com/library/fin-api:1.0.0@sha256:0fcd64a79cb601b016b67c15ae94879141ad54c0b24ec791dc88ab1c84728983
+          image: harbor.cloud.traunseenet.com/library/fin-api:1.0.1@sha256:3b9eaf28bf13baa57f6d9a2865ebd0c7863bb2f674adddd43d2decfacc800520
           ports:
             - name: http
               containerPort: 8000
@@ -89,7 +89,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: harbor.cloud.traunseenet.com/library/fin-web:1.0.0@sha256:990b1d262c66e880b3cfaf356781715a6196b52132b484a9195972c6f57fa9f9
+          image: harbor.cloud.traunseenet.com/library/fin-web:1.0.1@sha256:da6001c4987283973d49771868936480bb2125cb0137e0e0f4f8ac90e6db7693
           env:
             - name: API_UPSTREAM
               value: fin-api:8000
@@ -146,7 +146,7 @@ spec:
         runAsGroup: 1000
       containers:
         - name: mcp
-          image: harbor.cloud.traunseenet.com/library/fin-mcp:1.0.0@sha256:07719c68369e22b1bb6a162b53b943a2a9818685c61d15d22b38d0fc3dddca38
+          image: harbor.cloud.traunseenet.com/library/fin-mcp:1.0.1@sha256:8df063b745b58e040f6ce4c339b7b34046e50445d8b23f69b5346121b55a8914
           ports:
             - name: http
               containerPort: 8000

@@ -33,7 +33,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          image: harbor.cloud.traunseenet.com/library/track-api:1.0.0@sha256:b0466ff5159935719ef563457ddb11e91412c512dcbadc7d7336fb8a2e8d6017
+          image: harbor.cloud.traunseenet.com/library/track-api:1.0.1@sha256:a7e99039f118730850ba429adaf9bde236a26f479cba5499a8dd8cbfe7302a29
           ports:
             - name: http
               containerPort: 8000
@@ -105,7 +105,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: web
-          image: harbor.cloud.traunseenet.com/library/track-web:1.0.0@sha256:3e3116254a5388bf2e32e21932aa035370b6d78748ef4bdc8799173e3004754c
+          image: harbor.cloud.traunseenet.com/library/track-web:1.0.1@sha256:6d51386fddbc06bb8b976019cda5665752ba78fca7abc2daa700a9e9fa10d66c
           env:
             # rendered into the nginx config at start (frontend/nginx.conf)
             - name: API_UPSTREAM

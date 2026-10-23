@@ -36,7 +36,7 @@ spec:
         - name: dsh
           # Built in traunseenet-lab/dsh (fj + bot git config). Pin tag AND digest;
           # Renovate does not track library/*.
-          image: harbor.cloud.traunseenet.com/library/dsh:sha-adcd0f723088@sha256:7cd25439766d96a29e50988fee574793bddb2483432522413d2ff940a31f88c5
+          image: harbor.cloud.traunseenet.com/library/dsh:0.1.0@sha256:cc975778289f1125ad39763207666e1f0fdcb3e45a9c05208c5e5688f0d52a51
           imagePullPolicy: IfNotPresent
           # Entrypoint is `dsh`. No auth of its own: oauth2-proxy (httproute.yaml) is the gate.
           args: ["--profile", "web", "--no-auth", "--host", "0.0.0.0", "--no-open"]

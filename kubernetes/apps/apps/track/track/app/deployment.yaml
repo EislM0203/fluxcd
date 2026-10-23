@@ -105,7 +105,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: web
-          image: harbor.cloud.traunseenet.com/library/track-web:1.0.1@sha256:6d51386fddbc06bb8b976019cda5665752ba78fca7abc2daa700a9e9fa10d66c
+          image: harbor.cloud.traunseenet.com/library/track-web:1.0.2@sha256:31f66ccfd021b9e976015ddd1f12916ab8e560e411d930e79ca061b23ff7439d
           env:
             # rendered into the nginx config at start (frontend/nginx.conf)
             - name: API_UPSTREAM

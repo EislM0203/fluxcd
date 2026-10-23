@@ -14,11 +14,11 @@ data:
     # label=image
     k8s=docker://harbor.cloud.traunseenet.com/docker.io/library/alpine:3.22@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8
     alpine=docker://harbor.cloud.traunseenet.com/docker.io/library/alpine:3.22@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8
-    ubuntu-latest=docker://harbor.cloud.traunseenet.com/docker.io/library/node:22-bookworm@sha256:0e5f906573693feaa1e21057ebdcfdb5bd5021f050b2dc7c9deceb629c7da2a8
+    ubuntu-latest=docker://harbor.cloud.traunseenet.com/docker.io/library/node:22-bookworm@sha256:63538dfe497cc29dfafdda25ada09b46db68a3f4cc205abf1f5d6bf0913f3384
     # same image, but the job may use the pod's dockerd (DOCKER_LABELS)
-    ubuntu-latest-docker=docker://harbor.cloud.traunseenet.com/docker.io/library/node:22-bookworm@sha256:0e5f906573693feaa1e21057ebdcfdb5bd5021f050b2dc7c9deceb629c7da2a8
+    ubuntu-latest-docker=docker://harbor.cloud.traunseenet.com/docker.io/library/node:22-bookworm@sha256:63538dfe497cc29dfafdda25ada09b46db68a3f4cc205abf1f5d6bf0913f3384
     debian-latest=docker://harbor.cloud.traunseenet.com/docker.io/library/debian:trixie@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5
-    node=docker://harbor.cloud.traunseenet.com/docker.io/library/node:22-bookworm@sha256:0e5f906573693feaa1e21057ebdcfdb5bd5021f050b2dc7c9deceb629c7da2a8
+    node=docker://harbor.cloud.traunseenet.com/docker.io/library/node:22-bookworm@sha256:63538dfe497cc29dfafdda25ada09b46db68a3f4cc205abf1f5d6bf0913f3384
     go=docker://harbor.cloud.traunseenet.com/docker.io/library/golang:1.25-bookworm@sha256:3b4a11519ad929d1e1d261a12cff056f0c85b735253d7d861346b9c6f8b36437
     docker=docker://harbor.cloud.traunseenet.com/docker.io/library/docker:29-cli@sha256:6fae2214c3121a28d5aa639d09032f61310b7c9c75ffbad1025f261a1b621800
 

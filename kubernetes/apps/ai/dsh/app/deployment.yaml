@@ -53,9 +53,12 @@ spec:
               value: /home/node/.dsh/gitconfig
             - name: DSH_DESKTOP_ENABLED
               value: "0"
-          envFrom:
-            - secretRef:
-                name: dsh            # from Vault via the ExternalSecret
+            # Bifrost virtual key, from Vault secret/ai/dsh via the ExternalSecret
+            - name: BIFROST_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dsh
+                  key: BIFROST_VK
           ports:
             - name: http
               containerPort: 3080

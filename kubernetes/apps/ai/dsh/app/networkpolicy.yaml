@@ -1,0 +1,62 @@
+---
+# The agent runs arbitrary commands, so outbound is limited to what it needs:
+#   DNS            kube-dns
+#   Traefik        bifrost.cloud (LLM) and git.cloud (push/PRs) resolve to the
+#                  LAN VIP 10.0.0.50; Calico checks post-DNAT, so allow the
+#                  Traefik pods, never an ipBlock on the VIP
+#   Internet       package registries, docs (RFC1918 excluded: no LAN)
+# Inbound: Traefik only (behind oauth2-proxy forward-auth).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dsh
+spec:
+  podSelector:
+    matchLabels:
+      app: dsh
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 3080
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 8443
+        - protocol: TCP
+          port: 8000
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 100.64.0.0/10
+              - 169.254.0.0/16

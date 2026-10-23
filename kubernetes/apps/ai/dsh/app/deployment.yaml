@@ -1,0 +1,98 @@
+---
+# dsh (deepseek-harness) web UI. Runs in its own Kata VM (nodes rke2-node-1/-3,
+# picked by the RuntimeClass): agent code and tools never share the node kernel.
+# The VM gets the memory limit as RAM and 1 + the CPU limit as vCPUs (3 here).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dsh
+  labels:
+    app: dsh
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: dsh
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: dsh
+        app: dsh
+    spec:
+      runtimeClassName: kata
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch   # Longhorn: else the volumes come up root-owned
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: dsh
+          # Built in traunseenet-lab/dsh (fj + bot git config). Pin tag AND digest;
+          # Renovate does not track library/*.
+          image: harbor.cloud.traunseenet.com/library/dsh:sha-adcd0f723088@sha256:7cd25439766d96a29e50988fee574793bddb2483432522413d2ff940a31f88c5
+          imagePullPolicy: IfNotPresent
+          # Entrypoint is `dsh`. No auth of its own: oauth2-proxy (httproute.yaml) is the gate.
+          args: ["--profile", "web", "--no-auth", "--host", "0.0.0.0", "--no-open"]
+          stdin: true
+          tty: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            # git reads the bot's credentials from /home/node/.dsh (the image's
+            # /etc/gitconfig); this file must not set user.* (it would override the bot).
+            - name: GIT_CONFIG_GLOBAL
+              value: /home/node/.dsh/gitconfig
+            - name: DSH_DESKTOP_ENABLED
+              value: "0"
+          envFrom:
+            - secretRef:
+                name: dsh            # from Vault via the ExternalSecret
+          ports:
+            - name: http
+              containerPort: 3080
+          volumeMounts:
+            - name: data
+              mountPath: /home/node/.dsh
+            - name: workspace
+              mountPath: /workspace
+            - name: tmp
+              mountPath: /tmp
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 5
+            failureThreshold: 36
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: dsh-data
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: dsh-workspace
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi

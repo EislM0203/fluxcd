@@ -1,0 +1,47 @@
+---
+# /home/node/.dsh: profiles, sessions, the bot's git credentials and fj login.
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: dsh-restore
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: restic-dsh
+    storageClassName: longhorn-storage
+    accessModes: ["ReadWriteOnce"]
+    copyMethod: Snapshot
+    capacity: 2Gi
+    enableFileDeletion: false
+    cleanupCachePVC: false
+    cleanupTempPVC: false
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dsh-data
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: longhorn-storage
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: dsh-restore
+  resources:
+    requests:
+      storage: 2Gi
+---
+# /workspace: the agent's git checkouts. Not backed up — everything lives in
+# Forgejo once pushed.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dsh-workspace
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: longhorn-storage
+  resources:
+    requests:
+      storage: 10Gi

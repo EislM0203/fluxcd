@@ -1,0 +1,58 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dsh-app
+  namespace: flux-system
+spec:
+  targetNamespace: ai
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: dsh
+  dependsOn:
+    - name: traefik-addons
+    - name: longhorn-addons
+    - name: volsync
+    - name: harbor-app                # the image is pulled from in-cluster Harbor
+    - name: hashicorp-vault-store     # the ExternalSecret needs the ClusterSecretStore
+    - name: external-secrets-app
+    - name: oauth2-proxy-app          # dsh runs --no-auth; forward-auth is the only gate
+    - name: kata-deploy               # runtimeClassName: kata
+  path: ./kubernetes/apps/ai/dsh/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  wait: true
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: dsh
+      namespace: ai
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dsh-backup
+  namespace: flux-system
+spec:
+  targetNamespace: ai
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: dsh
+  dependsOn:
+    - name: dsh-app
+    - name: volsync
+  path: ./kubernetes/apps/ai/dsh/backup
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m

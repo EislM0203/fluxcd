@@ -44,6 +44,12 @@ spec:
     keepHistory: false
   values:
     k8sDistribution: rke2
+    # Chart 4.3 defaults to "job" (dispatcher + per-node Jobs), but the mode is
+    # immutable for an existing release: the upgrade fails unless it stays as
+    # installed. An image change rolls the DaemonSet one node at a time, and each
+    # terminating pod uninstalls Kata on its node before the new pod reinstalls it,
+    # so Kata pods on that node (dsh, CI jobs) go down for a few minutes.
+    deploymentMode: daemonset
     image:
       # tag stays empty = chart appVersion, so image and chart move together.
       reference: harbor.cloud.traunseenet.com/ghcr.io/kata-containers/kata-deploy

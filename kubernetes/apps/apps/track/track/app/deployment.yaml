@@ -33,7 +33,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          image: harbor.cloud.traunseenet.com/library/track-api:1.0.1@sha256:a7e99039f118730850ba429adaf9bde236a26f479cba5499a8dd8cbfe7302a29
+          image: harbor.cloud.traunseenet.com/library/track-api:1.0.2@sha256:660d69f390c4f6c2a544999f71e0ad22ccd9b8e40f18ca2ce43366da895ebab8
           ports:
             - name: http
               containerPort: 8000

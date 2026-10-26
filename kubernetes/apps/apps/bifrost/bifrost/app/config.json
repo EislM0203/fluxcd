@@ -242,6 +242,16 @@
         "tools_to_execute": ["*"]
       },
       {
+        "name": "track",
+        "connection_type": "http",
+        "connection_string": "http://track-mcp.apps.svc.cluster.local:8000/mcp",
+        "auth_type": "none",
+        "is_ping_available": false,
+        "is_code_mode_client": true,
+        "_comment": "Period/intimacy tracker (track repo, mcp/), talks to track-api in-cluster. No auth on the MCP hop: track-mcp only admits Bifrost (track mcp-networkpolicy.yaml), so access is decided by which virtual keys get this client. TRACK_MCP_ALLOW_WRITES=1, so '*' includes create/update/delete for periods and activities; import/export/bulk are not exposed by the server at all.",
+        "tools_to_execute": ["*"]
+      },
+      {
         "name": "fastmail",
         "connection_type": "http",
         "connection_string": "https://api.fastmail.com/mcp",

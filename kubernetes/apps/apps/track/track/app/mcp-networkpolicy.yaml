@@ -1,0 +1,25 @@
+---
+# Ingress-only, same as fin-mcp: MCP servers are called by Bifrost only (apps
+# that want tools go through Bifrost and its virtual keys). The server answers
+# without auth, so the network is the gate. Kubelet probes are not affected.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: track-mcp-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: track
+      component: mcp
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps
+          podSelector:
+            matchLabels:
+              app: bifrost
+      ports:
+        - protocol: TCP
+          port: 8000

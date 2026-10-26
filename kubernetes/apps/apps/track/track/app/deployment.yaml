@@ -33,7 +33,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          image: harbor.cloud.traunseenet.com/library/track-api:1.0.2@sha256:660d69f390c4f6c2a544999f71e0ad22ccd9b8e40f18ca2ce43366da895ebab8
+          image: harbor.cloud.traunseenet.com/library/track-api:1.1.0@sha256:2ad616a2637aeb6a8e566be9632e5e1d1cd27497c0fc54de6fb3148c662332a1
           ports:
             - name: http
               containerPort: 8000
@@ -105,7 +105,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: web
-          image: harbor.cloud.traunseenet.com/library/track-web:1.0.2@sha256:31f66ccfd021b9e976015ddd1f12916ab8e560e411d930e79ca061b23ff7439d
+          image: harbor.cloud.traunseenet.com/library/track-web:1.1.0@sha256:51c967499233b8440a249b83df5799c874f16c75fd060f4f7747f1ff3126b63c
           env:
             # rendered into the nginx config at start (frontend/nginx.conf)
             - name: API_UPSTREAM
@@ -136,3 +136,79 @@ spec:
               memory: 32Mi
             limits:
               memory: 128Mi
+---
+# MCP server over the track HTTP API (track repo, mcp/). Called by Bifrost only
+# (mcp-networkpolicy.yaml); it has no auth of its own, so the network is the gate.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: track-mcp
+  labels:
+    app: track
+    component: mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: track
+      component: mcp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: track
+        app: track
+        component: mcp
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mcp
+          image: harbor.cloud.traunseenet.com/library/track-mcp:1.1.0@sha256:a0854bc5fcf4d8e8e0bd382a9598754df03288952fab7773d84b1d4b7a253ee7
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            # transport, host, port and /mcp path are the image defaults
+            - name: TRACK_API_URL
+              value: http://track-api.apps.svc.cluster.local:8000
+            - name: TRACK_MCP_ALLOW_WRITES
+              value: "1"
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi

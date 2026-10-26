@@ -160,6 +160,9 @@ spec:
         component: mcp
     spec:
       automountServiceAccountToken: false
+      # The Service "track-mcp" would inject TRACK_MCP_PORT=tcp://<ip>:8000 over
+      # the image's TRACK_MCP_PORT=8000, and the server crashes parsing it.
+      enableServiceLinks: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

@@ -12,6 +12,10 @@ data:
   ENABLE_OLLAMA_API: "false"
   ENABLE_LOGIN_FORM: "false"
   ENABLE_SUBAGENTS: "true"
+  # Summarize older messages once a chat passes the threshold (default 80000 est.
+  # tokens, keeps the newest 40%). Strata's window is 122880, and the summary request
+  # carries the compacted messages, so the threshold has to stay well below it.
+  ENABLE_CONTEXT_COMPACTION: "true"
   OAUTH_MERGE_ACCOUNTS_BY_EMAIL: "true"
   # LLM traffic is routed through the Bifrost AI gateway (OpenAI-compatible /v1).
   # Bifrost fronts llama-swap (10.0.0.59:9000) and applies OTel + MCP server-side.

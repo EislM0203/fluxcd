@@ -1,0 +1,718 @@
+---
+# Falco runtime events (falcosidekick -> Loki, stream labels priority/rule/k8s_ns_name/
+# k8s_pod_name). To change it: edit in Grafana, export JSON, paste it back here.
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadashboard_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: falco
+spec:
+  allowCrossNamespaceImport: true
+  folder: General
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  json: |
+    {
+      "title": "Falco",
+      "uid": "falco-runtime",
+      "tags": [
+        "security",
+        "falco"
+      ],
+      "editable": true,
+      "time": {
+        "from": "now-24h",
+        "to": "now"
+      },
+      "refresh": "5m",
+      "schemaVersion": 39,
+      "templating": {
+        "list": [
+          {
+            "name": "priority",
+            "label": "Priority",
+            "type": "custom",
+            "multi": true,
+            "includeAll": true,
+            "allValue": ".+",
+            "query": "Emergency,Alert,Critical,Error,Warning,Notice,Informational,Debug",
+            "current": {
+              "selected": true,
+              "text": [
+                "All"
+              ],
+              "value": [
+                "$__all"
+              ]
+            }
+          },
+          {
+            "name": "namespace",
+            "label": "Namespace",
+            "type": "query",
+            "datasource": {
+              "type": "loki",
+              "uid": "loki"
+            },
+            "multi": true,
+            "includeAll": true,
+            "allValue": ".*",
+            "current": {
+              "selected": true,
+              "text": [
+                "All"
+              ],
+              "value": [
+                "$__all"
+              ]
+            },
+            "query": {
+              "type": 1,
+              "label": "k8s_ns_name",
+              "stream": "{source=\"syscall\"}",
+              "refId": "LokiVariableQueryEditor-VariableQuery"
+            },
+            "definition": "label_values({source=\"syscall\"}, k8s_ns_name)",
+            "refresh": 2,
+            "sort": 1
+          },
+          {
+            "name": "rule",
+            "label": "Rule",
+            "type": "query",
+            "datasource": {
+              "type": "loki",
+              "uid": "loki"
+            },
+            "multi": true,
+            "includeAll": true,
+            "allValue": ".+",
+            "current": {
+              "selected": true,
+              "text": [
+                "All"
+              ],
+              "value": [
+                "$__all"
+              ]
+            },
+            "query": {
+              "type": 1,
+              "label": "rule",
+              "stream": "{source=\"syscall\"}",
+              "refId": "LokiVariableQueryEditor-VariableQuery"
+            },
+            "definition": "label_values({source=\"syscall\"}, rule)",
+            "refresh": 2,
+            "sort": 1
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Critical / Alert / Emergency",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 0,
+            "y": 0
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "queryType": "instant",
+              "expr": "sum(count_over_time({source=\"syscall\", priority=~\"Critical|Alert|Emergency\", k8s_ns_name=~\"$namespace\", rule=~\"$rule\"} [$__range])) or vector(0)"
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Error",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 6,
+            "y": 0
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "queryType": "instant",
+              "expr": "sum(count_over_time({source=\"syscall\", priority=~\"Error\", k8s_ns_name=~\"$namespace\", rule=~\"$rule\"} [$__range])) or vector(0)"
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Warning",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 12,
+            "y": 0
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "queryType": "instant",
+              "expr": "sum(count_over_time({source=\"syscall\", priority=~\"Warning\", k8s_ns_name=~\"$namespace\", rule=~\"$rule\"} [$__range])) or vector(0)"
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Notice",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 18,
+            "y": 0
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "queryType": "instant",
+              "expr": "sum(count_over_time({source=\"syscall\", priority=~\"Notice\", k8s_ns_name=~\"$namespace\", rule=~\"$rule\"} [$__range])) or vector(0)"
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "blue",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 5,
+          "type": "timeseries",
+          "title": "Events over time",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 4
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "legendFormat": "{{priority}}",
+              "expr": "sum by (priority) (count_over_time({source=\"syscall\", priority=~\"$priority\", k8s_ns_name=~\"$namespace\", rule=~\"$rule\"} [$__interval]))"
+            }
+          ],
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "bars",
+                "fillOpacity": 80,
+                "lineWidth": 1,
+                "stacking": {
+                  "mode": "normal",
+                  "group": "A"
+                }
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Emergency"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "dark-red"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Alert"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "dark-red"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Critical"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "red"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Error"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "orange"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Warning"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "yellow"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Notice"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "blue"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Informational"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "text"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Debug"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "text"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": 6,
+          "type": "bargauge",
+          "title": "Top rules",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 10,
+            "x": 0,
+            "y": 12
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "queryType": "instant",
+              "legendFormat": "{{rule}}",
+              "expr": "topk(15, sum by (rule) (count_over_time({source=\"syscall\", priority=~\"$priority\", k8s_ns_name=~\"$namespace\", rule=~\"$rule\"} [$__range])))"
+            }
+          ],
+          "options": {
+            "orientation": "horizontal",
+            "displayMode": "basic",
+            "showUnfilled": true,
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "valueMode": "color"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "blue"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 7,
+          "type": "bargauge",
+          "title": "Top namespaces",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 7,
+            "x": 10,
+            "y": 12
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "queryType": "instant",
+              "legendFormat": "{{k8s_ns_name}}",
+              "expr": "topk(15, sum by (k8s_ns_name) (count_over_time({source=\"syscall\", priority=~\"$priority\", k8s_ns_name=~\"$namespace\", rule=~\"$rule\"} [$__range])))"
+            }
+          ],
+          "options": {
+            "orientation": "horizontal",
+            "displayMode": "basic",
+            "showUnfilled": true,
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "valueMode": "color"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "blue"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 8,
+          "type": "bargauge",
+          "title": "Top pods",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 7,
+            "x": 17,
+            "y": 12
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "queryType": "instant",
+              "legendFormat": "{{k8s_pod_name}}",
+              "expr": "topk(15, sum by (k8s_pod_name) (count_over_time({source=\"syscall\", priority=~\"$priority\", k8s_ns_name=~\"$namespace\", rule=~\"$rule\"} [$__range])))"
+            }
+          ],
+          "options": {
+            "orientation": "horizontal",
+            "displayMode": "basic",
+            "showUnfilled": true,
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "valueMode": "color"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "blue"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 9,
+          "type": "logs",
+          "title": "Warning and above (newest first)",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 24,
+            "x": 0,
+            "y": 21
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "expr": "{source=\"syscall\", priority=~\"Warning|Error|Critical|Alert|Emergency\", k8s_ns_name=~\"$namespace\", rule=~\"$rule\"} | json | line_format \"{{.priority}} | {{.rule}} | {{.hostname}} {{.output_fields_k8s_ns_name}}/{{.output_fields_k8s_pod_name}} | {{.output_fields_proc_cmdline}} {{.output_fields_fd_name}}\""
+            }
+          ],
+          "options": {
+            "showTime": true,
+            "wrapLogMessage": true,
+            "sortOrder": "Descending",
+            "enableLogDetails": true,
+            "dedupStrategy": "none"
+          }
+        },
+        {
+          "id": 10,
+          "type": "logs",
+          "title": "All events (raw)",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "collapsed": false,
+          "gridPos": {
+            "h": 12,
+            "w": 24,
+            "x": 0,
+            "y": 35
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "expr": "{source=\"syscall\", priority=~\"$priority\", k8s_ns_name=~\"$namespace\", rule=~\"$rule\"} | json | line_format \"{{.output}}\""
+            }
+          ],
+          "options": {
+            "showTime": false,
+            "wrapLogMessage": true,
+            "sortOrder": "Descending",
+            "enableLogDetails": true
+          }
+        }
+      ]
+    }

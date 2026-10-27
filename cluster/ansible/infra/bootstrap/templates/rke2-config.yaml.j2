@@ -14,3 +14,10 @@ advertise-address: "{{ ansible_host }}"
 # Fixed upstream DNS (written by maintenance/configure-dns.yml); avoids the
 # 8.8.8.8 fallback that breaks the *.cloud / *.local split horizon.
 resolv-conf: "/etc/rancher/rke2/resolv.conf"
+# API audit log to the apiserver's stdout: the otel collector already ships
+# /var/log/pods to Loki, so no extra log shipper or hostPath is needed.
+# Policy: templates/rke2-audit-policy.yaml.j2.
+audit-policy-file: /etc/rancher/rke2/audit-policy.yaml
+kube-apiserver-arg:
+  - "audit-log-path=-"
+  - "audit-log-format=json"

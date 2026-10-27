@@ -1,0 +1,53 @@
+# Kubernetes API audit policy. First matching rule wins.
+# Never raise Secret/ConfigMap/TokenReview above Metadata: Request/RequestResponse
+# would write their contents into the log (and Loki).
+apiVersion: audit.k8s.io/v1
+kind: Policy
+omitStages:
+  - RequestReceived
+rules:
+  # Pure noise: health/metrics probes, events, leader-election leases
+  - level: None
+    nonResourceURLs:
+      - /healthz*
+      - /livez*
+      - /readyz*
+      - /version
+      - /metrics
+      - /openapi*
+  - level: None
+    resources:
+      - group: ""
+        resources: [events]
+      - group: events.k8s.io
+        resources: [events]
+      - group: coordination.k8s.io
+        resources: [leases]
+
+  # Who touched secrets (any verb, including reads): user, object, verb, result
+  - level: Metadata
+    resources:
+      - group: ""
+        resources: [secrets, configmaps, serviceaccounts/token]
+      - group: authentication.k8s.io
+        resources: [tokenreviews]
+
+  # Interactive access into pods
+  - level: Metadata
+    resources:
+      - group: ""
+        resources: [pods/exec, pods/attach, pods/portforward, pods/proxy, nodes/proxy, services/proxy]
+
+  # RBAC and admission changes: keep the request body (what was granted)
+  - level: Request
+    verbs: [create, update, patch, delete, deletecollection]
+    resources:
+      - group: rbac.authorization.k8s.io
+      - group: admissionregistration.k8s.io
+
+  # Other reads are controllers watching the world; drop them
+  - level: None
+    verbs: [get, list, watch]
+
+  # Every remaining write: who changed what
+  - level: Metadata

@@ -7,7 +7,7 @@
     - name: Collect all ansible_host values from inventory
       ansible.builtin.set_fact:
         all_ansible_hosts: "{{ groups['all'] | map('extract', hostvars, 'ansible_host') | list | unique }}"
-      tags: [bootstrap, rke2, server]
+      tags: [bootstrap, rke2, server, config]
 
     - name: Create RKE2 config directory
       ansible.builtin.file:
@@ -22,6 +22,15 @@
         dest: /etc/rancher/rke2/config.yaml
         mode: '0640'
       tags: [bootstrap, rke2, server, config]
+      notify: Restart rke2-server
+
+    - name: Create Kubernetes API audit policy
+      ansible.builtin.template:
+        src: rke2-audit-policy.yaml.j2
+        dest: /etc/rancher/rke2/audit-policy.yaml
+        mode: '0600'
+      tags: [bootstrap, rke2, server, config, audit]
+      notify: Restart rke2-server
 
     - name: Install and start RKE2 server
       tags: [bootstrap, rke2, server]
@@ -107,3 +116,11 @@
         group: "{{ lookup('env', 'USER') }}"
         mode: '0600'
       tags: [bootstrap, rke2, server, kubeconfig]
+
+  handlers:
+    # Restarts the control plane (API down ~1-2 min; running pods are unaffected).
+    # Only fires when the config or audit policy actually changed.
+    - name: Restart rke2-server
+      ansible.builtin.systemd:
+        name: rke2-server.service
+        state: restarted

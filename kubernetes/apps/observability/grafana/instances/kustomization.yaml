@@ -9,5 +9,6 @@ resources:
   - servicemonitor.yaml
   - datasource-prometheus.yaml
   - dashboard-prometheus.yaml
+  - dashboard-falco.yaml
   - secret.yaml
   - serviceaccount-mcp.yaml

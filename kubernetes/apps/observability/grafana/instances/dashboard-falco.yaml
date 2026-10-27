@@ -1,6 +1,8 @@
 ---
 # Falco runtime events (falcosidekick -> Loki, stream labels priority/rule/k8s_ns_name/
-# k8s_pod_name). To change it: edit in Grafana, export JSON, paste it back here.
+# k8s_pod_name) plus the Kubernetes API audit log (kube-apiserver stdout, policy in
+# cluster/ansible/infra/bootstrap/templates/rke2-audit-policy.yaml.j2).
+# To change it: edit in Grafana, export JSON, paste it back here.
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadashboard_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
@@ -712,6 +714,393 @@ spec:
             "wrapLogMessage": true,
             "sortOrder": "Descending",
             "enableLogDetails": true
+          }
+        },
+        {
+          "id": 20,
+          "type": "row",
+          "title": "Kubernetes API audit",
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 47
+          },
+          "panels": []
+        },
+        {
+          "id": 21,
+          "type": "stat",
+          "title": "exec / attach / port-forward",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 0,
+            "y": 48
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "queryType": "instant",
+              "expr": "sum(count_over_time({k8s_namespace_name=\"kube-system\", k8s_pod_name=~\"kube-apiserver.*\"} |= \"audit.k8s.io/v1\" | json | objectRef_subresource=~\"exec|attach|portforward|proxy\" [$__range])) or vector(0)"
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 22,
+          "type": "stat",
+          "title": "RBAC changes outside Flux",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 6,
+            "y": 48
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "queryType": "instant",
+              "expr": "sum(count_over_time({k8s_namespace_name=\"kube-system\", k8s_pod_name=~\"kube-apiserver.*\"} |= \"audit.k8s.io/v1\" | json | objectRef_apiGroup=\"rbac.authorization.k8s.io\", verb=~\"create|update|patch|delete|deletecollection\", responseStatus_code=~\"2..\", user_username!~\"system:serviceaccount:flux-system:.*|system:rke2-supervisor|system:serviceaccount:storage:cloudnative-pg-operator\" [$__range])) or vector(0)"
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 23,
+          "type": "stat",
+          "title": "Denied requests (excl. kubelets)",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 12,
+            "y": 48
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "queryType": "instant",
+              "expr": "sum(count_over_time({k8s_namespace_name=\"kube-system\", k8s_pod_name=~\"kube-apiserver.*\"} |= \"audit.k8s.io/v1\" | json | responseStatus_code=~\"401|403\", user_username!~\"system:node:.*\" [$__range])) or vector(0)"
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 24,
+          "type": "stat",
+          "title": "Secret access by humans",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 18,
+            "y": 48
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "queryType": "instant",
+              "expr": "sum(count_over_time({k8s_namespace_name=\"kube-system\", k8s_pod_name=~\"kube-apiserver.*\"} |= \"audit.k8s.io/v1\" | json | objectRef_resource=\"secrets\", user_username!~\"system:.*\" [$__range])) or vector(0)"
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 25,
+          "type": "bargauge",
+          "title": "Secret reads by account",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 12,
+            "x": 0,
+            "y": 52
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "queryType": "instant",
+              "legendFormat": "{{user_username}}",
+              "expr": "topk(20, sum by (user_username) (count_over_time({k8s_namespace_name=\"kube-system\", k8s_pod_name=~\"kube-apiserver.*\"} |= \"audit.k8s.io/v1\" | json | objectRef_resource=\"secrets\", verb=~\"get|list\" [$__range])))"
+            }
+          ],
+          "options": {
+            "orientation": "horizontal",
+            "displayMode": "basic",
+            "showUnfilled": true,
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "purple"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 26,
+          "type": "bargauge",
+          "title": "Writes by account",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 12,
+            "x": 12,
+            "y": 52
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "queryType": "instant",
+              "legendFormat": "{{user_username}}",
+              "expr": "topk(20, sum by (user_username) (count_over_time({k8s_namespace_name=\"kube-system\", k8s_pod_name=~\"kube-apiserver.*\"} |= \"audit.k8s.io/v1\" | json | verb=~\"create|update|patch|delete|deletecollection\" [$__range])))"
+            }
+          ],
+          "options": {
+            "orientation": "horizontal",
+            "displayMode": "basic",
+            "showUnfilled": true,
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "blue"
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 27,
+          "type": "logs",
+          "title": "Interesting API calls: exec/attach/port-forward, RBAC changes, denials, human secret access",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 12,
+            "w": 24,
+            "x": 0,
+            "y": 62
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "expr": "{k8s_namespace_name=\"kube-system\", k8s_pod_name=~\"kube-apiserver.*\"} |= \"audit.k8s.io/v1\" | json | objectRef_subresource=~\"exec|attach|portforward|proxy\" | line_format \"{{.user_username}} {{.verb}} {{.objectRef_resource}}{{if .objectRef_subresource}}/{{.objectRef_subresource}}{{end}} {{.objectRef_namespace}}/{{.objectRef_name}} -> {{.responseStatus_code}}\""
+            },
+            {
+              "refId": "B",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "expr": "{k8s_namespace_name=\"kube-system\", k8s_pod_name=~\"kube-apiserver.*\"} |= \"audit.k8s.io/v1\" | json | objectRef_apiGroup=\"rbac.authorization.k8s.io\", verb=~\"create|update|patch|delete|deletecollection\", responseStatus_code=~\"2..\", user_username!~\"system:serviceaccount:flux-system:.*|system:rke2-supervisor|system:serviceaccount:storage:cloudnative-pg-operator\" | line_format \"{{.user_username}} {{.verb}} {{.objectRef_resource}}{{if .objectRef_subresource}}/{{.objectRef_subresource}}{{end}} {{.objectRef_namespace}}/{{.objectRef_name}} -> {{.responseStatus_code}}\""
+            },
+            {
+              "refId": "C",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "expr": "{k8s_namespace_name=\"kube-system\", k8s_pod_name=~\"kube-apiserver.*\"} |= \"audit.k8s.io/v1\" | json | responseStatus_code=~\"401|403\", user_username!~\"system:node:.*\" | line_format \"{{.user_username}} {{.verb}} {{.objectRef_resource}}{{if .objectRef_subresource}}/{{.objectRef_subresource}}{{end}} {{.objectRef_namespace}}/{{.objectRef_name}} -> {{.responseStatus_code}}\""
+            },
+            {
+              "refId": "D",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "expr": "{k8s_namespace_name=\"kube-system\", k8s_pod_name=~\"kube-apiserver.*\"} |= \"audit.k8s.io/v1\" | json | objectRef_resource=\"secrets\", user_username!~\"system:.*\" | line_format \"{{.user_username}} {{.verb}} {{.objectRef_resource}}{{if .objectRef_subresource}}/{{.objectRef_subresource}}{{end}} {{.objectRef_namespace}}/{{.objectRef_name}} -> {{.responseStatus_code}}\""
+            }
+          ],
+          "options": {
+            "showTime": true,
+            "wrapLogMessage": true,
+            "sortOrder": "Descending",
+            "enableLogDetails": true,
+            "dedupStrategy": "none"
           }
         }
       ]

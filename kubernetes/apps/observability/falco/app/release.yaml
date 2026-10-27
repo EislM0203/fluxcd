@@ -65,6 +65,107 @@ spec:
                 - [forgejo-runners]
           override:
             exceptions: append
+
+        # Exceptions below were taken from the first day of events in Loki. Each is pinned to
+        # image (plus process or namespace), so the same behaviour in another workload
+        # still fires. Pull-through images keep their harbor.cloud.traunseenet.com prefix.
+
+        # kube-vip answers ARP for the API/LoadBalancer VIPs on a raw packet socket.
+        - rule: Packet socket created in container
+          exceptions:
+            - name: kube_vip
+              fields: [k8s.ns.name, container.image.repository]
+              values:
+                - [kube-system, ghcr.io/kube-vip/kube-vip]
+          override:
+            exceptions: append
+
+        # Controllers and operators whose job is talking to the API server.
+        - rule: Contact K8S API Server From Container
+          exceptions:
+            - name: controllers
+              fields: [k8s.ns.name, container.image.repository]
+              values:
+                # CI jobs deploy with kubectl by design (the runner's own SA scopes them)
+                - [forgejo-runners, harbor.cloud.traunseenet.com/docker.io/alpine/k8s]
+                - [flux-system, ghcr.io/fluxcd/kustomize-controller]
+                - [flux-system, ghcr.io/fluxcd/helm-controller]
+                - [flux-system, ghcr.io/fluxcd/source-controller]
+                - [flux-system, ghcr.io/fluxcd/source-watcher]
+                - [flux-system, ghcr.io/fluxcd/notification-controller]
+                - [flux-system, ghcr.io/fluxcd/image-automation-controller]
+                - [flux-system, ghcr.io/fluxcd/image-reflector-controller]
+                - [longhorn-system, docker.io/longhornio/longhorn-manager]
+                - [longhorn-system, docker.io/longhornio/csi-provisioner]
+                - [longhorn-system, docker.io/longhornio/csi-resizer]
+                - [longhorn-system, docker.io/longhornio/csi-snapshotter]
+                - [longhorn-system, docker.io/longhornio/csi-attacher]
+                - [networking, docker.io/library/traefik]
+                - [networking, registry.k8s.io/external-dns/external-dns]
+                - [observability, registry.k8s.io/kube-state-metrics/kube-state-metrics]
+                - [observability, ghcr.io/grafana/grafana-operator]
+                - [observability, docker.io/otel/opentelemetry-collector-k8s]
+                - [observability, ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator]
+                - [observability, docker.io/grafana/beyla]
+                - [observability, ghcr.io/grafana/alloy-operator]
+                - [auth, harbor.cloud.traunseenet.com/docker.io/hashicorp/vault]
+                - [auth, harbor.cloud.traunseenet.com/ghcr.io/external-secrets/external-secrets]
+                - [auth, quay.io/jetstack/cert-manager-controller]
+                - [auth, quay.io/jetstack/cert-manager-webhook]
+                - [storage, ghcr.io/cloudnative-pg/cloudnative-pg]
+                - [storage, quay.io/backube/volsync]
+                # CNPG instance managers and their barman plugin sidecars
+                - [storage, ghcr.io/cloudnative-pg/postgresql]
+                - [storage, ghcr.io/cloudnative-pg/plugin-barman-cloud]
+                - [storage, ghcr.io/cloudnative-pg/plugin-barman-cloud-sidecar]
+                - [apps, ghcr.io/cloudnative-pg/postgresql]
+                - [apps, ghcr.io/tensorchord/cloudnative-vectorchord]
+                - [apps, ghcr.io/cloudnative-pg/plugin-barman-cloud-sidecar]
+                - [apps, harbor.cloud.traunseenet.com/ghcr.io/containers/kubernetes-mcp-server]
+          override:
+            exceptions: append
+
+        # Postgres runs archive_command/restore_command through /bin/sh.
+        - rule: Run shell untrusted
+          exceptions:
+            - name: cnpg_archive
+              fields: [container.image.repository, proc.pname]
+              values:
+                - [ghcr.io/cloudnative-pg/postgresql, postgres]
+                - [ghcr.io/tensorchord/cloudnative-vectorchord, postgres]
+          override:
+            exceptions: append
+
+        # The document server's converter runs x2t from its own (writable) layer.
+        - rule: Drop and execute new binary in container
+          exceptions:
+            - name: eurooffice_x2t
+              fields: [container.image.repository, proc.exepath]
+              values:
+                - [harbor.cloud.traunseenet.com/ghcr.io/euro-office/documentserver, /var/www/euro-office/documentserver/server/FileConverter/bin/x2t]
+          override:
+            exceptions: append
+
+        # longhorn-manager drives the engine binary over a socket.
+        - rule: Redirect STDOUT/STDIN to Network Connection in Container
+          exceptions:
+            - name: longhorn_engine
+              fields: [container.image.repository, proc.name]
+              values:
+                - [docker.io/longhornio/longhorn-manager, longhorn]
+          override:
+            exceptions: append
+
+        # containerd opens /var/log/* inside image layers while unpacking them.
+        - rule: Clear Log Activities
+          exceptions:
+            - name: containerd_unpack
+              fields: [proc.name, fd.name]
+              comps: [=, startswith]
+              values:
+                - [containerd, /var/lib/rancher/rke2/agent/containerd/]
+          override:
+            exceptions: append
     falcosidekick:
       enabled: true
       replicaCount: 1

@@ -1,0 +1,89 @@
+---
+# Runtime threat detection. Falco watches syscalls on each node's kernel (modern eBPF,
+# no kernel module) and hands events to falcosidekick, which ships them to Loki.
+# Blind spot: Kata pods (dsh) run on their own guest kernel; Falco only sees QEMU.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: falco
+  namespace: observability
+spec:
+  interval: 15m
+  timeout: 15m
+  chart:
+    spec:
+      chart: falco
+      version: 9.2.1
+      sourceRef:
+        kind: HelmRepository
+        name: falcosecurity
+        namespace: flux-system
+  maxHistory: 2
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    driver:
+      kind: modern_ebpf
+    # The container plugin already reads pod name/namespace from the CRI (RKE2's
+    # containerd socket is in its default list); the k8smeta collector would add a
+    # cluster-wide metacollector Deployment for little extra.
+    collectors:
+      kubernetes:
+        enabled: false
+    # Rules ship with the chart's falcoctl install step; no live rule updates, so a
+    # rules change only arrives with a chart bump (Renovate).
+    falcoctl:
+      artifact:
+        follow:
+          enabled: false
+    falco:
+      json_output: true
+      json_include_output_property: true
+      priority: notice
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 512Mi
+    customRules:
+      exceptions.yaml: |-
+        # forgejo-runners: CI jobs spawn shells in containers by design. Only this
+        # rule is relaxed there; token reads, host writes, reverse shells etc. still fire.
+        - rule: Terminal shell in container
+          exceptions:
+            - name: ci_runners
+              fields: [k8s.ns.name]
+              values:
+                - [forgejo-runners]
+          override:
+            exceptions: append
+    falcosidekick:
+      enabled: true
+      replicaCount: 1
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 128Mi
+      config:
+        loki:
+          hostport: http://grafana-loki.observability.svc.cluster.local:3100
+          format: json
+          # dashboards here come from the Grafana operator, not ConfigMap sidecars
+          grafanaDashboard:
+            enabled: false
+        # Off for the first week while exceptions are tuned from what lands in Loki.
+        # Then: hostport http://prometheus-stack-kube-prom-alertmanager.observability.svc.cluster.local:9093,
+        # endpoint /api/v2/alerts, minimumpriority error (default severity map:
+        # critical+ -> critical, error/warning -> warning).
+        alertmanager:
+          hostport: ""

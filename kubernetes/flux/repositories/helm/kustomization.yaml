@@ -18,3 +18,4 @@ resources:
   - ./external-secrets.yaml
   - ./hashicorp.yaml
   - ./crowdsec.yaml
+  - ./falcosecurity.yaml

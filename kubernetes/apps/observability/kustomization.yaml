@@ -6,4 +6,5 @@ resources:
   - ./prometheus/ks.yaml
   - ./grafana/ks.yaml
   - ./otelcol/ks.yaml
+  - ./falco/ks.yaml
   - namespace.yaml

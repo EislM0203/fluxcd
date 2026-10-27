@@ -55,23 +55,6 @@ spec:
         - envName: VAULT_AUTO_UNSEAL_KEY_0
           secretName: vault-token
           secretKey: VAULT_AUTO_UNSEAL_KEY_0
-      # TEMPORARY: Vault 2.0 requires a token for sys/generate-root (CVE-2026-5807).
-      # Re-enabled only long enough to mint a root token from the unseal key;
-      # revert this block right after. Otherwise identical to the chart default.
-      standalone:
-        config: |-
-          ui = true
-          enable_unauthenticated_access = ["generate-root"]
-
-          listener "tcp" {
-            tls_disable = 1
-            address = "[::]:8200"
-            cluster_address = "[::]:8201"
-          }
-          storage "file" {
-            path = "/vault/data"
-          }
-          disable_mlock = true
       volumes:
         - name: &data-pvc vault-data
           persistentVolumeClaim:

@@ -182,9 +182,9 @@ spec:
           # dashboards here come from the Grafana operator, not ConfigMap sidecars
           grafanaDashboard:
             enabled: false
-        # Off for the first week while exceptions are tuned from what lands in Loki.
-        # Then: hostport http://prometheus-stack-kube-prom-alertmanager.observability.svc.cluster.local:9093,
-        # endpoint /api/v2/alerts, minimumpriority error (default severity map:
-        # critical+ -> critical, error/warning -> warning).
+        # Warning and above go to Alertmanager; the default severity map (critical+ ->
+        # critical, error/warning -> warning) lands on the existing ntfy routes.
         alertmanager:
-          hostport: ""
+          hostport: http://prometheus-stack-kube-prom-alertmanager.observability.svc.cluster.local:9093
+          endpoint: /api/v2/alerts
+          minimumpriority: warning

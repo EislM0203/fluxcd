@@ -22,6 +22,10 @@ data:
   OTEL_EXPORTER_OTLP_ENDPOINT: http://opentelemetry-collector.observability.svc.cluster.local:4317
   OTEL_RESOURCE_ATTRIBUTES: service.name=open-webui
   OTEL_EXPORTER_OTLP_INSECURE: "true"
+  # Don't trace the socket.io websocket: a browser tab left open puts every frame
+  # (one span each) into a single connection trace, which grows past Tempo's 5 MB
+  # max trace size within hours and gets its spans discarded (TRACE_TOO_LARGE).
+  OTEL_PYTHON_FASTAPI_EXCLUDED_URLS: "/ws/socket\\.io"
   WEB_SEARCH_CONCURRENT_REQUESTS: "10"
   WEB_SEARCH_ENGINE: searxng
   WEB_SEARCH_RESULT_COUNT: "3"

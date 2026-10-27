@@ -23,6 +23,47 @@ rules:
         resources: [events]
       - group: coordination.k8s.io
         resources: [leases]
+      # metrics-server/webhooks asking "may X do Y" on every scrape
+      - group: authorization.k8s.io
+      # RKE2's own addon reconcile loop
+      - group: k3s.cattle.io
+  # Watches are long-lived controller streams that re-open every few minutes;
+  # get/list on secrets is still logged below
+  - level: None
+    verbs: [watch]
+  # Kubelets reading what their pods mount (the node authorizer already scopes this)
+  - level: None
+    userGroups: ["system:nodes"]
+    verbs: [get, list, watch]
+  # Controllers reporting status: by far the bulk of writes, no security value
+  - level: None
+    verbs: [update, patch]
+    resources:
+      - group: ""
+        resources: ["*/status"]
+      - group: apps
+        resources: ["*/status"]
+      - group: batch
+        resources: ["*/status"]
+      - group: external-secrets.io
+        resources: ["*/status"]
+      - group: volsync.backube
+        resources: ["*/status"]
+      - group: postgresql.cnpg.io
+        resources: ["*/status"]
+      - group: helm.toolkit.fluxcd.io
+        resources: ["*/status"]
+      - group: kustomize.toolkit.fluxcd.io
+        resources: ["*/status"]
+      - group: source.toolkit.fluxcd.io
+        resources: ["*/status"]
+      - group: cert-manager.io
+        resources: ["*/status"]
+  # Longhorn managing its own CRs (engines, replicas, nodes, ...)
+  - level: None
+    users: ["system:serviceaccount:longhorn-system:longhorn-service-account"]
+    resources:
+      - group: longhorn.io
 
   # Who touched secrets (any verb, including reads): user, object, verb, result
   - level: Metadata

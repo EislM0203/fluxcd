@@ -59,6 +59,15 @@ spec:
                 secretKeyRef:
                   name: dsh
                   key: BIFROST_VK
+            # mdmem owner API token for the Memory panel plugin (its config tokenEnv).
+            # Same value as API_TOKEN in secret/apps/mdmem. Optional, so the pod still
+            # starts before the key exists; the panel then answers 503.
+            - name: MDMEM_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: dsh
+                  key: MDMEM_API_TOKEN
+                  optional: true
           ports:
             - name: http
               containerPort: 3080

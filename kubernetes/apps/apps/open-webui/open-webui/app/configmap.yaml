@@ -12,10 +12,13 @@ data:
   ENABLE_OLLAMA_API: "false"
   ENABLE_LOGIN_FORM: "false"
   ENABLE_SUBAGENTS: "true"
-  # Summarize older messages once a chat passes the threshold (default 80000 est.
-  # tokens, keeps the newest 40%). Strata's window is 122880, and the summary request
-  # carries the compacted messages, so the threshold has to stay well below it.
+  # Summarize older messages once a chat passes the threshold (keeps the newest 40%).
+  # Strata's window is 229376 (kv-grow, 2026-10-29), and the summary request carries the
+  # compacted messages, so the threshold has to stay well below it.
+  # PersistentConfig: these env values only seed keys that are not in the database yet;
+  # once stored, change them in Admin Panel > Settings instead.
   ENABLE_CONTEXT_COMPACTION: "true"
+  CONTEXT_COMPACTION_TOKEN_THRESHOLD: "170000"
   OAUTH_MERGE_ACCOUNTS_BY_EMAIL: "true"
   # LLM traffic is routed through the Bifrost AI gateway (OpenAI-compatible /v1).
   # Bifrost fronts llama-swap (10.0.0.59:9000) and applies OTel + MCP server-side.

@@ -351,6 +351,20 @@ spec:
                 - severity="info"
               receiver: null-receiver
 
+            # Falco (falcosidekick) alerts have no alertname or namespace label: group them by
+            # rule and namespace instead, so different events don't merge into one message.
+            - matchers:
+                - source="falco"
+              group_by: ['rule', 'k8s_ns_name']
+              routes:
+                - matchers:
+                    - severity="critical"
+                  receiver: ntfy-critical
+                  repeat_interval: 1h
+                - matchers:
+                    - severity="warning"
+                  receiver: ntfy-warning
+
             # Critical -> dedicated topic, faster repeat
             - matchers:
                 - severity="critical"
@@ -364,8 +378,11 @@ spec:
 
         inhibit_rules:
           # If critical is firing, suppress warning/info for same thing
+          # (not for Falco: its alerts share empty alertname/namespace labels, so one critical
+          # event would silence every Falco warning)
           - source_matchers:
               - severity="critical"
+              - source!="falco"
             target_matchers:
               - severity=~"warning|info"
             equal: ['alertname', 'cluster', 'namespace']
@@ -376,21 +393,21 @@ spec:
           # Default / fallback
           - name: ntfy-default
             webhook_configs:
-              - url: "http://ntfy.apps.svc.cluster.local/am-default?template=alertmanager"
+              - url: "http://ntfy.apps.svc.cluster.local/am-default?template=alertmanager-plus"
                 send_resolved: true
                 http_config:
                   authorization:
                     credentials_file: /etc/alertmanager/secrets/alertmanager-ntfy/token
           - name: ntfy-warning
             webhook_configs:
-              - url: "http://ntfy.apps.svc.cluster.local/am-warning?template=alertmanager"
+              - url: "http://ntfy.apps.svc.cluster.local/am-warning?template=alertmanager-plus"
                 send_resolved: true
                 http_config:
                   authorization:
                     credentials_file: /etc/alertmanager/secrets/alertmanager-ntfy/token
           - name: ntfy-critical
             webhook_configs:
-              - url: "http://ntfy.apps.svc.cluster.local/am-critical?template=alertmanager"
+              - url: "http://ntfy.apps.svc.cluster.local/am-critical?template=alertmanager-plus"
                 send_resolved: true
                 http_config:
                   authorization:

@@ -1,0 +1,47 @@
+---
+# Webhook templates, used as ?template=<name> (NTFY_TEMPLATE_DIR). alertmanager-plus is
+# ntfy's built-in alertmanager template with fallbacks for alerts that carry no alertname,
+# instance or namespace label: falcosidekick sends rule, k8s_ns_name and k8s_pod_name.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ntfy-templates
+data:
+  alertmanager-plus.yml: |
+    title: |
+      {{- $a := first .alerts }}
+      {{- $name := or $a.labels.alertname $a.labels.rule "alert" }}
+      {{- $ns := or $a.labels.namespace $a.labels.k8s_ns_name }}
+      {{- if eq .status "firing" }}
+      🚨 {{ $name }}{{ if $ns }} ({{ $ns }}){{ end }}
+      {{- else if eq .status "resolved" }}
+      ✅ Resolved: {{ $name }}{{ if $ns }} ({{ $ns }}){{ end }}
+      {{- else }}
+      {{ fail "Unsupported Alertmanager status." }}
+      {{- end }}
+    message: |
+      Status: {{ .status | title }}
+      Receiver: {{ .receiver }}
+
+      {{- range .alerts }}
+      Alert: {{ or .labels.alertname .labels.rule }}
+      {{- with or .labels.instance .labels.k8s_pod_name .labels.hostname }}
+      Instance: {{ . }}
+      {{- end }}
+      {{- with or .labels.namespace .labels.k8s_ns_name }}
+      Namespace: {{ . }}
+      {{- end }}
+      Severity: {{ .labels.severity }}
+      Starts at: {{ .startsAt }}
+      {{ if and .endsAt (ne .endsAt "0001-01-01T00:00:00Z") }}Ends at: {{ .endsAt }}{{ end }}
+      {{- if .annotations.summary }}
+      Summary: {{ .annotations.summary }}
+      {{- end }}
+      {{- if .annotations.description }}
+      Description: {{ .annotations.description }}
+      {{- end }}
+      {{- if .generatorURL }}
+      Source: {{ .generatorURL }}
+      {{- end }}
+
+      {{ end }}

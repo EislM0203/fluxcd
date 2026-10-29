@@ -28,6 +28,13 @@ spec:
       retries: 3
   uninstall:
     keepHistory: false
+  # Exceptions that would reveal private workloads live in a SOPS encrypted Secret
+  # (key values.yaml, a customRules entry of its own). Flux merges it under these values.
+  valuesFrom:
+    - kind: Secret
+      name: falco-private-rules
+      valuesKey: values.yaml
+      optional: true
   values:
     driver:
       kind: modern_ebpf

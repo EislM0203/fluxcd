@@ -12,7 +12,7 @@
 - id: traunseenet-lab/strata-container
   host: git.cloud.traunseenet.com
   default_ref: main
-  about: Rootless podman setup serving Qwen3.8-Flash-Next via Strata + llama-swap on the EVO-X2 (llamaswap-prod.json is the prod config snapshot)
+  about: Rootless podman setup serving Qwen3.8-Flash-Next via Strata + llama-swap on the EVO-X2 (llamaswap-prod.json is the live prod engine config)
 - id: traunseenet-lab/mdmem
   host: git.cloud.traunseenet.com
   default_ref: main

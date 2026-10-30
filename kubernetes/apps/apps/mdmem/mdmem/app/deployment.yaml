@@ -28,7 +28,7 @@ spec:
         - name: mdmem
           # Pin tag AND digest. Renovate opens PRs for new vX.Y.Z releases
           # (library/* pulls anonymously).
-          image: harbor.cloud.traunseenet.com/library/mdmem:0.3.1@sha256:582a0f58a4425684783fd3b58aee75521213dcb5b0b6b3926b736646c5cff164
+          image: harbor.cloud.traunseenet.com/library/mdmem:0.4.0@sha256:8614a7f53084f2e080135dd3fc62e47666912f0e881be1df3ed5704b7c7b4469
           imagePullPolicy: IfNotPresent
           args: ["serve"]
           securityContext:
@@ -56,6 +56,9 @@ spec:
               mountPath: /data
             - name: tmp
               mountPath: /tmp
+            - name: repos
+              mountPath: /config
+              readOnly: true
           livenessProbe:
             httpGet:
               path: /healthz
@@ -87,3 +90,6 @@ spec:
             claimName: mdmem-data
         - name: tmp
           emptyDir: {}
+        - name: repos
+          configMap:
+            name: mdmem-repos    # anchor registry (REPOS_FILE)

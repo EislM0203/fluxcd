@@ -12,6 +12,9 @@ resources:
   - ./networkpolicy.yaml
   - ./servicemonitor.yaml
 configMapGenerator:
+  - name: mdmem-repos
+    files:
+      - repos.yaml
   - name: mdmem-env
     literals:
       # --- storage ---------------------------------------------------------
@@ -50,6 +53,15 @@ configMapGenerator:
       - OIDC_GROUPS_CLAIM=groups
       - OIDC_REQUIRED_GROUP=mdmem_admins
       - SESSION_TTL_HOURS=12
+      # --- anchors (issue #6) ----------------------------------------------
+      # Registry from the mdmem-repos ConfigMap below. Settings hold only the token
+      # env var NAME; FORGEJO_TOKEN comes from Vault (secret/apps/mdmem). Without
+      # it, Forgejo anchors are ERROR "repo not visible", never stale.
+      # fluxcd is public on GitHub: no token.
+      - REPOS_FILE=/config/repos.yaml
+      - ANCHOR_HOSTS=git.cloud.traunseenet.com=forgejo:FORGEJO_TOKEN,github.com=github
+      - ANCHOR_CHECK_INTERVAL=6h
+      - ANCHOR_MAX_BYTES=1048576
       # --- misc ------------------------------------------------------------
       - LOG_LEVEL=info
       - LOG_STYLE=json

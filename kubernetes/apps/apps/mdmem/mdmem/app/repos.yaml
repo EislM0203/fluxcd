@@ -1,0 +1,15 @@
+# mdmem anchor registry (REPOS_FILE): the allowlist of repos a note may anchor to.
+# Read once at startup; every host must be listed in ANCHOR_HOSTS (kustomization.yaml).
+# Changing this file changes the generated ConfigMap name, so the pod restarts.
+- id: EislM0203/fluxcd
+  host: github.com
+  default_ref: main
+  about: Homelab GitOps repo (RKE2 on Proxmox, Flux, edge VPS, Ansible, OpenTofu)
+- id: traunseenet-lab/fin
+  host: git.cloud.traunseenet.com
+  default_ref: main
+  about: Self-hosted personal net worth tracker (accounts, portfolios, Splitwise, snapshots)
+- id: traunseenet-lab/mdmem
+  host: git.cloud.traunseenet.com
+  default_ref: main
+  about: mdmem itself (memory service, MCP + web UI)

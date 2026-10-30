@@ -18,3 +18,15 @@
         - { name: fs.inotify.max_user_instances, value: "8192" }
         - { name: fs.inotify.max_user_watches, value: "524288" }
       tags: [maintenance, sysctl]
+
+    # CVE-2026-98432 (IPv4 TCP use-after-free): the published root exploit needs an
+    # MPTCP listener. Nothing in the cluster uses MPTCP, so keep it off until Ubuntu
+    # ships a fixed kernel, then decide whether to drop this.
+    - name: Disable MPTCP (persistent, applied immediately)
+      ansible.posix.sysctl:
+        name: net.mptcp.enabled
+        value: "0"
+        sysctl_file: /etc/sysctl.d/90-mptcp-off.conf
+        state: present
+        reload: yes
+      tags: [maintenance, sysctl]

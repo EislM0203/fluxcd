@@ -48,6 +48,8 @@
     content: |
       # Managed by Ansible (edge/ansible)
       net.ipv4.ip_forward = 1
+      # CVE-2026-98432: the published exploit needs an MPTCP listener; the edge uses none.
+      net.mptcp.enabled = 0
       {% for k, v in (edge_sysctls | default({})) | dictsort %}
       {{ k }} = {{ v }}
       {% endfor %}

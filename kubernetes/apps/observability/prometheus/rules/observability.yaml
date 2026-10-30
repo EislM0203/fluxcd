@@ -13,10 +13,12 @@ spec:
         - alert: OtelCollectorExportFailing
           # One sum per signal: rate() over a __name__ regex drops the names and the
           # three series collide ("vector cannot contain metrics with the same labelset").
+          # Collector >= 0.164 exports counters without the `_total` suffix; the
+          # send_failed series only appear once something fails.
           expr: >-
-            sum by (exporter) (rate(otelcol_exporter_send_failed_spans_total[10m])) > 0
-            or sum by (exporter) (rate(otelcol_exporter_send_failed_log_records_total[10m])) > 0
-            or sum by (exporter) (rate(otelcol_exporter_send_failed_metric_points_total[10m])) > 0
+            sum by (exporter) (rate(otelcol_exporter_send_failed_spans[10m])) > 0
+            or sum by (exporter) (rate(otelcol_exporter_send_failed_log_records[10m])) > 0
+            or sum by (exporter) (rate(otelcol_exporter_send_failed_metric_points[10m])) > 0
           for: 15m
           labels:
             severity: warning
@@ -25,9 +27,9 @@ spec:
             description: Telemetry for this backend is being dropped. Check the collector logs and the backend.
         - alert: OtelCollectorRefusingData
           expr: >-
-            sum by (receiver) (rate(otelcol_receiver_refused_spans_total[10m])) > 0
-            or sum by (receiver) (rate(otelcol_receiver_refused_log_records_total[10m])) > 0
-            or sum by (receiver) (rate(otelcol_receiver_refused_metric_points_total[10m])) > 0
+            sum by (receiver) (rate(otelcol_receiver_refused_spans[10m])) > 0
+            or sum by (receiver) (rate(otelcol_receiver_refused_log_records[10m])) > 0
+            or sum by (receiver) (rate(otelcol_receiver_refused_metric_points[10m])) > 0
           for: 15m
           labels:
             severity: warning

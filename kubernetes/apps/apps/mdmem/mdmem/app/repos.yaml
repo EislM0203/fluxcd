@@ -17,3 +17,7 @@
   host: git.cloud.traunseenet.com
   default_ref: main
   about: mdmem itself (memory service, MCP + web UI)
+- id: traunseenet-lab/dsh
+  host: git.cloud.traunseenet.com
+  default_ref: main
+  about: dsh coding-agent image (dsh base + fj + gitconfig as traunsee-bot), its Kata deployment lives in fluxcd

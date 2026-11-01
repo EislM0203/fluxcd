@@ -58,9 +58,11 @@ configMapGenerator:
       # Registry from the mdmem-repos ConfigMap below. Settings hold only the token
       # env var NAME; FORGEJO_TOKEN comes from Vault (secret/apps/mdmem). Without
       # it, Forgejo anchors are ERROR "repo not visible", never stale.
-      # fluxcd is public on GitHub: no token.
+      # fluxcd is public on GitHub, but the anonymous API limit (60/h, shared by the
+      # whole home IP) ran out and turned anchor checks into ERROR; GITHUB_TOKEN is a
+      # read-only fine-grained token (5000/h).
       - REPOS_FILE=/config/repos.yaml
-      - ANCHOR_HOSTS=git.cloud.traunseenet.com=forgejo:FORGEJO_TOKEN,github.com=github
+      - ANCHOR_HOSTS=git.cloud.traunseenet.com=forgejo:FORGEJO_TOKEN,github.com=github:GITHUB_TOKEN
       - ANCHOR_CHECK_INTERVAL=6h
       - ANCHOR_MAX_BYTES=1048576
       # --- tag vocabulary (issue #18, mdmem >= 0.7.0) -----------------------

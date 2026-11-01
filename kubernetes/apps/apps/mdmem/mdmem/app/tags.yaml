@@ -1,0 +1,147 @@
+# mdmem tag vocabulary (TAGS_FILE, issue #18), mounted at /config/tags.yaml next to
+# repos.yaml. Read once at startup: a broken file stops mdmem from starting, and
+# changing it changes the generated ConfigMap name, so the pod restarts.
+# Template and format: tags.example.yaml in traunseenet-lab/mdmem.
+#
+# Rules agents are told: lowercase kebab-case, singular, 2-6 tags, exactly one scope,
+# at most one nature. Aliases rewrite agent writes; unknown tags only warn.
+tags:
+  # scope
+  - {name: dev-tooling, facet: scope}
+  - {name: homelab, facet: scope}
+  - {name: personal, facet: scope}
+  # nature
+  - {name: convention, facet: nature}
+  - {name: gotcha, facet: nature}
+  - {name: incident, facet: nature}
+  # area
+  - {name: agents, facet: area}
+  - {name: backup, facet: area}
+  - {name: benchmark, facet: area}
+  - {name: ci, facet: area}
+  - {name: classification, facet: area}
+  - {name: containers, facet: area}
+  - {name: edge, facet: area}
+  - {name: gateway-api, facet: area}
+  - {name: git, facet: area}
+  - {name: kernel, facet: area}
+  - {name: kubernetes, facet: area}
+  - {name: llm, facet: area}
+  - {name: mcp, facet: area}
+  - {name: networking, facet: area}
+  - {name: observability, facet: area}
+  - {name: privacy, facet: area}
+  - {name: sandbox, facet: area}
+  - {name: secrets, facet: area}
+  - {name: security, facet: area}
+  - {name: shell, facet: area}
+  - {name: storage, facet: area}
+  - {name: systemd, facet: area}
+  - {name: tls, facet: area}
+  # component
+  - {name: actual-budget, facet: component}
+  - {name: ansible, facet: component}
+  - {name: bifrost, facet: component}
+  - {name: cert-manager, facet: component}
+  - {name: cnpg, facet: component}
+  - {name: codepod, facet: component}
+  - {name: crowdsec, facet: component}
+  - {name: descheduler, facet: component}
+  - {name: docker, facet: component}
+  - {name: dsh, facet: component}
+  - {name: evo-x2, facet: component}
+  - {name: external-dns, facet: component}
+  - {name: external-secrets, facet: component}
+  - {name: falco, facet: component}
+  - {name: fin, facet: component}
+  - {name: flash-next, facet: component}
+  - {name: flux, facet: component}
+  - {name: forgejo, facet: component}
+  - {name: gatus, facet: component}
+  - {name: github, facet: component}
+  - {name: grafana, facet: component}
+  - {name: harbor, facet: component}
+  - {name: homepage, facet: component}
+  - {name: immich, facet: component}
+  - {name: jellyfin, facet: component}
+  - {name: karakeep, facet: component}
+  - {name: kata, facet: component}
+  - {name: kube-vip, facet: component}
+  - {name: llama-cpp, facet: component}
+  - {name: llama-swap, facet: component}
+  - {name: loki, facet: component}
+  - {name: longhorn, facet: component}
+  - {name: mdmem, facet: component}
+  - {name: memos, facet: component}
+  - {name: minio, facet: component}
+  - {name: navidrome, facet: component}
+  - {name: nextcloud, facet: component}
+  - {name: ntfy, facet: component}
+  - {name: oauth2-proxy, facet: component}
+  - {name: obsidian, facet: component}
+  - {name: ollama, facet: component}
+  - {name: open-webui, facet: component}
+  - {name: openshell, facet: component}
+  - {name: opentofu, facet: component}
+  - {name: opnsense, facet: component}
+  - {name: otel-collector, facet: component}
+  - {name: paperless, facet: component}
+  - {name: pbs, facet: component}
+  - {name: pocketid, facet: component}
+  - {name: podman, facet: component}
+  - {name: postgres, facet: component}
+  - {name: prometheus, facet: component}
+  - {name: proxmox, facet: component}
+  - {name: renovate, facet: component}
+  - {name: rke2, facet: component}
+  - {name: searxng, facet: component}
+  - {name: silverbullet, facet: component}
+  - {name: sops, facet: component}
+  - {name: starlark, facet: component}
+  - {name: strata, facet: component}
+  - {name: technitium, facet: component}
+  - {name: tempo, facet: component}
+  - {name: track, facet: component}
+  - {name: traefik, facet: component}
+  - {name: trek, facet: component}
+  - {name: truenas, facet: component}
+  - {name: vault, facet: component}
+  - {name: volsync, facet: component}
+  - {name: wireguard, facet: component}
+aliases:
+  branch-protection: drop
+  compose: containers
+  config: drop
+  container: containers
+  conventions: convention
+  correspondents: drop
+  cve: security
+  data-quality: classification
+  decision: drop
+  document-management: drop
+  embeddings: llm
+  fluxcd: flux
+  infrastructure: drop
+  k8s: kubernetes
+  memory: drop
+  open-items: drop
+  opentelemetry: otel-collector
+  plugin: drop
+  plugins: drop
+  preferences: drop
+  procedure: drop
+  python: drop
+  reasoning: llm
+  release: drop
+  restore: drop
+  runbook: drop
+  supply-chain: security
+  tags: drop
+  terraform: opentofu
+  todo: drop
+  tofu: opentofu
+  tool-quirks: gotcha
+  troubleshooting: gotcha
+  tuning: benchmark
+  upgrade: drop
+  workflow: agents

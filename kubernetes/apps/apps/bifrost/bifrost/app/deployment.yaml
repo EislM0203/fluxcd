@@ -75,7 +75,9 @@ spec:
               memory: 512Mi
             limits:
               cpu: "2"
-              memory: 1Gi
+              # ~250-400Mi steady, but bursts of MCP traffic (agent sessions) hit 1Gi and
+              # OOMKilled it (2026-10-31): 503s in every chat until the restart.
+              memory: 2Gi
       volumes:
         - name: bifrost-data
           persistentVolumeClaim:

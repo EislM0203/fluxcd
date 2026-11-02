@@ -18,7 +18,10 @@ spec:
         app.kubernetes.io/part-of: mdmem
         app: mdmem
     spec:
+      automountServiceAccountToken: false   # mdmem never talks to the API server
       securityContext:
+        seccompProfile:
+          type: RuntimeDefault
         runAsUser: 1000
         runAsGroup: 1000
         runAsNonRoot: true
@@ -28,7 +31,7 @@ spec:
         - name: mdmem
           # Pin tag AND digest. Renovate opens PRs for new vX.Y.Z releases
           # (library/* pulls anonymously).
-          image: harbor.cloud.traunseenet.com/library/mdmem:0.7.2@sha256:491d078da6c816174c2307dcdbc3e63f995463821f107e19b1eef3e1e15f8bb1
+          image: harbor.cloud.traunseenet.com/library/mdmem:0.8.1@sha256:6c047fd4874fad9e23fd30f7dfd6c25fb53e16de37bbc85eccbf2c6a90c73385
           imagePullPolicy: IfNotPresent
           args: ["serve"]
           securityContext:
@@ -63,18 +66,21 @@ spec:
             httpGet:
               path: /healthz
               port: ui
+            timeoutSeconds: 5
             initialDelaySeconds: 30
             periodSeconds: 30
           startupProbe:
             httpGet:
               path: /healthz
               port: ui
+            timeoutSeconds: 5
             periodSeconds: 5
             failureThreshold: 36
           readinessProbe:
             httpGet:
               path: /readyz          # never checks Bifrost (§14.17)
               port: ui
+            timeoutSeconds: 5
             initialDelaySeconds: 5
             periodSeconds: 10
           resources:
@@ -89,7 +95,8 @@ spec:
           persistentVolumeClaim:
             claimName: mdmem-data
         - name: tmp
-          emptyDir: {}
+          emptyDir:
+            sizeLimit: 1Gi   # eval runs and caches write here
         - name: repos
           configMap:
             name: mdmem-repos    # anchor registry (REPOS_FILE) + tag vocabulary (TAGS_FILE)

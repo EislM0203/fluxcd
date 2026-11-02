@@ -16,6 +16,22 @@ spec:
   hostnames:
     - memory.cloud.traunseenet.com
   rules:
+    # /metrics and /readyz are for in-cluster scrapes and probes only (the
+    # ServiceMonitor hits the Service directly); publicly they redirect to /.
+    - matches:
+        - path:
+            type: Exact
+            value: /metrics
+        - path:
+            type: Exact
+            value: /readyz
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /
+            statusCode: 302
     - matches:
         - path:
             type: PathPrefix

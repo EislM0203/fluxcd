@@ -42,6 +42,13 @@ spec:
           "prConcurrentLimit": 50,
           "prHourlyLimit": 0,
           "repositories": ["EislM0203/fluxcd"],
+          "hostRules": [
+            {
+              "description": "Own images (library/*) are looked up in Harbor itself, which split-horizon DNS resolves to the LAN; allowInternal is only accepted in this self-hosted config, not in renovate.json.",
+              "matchHost": "harbor.cloud.traunseenet.com",
+              "allowInternal": true
+            }
+          ],
           "flux": {
             "managerFilePatterns": ["/\\.yaml$/"]
           },

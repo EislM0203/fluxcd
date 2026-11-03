@@ -19,5 +19,8 @@ spec:
       monthly: 2
       yearly: 1
     copyMethod: Snapshot
-    storageClassName: openebs-lvm
+    # The snapshot clone always lands on node-2 next to harbor-data, but the
+    # restic cache follows this class too; with the generic class the scheduler
+    # put the cache on another node and the mover could not start.
+    storageClassName: openebs-lvm-rke2-node-2
     unlock: "something"

@@ -1,11 +1,11 @@
 ---
-# Make RKE2's containerd (2.x, config v3) import drop-in files from config-v3.toml.d.
-# kata-deploy only writes its runtime as a drop-in there and refuses to install
-# ("rendered config ... does not import the drop-in dir 'config-v3.toml.d'") when
-# the import is missing; RKE2's stock template has none. The template extends
-# RKE2's own base, so detected runtimes (crun, nvidia) and registries stay as-is.
-# imports must come before the base: it is a top-level key and the base ends in tables.
-# Restarts the RKE2 service only when the template changed, one node at a time
+# kata-deploy only writes its runtime as a drop-in in config-v3.toml.d and refuses
+# to install ("rendered config ... does not import the drop-in dir") when containerd
+# does not import that directory. RKE2 >= 1.36 (containerd 2.3) imports it in its
+# own base config; the custom config-v3.toml.tmpl that added the import for 1.35
+# now duplicates the key and containerd refuses to start ("key imports is already
+# defined"), so this only creates the directory and removes that template.
+# Restarts the RKE2 service only when the template was removed, one node at a time
 # (rke2-node-1 is the only control plane; its restart pauses the API briefly).
 - name: Configure containerd drop-in imports
   hosts: rke2_server:rke2_agents
@@ -25,15 +25,10 @@
         mode: "0755"
       tags: [maintenance, containerd]
 
-    - name: Template that imports the drop-in directory
-      ansible.builtin.copy:
-        dest: "{{ containerd_dir }}/config-v3.toml.tmpl"
-        owner: root
-        group: root
-        mode: "0644"
-        content: |
-          imports = ["{{ containerd_dir }}/config-v3.toml.d/*.toml"]
-          {% raw %}{{ template "base" . }}{% endraw %}
+    - name: Remove the import template from RKE2 1.35
+      ansible.builtin.file:
+        path: "{{ containerd_dir }}/config-v3.toml.tmpl"
+        state: absent
       notify: Restart RKE2
       tags: [maintenance, containerd]
 

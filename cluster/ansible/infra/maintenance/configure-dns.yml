@@ -19,13 +19,23 @@
     rke2_service: "{{ 'rke2-server' if inventory_hostname in groups['rke2_server'] else 'rke2-agent' }}"
 
   tasks:
-    # The router announces itself as an IPv6 DNS server (RDNSS in its router
-    # advertisements), and systemd-networkd adds it beside 10.0.0.99, so the node
-    # itself (image pulls, apt) could resolve outside the split horizon. netplan
-    # merges this onto cloud-init's 50-cloud-init.yaml for the same interface.
-    - name: Ignore DNS servers from router advertisements
+    # The router's IPv6 advertisements make systemd-networkd take a public SLAAC
+    # address, an IPv6 default route and, via DHCPv6, the router as a DNS server
+    # beside 10.0.0.99, so the node itself (image pulls, apt) could resolve
+    # outside the split horizon. ra-overrides use-dns does not cover the DHCPv6
+    # part. The cluster is IPv4-only, so the nodes take no IPv6 autoconfiguration
+    # at all; link-local fe80:: stays. netplan merges this onto cloud-init's
+    # 50-cloud-init.yaml for the same interface.
+    - name: Remove the earlier RA-only override
+      ansible.builtin.file:
+        path: /etc/netplan/60-no-ra-dns.yaml
+        state: absent
+      register: netplan_old
+      tags: [maintenance, dns]
+
+    - name: Turn off IPv6 autoconfiguration on the node interface
       ansible.builtin.copy:
-        dest: /etc/netplan/60-no-ra-dns.yaml
+        dest: /etc/netplan/60-ipv4-only.yaml
         mode: '0600'
         content: |
           # Managed by Ansible (configure-dns.yml)
@@ -33,14 +43,18 @@
             version: 2
             ethernets:
               {{ ansible_facts['default_ipv4']['interface'] }}:
-                ra-overrides:
-                  use-dns: false
+                accept-ra: false
+                dhcp6: false
       register: netplan_ra
       tags: [maintenance, dns]
 
-    - name: Apply netplan
-      ansible.builtin.command: netplan apply
-      when: netplan_ra.changed
+    # netplan apply only reloads networkd; addresses, routes and DNS servers
+    # learned before stay on the link until it is reconfigured.
+    - name: Apply netplan and drop what was learned before
+      ansible.builtin.shell: >-
+        netplan apply &&
+        networkctl reconfigure {{ ansible_facts['default_ipv4']['interface'] }}
+      when: netplan_ra.changed or netplan_old.changed
       tags: [maintenance, dns]
 
     - name: Ensure RKE2 config dir exists (fresh nodes)

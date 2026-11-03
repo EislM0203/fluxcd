@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: paperless-mcp
-          image: harbor.cloud.traunseenet.com/ghcr.io/barryw/paperlessmcp:v0.6.3@sha256:9b0336cce09c7ab18ad0123be86dee3befc80007cb755fdc44a9572dfee11f79
+          image: harbor.cloud.traunseenet.com/ghcr.io/barryw/paperlessmcp:v0.7.0@sha256:13c44be091d64bd88762a33d423b750bc93a8c7f36adafe27a7f78f6afc6d06b
           ports:
             - name: http
               containerPort: 5000

@@ -184,14 +184,6 @@ data:
           - "[BODY] == Healthy"
           - "[RESPONSE_TIME] < 700"
         alerts: *ntfy-alert
-      - name: Navidrome
-        group: Media
-        url: "http://navidrome.apps.svc.cluster.local:4533/rest/ping"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 500"
-        alerts: *ntfy-alert
       - name: Immich
         group: Media
         url: "http://immich-server.apps.svc.cluster.local:2283/api/server/ping"
@@ -274,23 +266,6 @@ data:
           - "[BODY].status == ok"
           - "[RESPONSE_TIME] < 500"
         alerts: *ntfy-alert
-      - name: SilverBullet
-        group: Notes & Knowledge
-        # /.instance is what the pod probes use (unauthenticated).
-        url: "http://silverbullet.apps.svc.cluster.local:3000/.instance"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 500"
-        alerts: *ntfy-alert
-      - name: Memos
-        group: Notes & Knowledge
-        url: "http://memos-web.apps.svc.cluster.local:5230/healthz"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 500"
-        alerts: *ntfy-alert
       - name: Karakeep
         group: Notes & Knowledge
         url: "http://karakeep.apps.svc.cluster.local:3000/api/health"
@@ -315,15 +290,6 @@ data:
       ###########################
       # Finance
       ###########################
-      - name: Actual Budget
-        group: Finance
-        url: "http://actual-budget.apps.svc.cluster.local:5006/health"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[BODY].status == UP"
-          - "[RESPONSE_TIME] < 500"
-        alerts: *ntfy-alert
       - name: Fin
         group: Finance
         # Through the web frontend, which proxies /api to fin-api: one check
@@ -371,33 +337,6 @@ data:
           - "[RESPONSE_TIME] < 500"
         alerts: *ntfy-alert
 
-      ###########################
-      # Home
-      ###########################
-      - name: Homepage
-        group: Home
-        # Server-side renders every tile on request, so it is meaningfully
-        # slower than a bare health endpoint -- 1s rather than the usual 500ms.
-        url: "http://homepage.apps.svc.cluster.local:3000"
-        # v2 answers 400 unless Host is in HOMEPAGE_ALLOWED_HOSTS
-        headers:
-          Host: homepage.cloud.traunseenet.com
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 1000"
-        alerts: *ntfy-alert
-      - name: TREK
-        group: Home
-        # /api/health is unauthenticated and is what upstream's own container
-        # healthcheck polls. SQLite means the check also fails if the data PVC
-        # goes read-only, which a bare TCP probe would miss.
-        url: "http://trek.apps.svc.cluster.local:3000/api/health"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 700"
-        alerts: *ntfy-alert
     alerting:
       ntfy:
         topic: "gatus"

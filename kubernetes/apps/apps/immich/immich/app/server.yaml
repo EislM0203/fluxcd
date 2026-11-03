@@ -123,7 +123,7 @@ spec:
     copyMethod: Snapshot
     capacity: 15Gi
     enableFileDeletion: false
-    cleanupCachePVC: false
+    cleanupCachePVC: true
     cleanupTempPVC: false
 ---
 apiVersion: v1

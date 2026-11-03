@@ -44,3 +44,24 @@ allowedTopologies:
   - matchLabelExpressions:
       - key: kubernetes.io/hostname
         values: ["rke2-node-2"]
+---
+# Only for the snapshot clone of a VolSync backup (ReplicationSource
+# storageClassName), never for app volumes: Immediate would put those on a
+# random node. OpenEBS always creates a clone on its snapshot's node, but with
+# WaitForFirstConsumer the scheduler does not know that and may place the mover
+# (and its WaitForFirstConsumer restic cache) on another node, where it hangs
+# Pending. Bound immediately, the clone pins the mover to the right node.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-lvm-backup
+provisioner: local.csi.openebs.io
+parameters:
+  storage: lvm
+  volgroup: lvmvg
+  thinProvision: "yes"
+  fsType: ext4
+  shared: "yes"
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: Immediate

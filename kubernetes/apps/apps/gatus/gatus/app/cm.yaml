@@ -103,17 +103,6 @@ data:
           - "[BODY].status == pass"
           - "[RESPONSE_TIME] < 500"
         alerts: *ntfy-alert
-      - name: MinIO S3
-        group: Platform
-        # S3 API port: /minio/health/cluster is 200 only while the deployment has
-        # write quorum. (:9001/health was the console's SPA fallback page.)
-        url: "http://minio-service.storage.svc.cluster.local:9000/minio/health/cluster"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 500"
-        alerts: *ntfy-alert
-
       ###########################
       # Observability
       ###########################

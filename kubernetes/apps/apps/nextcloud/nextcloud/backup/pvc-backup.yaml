@@ -18,5 +18,7 @@ spec:
       monthly: 2
       yearly: 1
     copyMethod: Snapshot
-    storageClassName: openebs-lvm
+    # Clone binds at once on the snapshot's node; the cache follows the mover there.
+    storageClassName: openebs-lvm-backup
+    cacheStorageClassName: openebs-lvm
     unlock: "2026-10-18"

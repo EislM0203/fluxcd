@@ -63,5 +63,8 @@ spec:
           nfs:
             server: 10.0.0.154
             path: /mnt/nvmepool/kubernetes/media/data
+      # Next to Harbor on rke2-node-2, which sits closest to the router.
+      nodeSelector:
+        kubernetes.io/hostname: rke2-node-2
       dnsPolicy: ClusterFirst
       restartPolicy: Always

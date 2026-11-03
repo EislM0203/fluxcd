@@ -29,7 +29,7 @@ spec:
       containers:
         - name: autoscaler
           # bash + curl + jq + kubectl; tag = cluster version (v1.35)
-          image: harbor.cloud.traunseenet.com/docker.io/alpine/k8s:1.37.1@sha256:712dc5385d1c1a3f83b747fa9e40f64d433a97f72ff42f9755ff7dd1f62846e4
+          image: harbor.cloud.traunseenet.com/docker.io/alpine/k8s:1.37.2@sha256:dcb7185e112a453aa72f426754849a97357727ef8f40168fb208c8cf59952042
           command: ["/bin/bash", "/etc/forgejo-runner/autoscaler.sh"]
           env:
             # In-cluster, plain HTTP (forgejo/app/networkpolicy.yaml admits this

@@ -8,7 +8,7 @@ metadata:
 spec:
   dependsOn:
     - name: traefik-base
-    - name: longhorn-addons
+    - name: openebs-lvm
     - name: bifrost-app
     - name: searxng-app
     - name: harbor-app

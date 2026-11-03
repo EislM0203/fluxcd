@@ -9,7 +9,6 @@ resources:
   - cnpg.yaml
   - cert-manager.yaml
   - flux.yaml
-  - longhorn.yaml
   - services.yaml
   - observability.yaml
   - crowdsec.yaml

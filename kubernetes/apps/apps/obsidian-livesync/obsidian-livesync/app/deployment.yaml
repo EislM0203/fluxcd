@@ -19,7 +19,7 @@ spec:
         app: obsidian-livesync
     spec:
       securityContext:
-        # The couchdb image runs as uid/gid 5984; longhorn volumes come up
+        # The couchdb image runs as uid/gid 5984; new volumes come up
         # root-owned otherwise and CouchDB cannot write its data dir.
         fsGroup: 5984
         fsGroupChangePolicy: OnRootMismatch

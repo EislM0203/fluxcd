@@ -2,6 +2,9 @@
 - name: Update and Upgrade Packages
   hosts: proxmox
   become: yes
+  # One node at a time: a kernel update reboots the node, and rebooting all three
+  # together takes the whole cluster down.
+  serial: 1
 
   tasks:
     - name: Update and upgrade packages

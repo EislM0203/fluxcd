@@ -10,7 +10,7 @@ spec:
     manual: restore-once
   restic:
     repository: restic-dsh
-    storageClassName: longhorn-storage
+    storageClassName: openebs-lvm
     accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
     capacity: 2Gi
@@ -24,7 +24,7 @@ metadata:
   name: dsh-data
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: longhorn-storage
+  storageClassName: openebs-lvm
   dataSourceRef:
     kind: ReplicationDestination
     apiGroup: volsync.backube
@@ -41,7 +41,7 @@ metadata:
   name: dsh-workspace
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: longhorn-storage
+  storageClassName: openebs-lvm
   resources:
     requests:
       storage: 10Gi

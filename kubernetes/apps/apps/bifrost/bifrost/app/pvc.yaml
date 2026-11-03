@@ -6,7 +6,7 @@ metadata:
   name: bifrost-data
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: longhorn-storage
+  storageClassName: openebs-lvm
   dataSourceRef:
     kind: ReplicationDestination
     apiGroup: volsync.backube
@@ -25,7 +25,7 @@ spec:
     manual: restore-vkeys-20260731
   restic:
     repository: restic-bifrost
-    storageClassName: longhorn-storage
+    storageClassName: openebs-lvm
     accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
     capacity: 5Gi

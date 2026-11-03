@@ -4,12 +4,10 @@ metadata:
   labels:
     app: gatus
   name: gatus-db
-  annotations:
-    numberOfReplicas: '1'
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: longhorn-storage
+  storageClassName: openebs-lvm
   resources:
     requests:
       storage: 1Gi

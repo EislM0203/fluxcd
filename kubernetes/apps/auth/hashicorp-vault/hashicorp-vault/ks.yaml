@@ -8,7 +8,7 @@ metadata:
 spec:
   dependsOn:
     - name: traefik-base
-    - name: longhorn-addons
+    - name: openebs-lvm
     - name: harbor-app
   path: ./kubernetes/apps/auth/hashicorp-vault/hashicorp-vault/app
   prune: true

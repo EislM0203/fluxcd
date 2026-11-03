@@ -43,7 +43,7 @@ spec:
       resources:
         requests:
           storage: 10Gi
-      storageClassName: longhorn-storage
+      storageClassName: openebs-lvm
       volumeMode: Filesystem
   monitoring:
     enablePodMonitor: true

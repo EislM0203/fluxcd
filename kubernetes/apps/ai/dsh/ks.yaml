@@ -11,7 +11,7 @@ spec:
       app.kubernetes.io/name: dsh
   dependsOn:
     - name: traefik-addons
-    - name: longhorn-addons
+    - name: openebs-lvm
     - name: volsync
     - name: harbor-app                # the image is pulled from in-cluster Harbor
     - name: hashicorp-vault-store     # the ExternalSecret needs the ClusterSecretStore

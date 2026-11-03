@@ -11,7 +11,7 @@ spec:
       app.kubernetes.io/name: mdmem
   dependsOn:
     - name: traefik-base
-    - name: longhorn-addons
+    - name: openebs-lvm
     - name: cert-manager-addons
     - name: volsync
     - name: harbor-app                # the image is pulled from in-cluster Harbor

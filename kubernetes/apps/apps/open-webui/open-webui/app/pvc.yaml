@@ -5,11 +5,9 @@ metadata:
   labels:
     app: openwebui
   name: openwebui-data
-  annotations:
-    numberOfReplicas: '1'
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: longhorn-storage
+  storageClassName: openebs-lvm
   dataSourceRef:
     kind: ReplicationDestination
     apiGroup: volsync.backube
@@ -28,7 +26,7 @@ spec:
     manual: restore-once
   restic:
     repository: restic-openwebui
-    storageClassName: longhorn-storage
+    storageClassName: openebs-lvm
     accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
     capacity: 2Gi

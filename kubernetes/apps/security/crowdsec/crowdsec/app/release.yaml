@@ -122,11 +122,11 @@ spec:
       persistentVolume:
         data:
           enabled: true
-          storageClassName: longhorn-storage
+          storageClassName: openebs-lvm
           size: 1Gi
         config:
           enabled: true
-          storageClassName: longhorn-storage
+          storageClassName: openebs-lvm
           size: 100Mi
       metrics:
         enabled: true

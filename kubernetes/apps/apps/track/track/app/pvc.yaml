@@ -8,7 +8,7 @@ metadata:
     component: api
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: longhorn-storage
+  storageClassName: openebs-lvm
   dataSourceRef:
     kind: ReplicationDestination
     apiGroup: volsync.backube
@@ -30,7 +30,7 @@ spec:
     manual: restore-once
   restic:
     repository: restic-track
-    storageClassName: longhorn-storage
+    storageClassName: openebs-lvm
     accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
     capacity: 1Gi

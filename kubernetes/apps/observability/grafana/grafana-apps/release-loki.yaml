@@ -68,7 +68,7 @@ spec:
       replicas: 1
       persistence:
         enabled: true
-        storageClass: longhorn-storage
+        storageClass: openebs-lvm
         size: 50Gi
     # ingress:
     #   enabled: true

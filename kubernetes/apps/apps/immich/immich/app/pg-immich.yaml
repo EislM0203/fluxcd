@@ -54,7 +54,7 @@ spec:
       resources:
         requests:
           storage: 2Gi
-      storageClassName: longhorn-storage
+      storageClassName: openebs-lvm
       volumeMode: Filesystem
 ---
 apiVersion: barmancloud.cnpg.io/v1

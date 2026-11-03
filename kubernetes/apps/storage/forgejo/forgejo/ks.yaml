@@ -8,7 +8,7 @@ metadata:
 spec:
   dependsOn:
     - name: traefik-base
-    - name: longhorn-addons
+    - name: openebs-lvm
     - name: cnpg
   path: ./kubernetes/apps/storage/forgejo/forgejo/app
   prune: true

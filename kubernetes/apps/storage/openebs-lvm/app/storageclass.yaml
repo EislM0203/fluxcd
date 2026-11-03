@@ -3,6 +3,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: openebs-lvm
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
 provisioner: local.csi.openebs.io
 parameters:
   storage: lvm
@@ -11,10 +13,6 @@ parameters:
   fsType: ext4
 reclaimPolicy: Delete
 allowVolumeExpansion: true
-# The volume lives on whichever node the first consumer lands on.
+# The volume lives on whichever node the first consumer lands on; the chart's
+# storage capacity tracking keeps the scheduler off nodes where it cannot fit.
 volumeBindingMode: WaitForFirstConsumer
-# Only rke2-node-3 has the lvmvg data disk during the test.
-allowedTopologies:
-  - matchLabelExpressions:
-      - key: kubernetes.io/hostname
-        values: ["rke2-node-3"]

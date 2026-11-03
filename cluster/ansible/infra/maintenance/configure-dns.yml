@@ -19,6 +19,30 @@
     rke2_service: "{{ 'rke2-server' if inventory_hostname in groups['rke2_server'] else 'rke2-agent' }}"
 
   tasks:
+    # The router announces itself as an IPv6 DNS server (RDNSS in its router
+    # advertisements), and systemd-networkd adds it beside 10.0.0.99, so the node
+    # itself (image pulls, apt) could resolve outside the split horizon. netplan
+    # merges this onto cloud-init's 50-cloud-init.yaml for the same interface.
+    - name: Ignore DNS servers from router advertisements
+      ansible.builtin.copy:
+        dest: /etc/netplan/60-no-ra-dns.yaml
+        mode: '0600'
+        content: |
+          # Managed by Ansible (configure-dns.yml)
+          network:
+            version: 2
+            ethernets:
+              {{ ansible_facts['default_ipv4']['interface'] }}:
+                ra-overrides:
+                  use-dns: false
+      register: netplan_ra
+      tags: [maintenance, dns]
+
+    - name: Apply netplan
+      ansible.builtin.command: netplan apply
+      when: netplan_ra.changed
+      tags: [maintenance, dns]
+
     - name: Ensure RKE2 config dir exists (fresh nodes)
       ansible.builtin.file:
         path: /etc/rancher/rke2

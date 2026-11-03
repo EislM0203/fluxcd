@@ -9,7 +9,7 @@ spec:
   dependsOn:
     - name: traefik-base
     - name: cnpg
-    - name: longhorn-addons
+    - name: openebs-lvm
     - name: volsync
   path: ./kubernetes/apps/apps/immich/immich/app
   prune: true

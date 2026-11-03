@@ -62,7 +62,7 @@ spec:
           existingClaim: "harbor-data"
           subPath: "database"
           # accessMode: "ReadWriteOnce"
-          # storageClass: "longhorn-storage-im"
+          # storageClass: "openebs-lvm"
         redis:
           existingClaim: "harbor-data"
           subPath: "redis"

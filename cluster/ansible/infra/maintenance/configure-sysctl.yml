@@ -1,5 +1,5 @@
 ---
-# Kernel limits for the RKE2 nodes. Ubuntu ships fs.inotify.max_user_instances=128,
+# Kernel limits for the RKE2 nodes. Debian (like Ubuntu) ships fs.inotify.max_user_instances=128,
 # which kubelet/containerd/log shippers nearly exhaust on their own; CrowdSec's LAPI
 # then dies with "couldn't initialize inotify: too many open files".
 - name: Configure node sysctls
@@ -20,8 +20,9 @@
       tags: [maintenance, sysctl]
 
     # CVE-2026-98432 (IPv4 TCP use-after-free): the published root exploit needs an
-    # MPTCP listener. Nothing in the cluster uses MPTCP, so keep it off until Ubuntu
-    # ships a fixed kernel, then decide whether to drop this.
+    # MPTCP listener. Nothing in the cluster uses MPTCP, so keep it off until the
+    # node kernel (Debian's cloud kernel) is known to carry the fix, then decide
+    # whether to drop this.
     - name: Disable MPTCP (persistent, applied immediately)
       ansible.posix.sysctl:
         name: net.mptcp.enabled

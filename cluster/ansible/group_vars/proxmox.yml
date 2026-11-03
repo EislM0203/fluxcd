@@ -1,5 +1,7 @@
 ---
-rke2_version: "v1.35.0+rke2r3"
+rke2_version: "v1.36.5+rke2r1"
+# Debian 13 ships only python3; pinning it silences interpreter discovery.
+ansible_python_interpreter: /usr/bin/python3
 
 # Static /etc/hosts entries applied to every node by
 # infra/bootstrap/configure-hosts-file.yml

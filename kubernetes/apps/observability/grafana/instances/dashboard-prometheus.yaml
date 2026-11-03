@@ -308,24 +308,6 @@ spec:
       grafana.internal/instance: grafana
   url: https://raw.githubusercontent.com/fluxcd/flux2-monitoring-example/7ab65dc8b90f7a6751d88f18bbb4e1bee33bf334/monitoring/configs/dashboards/control-plane.json
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadashboard_v1beta1.json
-apiVersion: grafana.integreatly.org/v1beta1
-kind: GrafanaDashboard
-metadata:
-  name: longhorn
-spec:
-  allowCrossNamespaceImport: true
-  folder: General
-  instanceSelector:
-    matchLabels:
-      grafana.internal/instance: grafana
-  grafanaCom:
-    id: 16888
-    revision: 14
-  datasources:
-    - inputName: DS_PROMETHEUS
-      datasourceName: Prometheus
----
 # Request rate, errors and latency per service from Beyla's Prometheus metrics.
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadashboard_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1

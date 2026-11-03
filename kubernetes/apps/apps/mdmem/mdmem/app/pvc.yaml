@@ -9,7 +9,7 @@ spec:
     manual: restore-once
   restic:
     repository: restic-mdmem
-    storageClassName: longhorn-storage
+    storageClassName: openebs-lvm
     accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
     capacity: 5Gi
@@ -23,9 +23,7 @@ metadata:
   name: mdmem-data
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: longhorn-storage
-  # Do NOT set numberOfReplicas: 1 here. The vault is the primary artefact of
-  # this service; an hourly restic snapshot is not block-level redundancy.
+  storageClassName: openebs-lvm
   dataSourceRef:
     kind: ReplicationDestination
     apiGroup: volsync.backube

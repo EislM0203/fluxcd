@@ -7,6 +7,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
+    - name: volsync
     - name: traefik-base
     - name: openebs-lvm
     - name: cnpg
@@ -81,6 +82,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
+    - name: volsync
     - name: paperless-app
   path: ./kubernetes/apps/apps/paperless-ngx/paperless-ngx/app/backup
   prune: true

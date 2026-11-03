@@ -7,6 +7,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
+    - name: volsync
     - name: traefik-base
     - name: openebs-lvm
     - name: harbor-app
@@ -38,6 +39,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
+    - name: volsync
     - name: pocketid-app
   path: ./kubernetes/apps/auth/pocketid/pocketid/backup
   prune: true

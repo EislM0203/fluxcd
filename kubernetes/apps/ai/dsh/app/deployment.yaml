@@ -29,7 +29,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch   # Longhorn: else the volumes come up root-owned
+        fsGroupChangePolicy: OnRootMismatch   # new volumes come up root-owned
         seccompProfile:
           type: RuntimeDefault
       containers:

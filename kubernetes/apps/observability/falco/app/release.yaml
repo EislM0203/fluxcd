@@ -102,11 +102,11 @@ spec:
                 - [flux-system, ghcr.io/fluxcd/notification-controller]
                 - [flux-system, ghcr.io/fluxcd/image-automation-controller]
                 - [flux-system, ghcr.io/fluxcd/image-reflector-controller]
-                - [longhorn-system, docker.io/longhornio/longhorn-manager]
-                - [longhorn-system, docker.io/longhornio/csi-provisioner]
-                - [longhorn-system, docker.io/longhornio/csi-resizer]
-                - [longhorn-system, docker.io/longhornio/csi-snapshotter]
-                - [longhorn-system, docker.io/longhornio/csi-attacher]
+                - [storage, harbor.cloud.traunseenet.com/docker.io/openebs/lvm-driver]
+                - [storage, registry.k8s.io/sig-storage/csi-provisioner]
+                - [storage, registry.k8s.io/sig-storage/csi-resizer]
+                - [storage, registry.k8s.io/sig-storage/csi-snapshotter]
+                - [storage, registry.k8s.io/sig-storage/csi-node-driver-registrar]
                 - [networking, docker.io/library/traefik]
                 - [networking, registry.k8s.io/external-dns/external-dns]
                 - [observability, registry.k8s.io/kube-state-metrics/kube-state-metrics]
@@ -150,16 +150,6 @@ spec:
               fields: [container.image.repository, proc.exepath]
               values:
                 - [harbor.cloud.traunseenet.com/ghcr.io/euro-office/documentserver, /var/www/euro-office/documentserver/server/FileConverter/bin/x2t]
-          override:
-            exceptions: append
-
-        # longhorn-manager drives the engine binary over a socket.
-        - rule: Redirect STDOUT/STDIN to Network Connection in Container
-          exceptions:
-            - name: longhorn_engine
-              fields: [container.image.repository, proc.name]
-              values:
-                - [docker.io/longhornio/longhorn-manager, longhorn]
           override:
             exceptions: append
 

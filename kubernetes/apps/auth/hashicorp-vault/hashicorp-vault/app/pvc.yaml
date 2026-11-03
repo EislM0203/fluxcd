@@ -5,11 +5,9 @@ metadata:
   labels:
     app: hashicorp-vault
   name: hashicorp-vault-data
-  annotations:
-    numberOfReplicas: '2'
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: longhorn-storage
+  storageClassName: openebs-lvm
   # Disaster recovery only: comment this out after restore completes.
   # Leave it out on a first deploy — a dataSourceRef with no restic snapshot
   # leaves the PVC Pending.
@@ -32,7 +30,7 @@ spec:
     manual: restore-once
   restic:
     repository: restic-hashicorp-vault
-    storageClassName: longhorn-storage
+    storageClassName: openebs-lvm
     accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
     capacity: 4Gi

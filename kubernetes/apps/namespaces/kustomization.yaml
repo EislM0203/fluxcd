@@ -6,7 +6,6 @@ resources:
   - auth.yaml
   - storage.yaml
   - networking.yaml
-  - longhorn-system.yaml
   - apps.yaml
   - crowdsec.yaml
   - forgejo-runners.yaml

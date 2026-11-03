@@ -78,8 +78,8 @@ data:
     # pod's userns. dockerd then cannot manage the pod netns (owned by the host
     # userns), so it runs without bridge/iptables; jobs use network: host anyway
     # (configmap-runner.yaml).
-    # Disk caps: a build must not fill the node's disk (Longhorn and every other
-    # pod share it). dockerd's /var/lib/docker and the job workspace are emptyDirs
+    # Disk caps: a build must not fill the node's root disk (every pod's images,
+    # logs and emptyDirs share it). dockerd's /var/lib/docker and the job workspace are emptyDirs
     # with sizeLimit (pod evicted when exceeded); each container's own writable
     # layer + logs is capped by an ephemeral-storage limit.
     DOCKER_DISK_LIMIT="${DOCKER_DISK_LIMIT:-30Gi}"

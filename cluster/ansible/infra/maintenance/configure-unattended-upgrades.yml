@@ -1,0 +1,74 @@
+---
+# Automatic updates on the nodes: security fixes only, never a reboot, and not on
+# all nodes at once. Kernel updates still need `make update-packages` (one node at
+# a time) to take effect; the kernel hook of unattended-upgrades marks them in
+# /var/run/reboot-required, which update-packages and reboot-if-required read.
+- name: Configure unattended upgrades
+  hosts: rke2_server:rke2_agents
+  become: yes
+
+  vars:
+    # Node N runs at 03:00 + N-1 hours, so a security update that restarts a
+    # service (systemd, lvm2, openssh) never hits every node in the same minute.
+    upgrade_hour: "{{ 3 + (groups['rke2_server'] + groups['rke2_agents']).index(inventory_hostname) }}"
+
+  tasks:
+    - name: Ensure unattended-upgrades is installed
+      ansible.builtin.apt:
+        name: unattended-upgrades
+        state: present
+      tags: [maintenance, upgrades]
+
+    # Debian's default also takes point-release updates (label=Debian). #clear
+    # empties the list from 50unattended-upgrades before the security-only one.
+    - name: Limit automatic upgrades to security fixes, no reboot
+      ansible.builtin.copy:
+        dest: /etc/apt/apt.conf.d/52unattended-upgrades-local
+        mode: '0644'
+        content: |
+          // Managed by Ansible (configure-unattended-upgrades.yml)
+          #clear Unattended-Upgrade::Origins-Pattern;
+          Unattended-Upgrade::Origins-Pattern {
+                  "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+                  "origin=Debian,codename=${distro_codename},label=Debian-Security";
+          };
+          Unattended-Upgrade::Automatic-Reboot "false";
+      tags: [maintenance, upgrades]
+
+    - name: Enable the daily update and upgrade runs
+      ansible.builtin.copy:
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        mode: '0644'
+        content: |
+          APT::Periodic::Update-Package-Lists "1";
+          APT::Periodic::Unattended-Upgrade "1";
+      tags: [maintenance, upgrades]
+
+    - name: Ensure the timer drop-in directory exists
+      ansible.builtin.file:
+        path: /etc/systemd/system/apt-daily-upgrade.timer.d
+        state: directory
+        mode: '0755'
+      tags: [maintenance, upgrades]
+
+    - name: Stagger the upgrade run per node
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/apt-daily-upgrade.timer.d/stagger.conf
+        mode: '0644'
+        content: |
+          # Managed by Ansible (configure-unattended-upgrades.yml)
+          [Timer]
+          OnCalendar=
+          OnCalendar=*-*-* {{ '%02d' | format(upgrade_hour | int) }}:00
+          RandomizedDelaySec=10m
+      register: stagger
+      tags: [maintenance, upgrades]
+
+    - name: Reload systemd and restart the timer
+      ansible.builtin.systemd:
+        name: apt-daily-upgrade.timer
+        daemon_reload: yes
+        state: restarted
+        enabled: yes
+      when: stagger.changed
+      tags: [maintenance, upgrades]

@@ -9,8 +9,8 @@ EDGE_ANSIBLE_DIR = edge/ansible
 SECRETS_FILE = secrets.yaml
 TFVARS_FILE = cluster/tf/terraform.tfvars
 
-.PHONY: bootstrap-infra plan-tf apply-tf destroy-tf wait-for-nodes configure-hosts-file update-packages configure-sysctl configure-dns \
-	install-longhorn-dependencies install-openebs-lvm reboot-if-required install-rke2-server install-rke2-agent configure-containerd-dropins cluster-readiness-check \
+.PHONY: bootstrap-infra plan-tf apply-tf destroy-tf wait-for-nodes configure-hosts-file update-packages configure-sysctl configure-dns configure-unattended-upgrades \
+	install-openebs-lvm reboot-if-required install-rke2-server install-rke2-agent configure-containerd-dropins cluster-readiness-check \
 	edge-infra-init edge-infra-plan edge-infra-apply edge-home-init edge-home-plan edge-home-apply edge-deploy edge-up
 
 bootstrap-infra: apply-tf \
@@ -19,7 +19,8 @@ bootstrap-infra: apply-tf \
 	update-packages \
 	configure-sysctl \
 	configure-dns \
-	install-longhorn-dependencies \
+	configure-unattended-upgrades \
+	install-openebs-lvm \
 	reboot-if-required \
 	install-rke2-server \
 	install-rke2-agent \
@@ -53,8 +54,8 @@ configure-sysctl:
 configure-dns:
 	ansible-playbook -i "${INVENTORY}" "${MAINTENANCE_DIR}/configure-dns.yml"
 
-install-longhorn-dependencies:
-	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/install-longhorn-dependencies.yml"
+configure-unattended-upgrades:
+	ansible-playbook -i "${INVENTORY}" "${MAINTENANCE_DIR}/configure-unattended-upgrades.yml"
 
 install-openebs-lvm:
 	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/install-openebs-lvm.yml"

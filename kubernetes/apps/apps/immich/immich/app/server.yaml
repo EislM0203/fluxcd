@@ -97,7 +97,7 @@ metadata:
   labels:
     app: *name
 spec:
-  storageClassName: longhorn-storage
+  storageClassName: openebs-lvm
   accessModes:
     - "ReadWriteOnce"
   dataSourceRef:
@@ -118,7 +118,7 @@ spec:
     manual: restore-once
   restic:
     repository: restic-immich
-    storageClassName: longhorn-storage
+    storageClassName: openebs-lvm
     accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
     capacity: 15Gi

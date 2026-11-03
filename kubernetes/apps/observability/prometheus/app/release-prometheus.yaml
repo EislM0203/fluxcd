@@ -269,7 +269,7 @@ spec:
         storageSpec:
           volumeClaimTemplate:
             spec:
-              storageClassName: longhorn-storage
+              storageClassName: openebs-lvm
               accessModes: ["ReadWriteOnce"]
               resources:
                 requests:

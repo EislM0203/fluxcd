@@ -59,12 +59,6 @@ rules:
         resources: ["*/status"]
       - group: cert-manager.io
         resources: ["*/status"]
-  # Longhorn managing its own CRs (engines, replicas, nodes, ...)
-  - level: None
-    users: ["system:serviceaccount:longhorn-system:longhorn-service-account"]
-    resources:
-      - group: longhorn.io
-
   # Who touched secrets (any verb, including reads): user, object, verb, result
   - level: Metadata
     resources:

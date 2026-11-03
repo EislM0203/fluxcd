@@ -9,7 +9,7 @@ spec:
   dependsOn:
     - name: cert-manager-addons
     - name: traefik-base
-    - name: longhorn-addons
+    - name: openebs-lvm
     - name: volsync
     - name: harbor-app
   path: ./kubernetes/apps/apps/track/track/app

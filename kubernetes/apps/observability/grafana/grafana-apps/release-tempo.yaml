@@ -109,11 +109,11 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: longhorn-storage
+  storageClassName: openebs-lvm
   resources:
     requests:
       # 14d retention at ~1.3 GB/day (2026-10-30) = ~18 GB + live store + compaction
-      # headroom; Longhorn expands online (shrinking is impossible)
+      # headroom; openebs-lvm expands online (shrinking is impossible)
       storage: 35Gi
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json

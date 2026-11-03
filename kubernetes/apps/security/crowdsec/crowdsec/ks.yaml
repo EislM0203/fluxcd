@@ -9,8 +9,8 @@ spec:
   dependsOn:
     # images are pulled through the harbor proxy cache
     - name: harbor-app
-    # LAPI PVCs (longhorn-storage)
-    - name: longhorn-addons
+    # LAPI PVCs (openebs-lvm)
+    - name: openebs-lvm
   path: ./kubernetes/apps/security/crowdsec/crowdsec/app
   prune: true
   wait: true

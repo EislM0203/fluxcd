@@ -4,7 +4,8 @@
 # instance or namespace label: falcosidekick sends rule, k8s_ns_name and k8s_pod_name.
 # ntfy rejects a message over 4096 bytes after templating, which dropped every group of
 # ~10+ alerts. Alertmanager sends at most 4 alerts per webhook (max_alerts) and reports
-# the rest in truncatedAlerts; long annotations are cut here.
+# the rest in truncatedAlerts; long annotations are cut here. No generatorURL: Loki's
+# is the whole LogQL query URL-encoded, and on a phone neither link opens anyway.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -42,9 +43,6 @@ data:
       {{- end }}
       {{- if .annotations.description }}
       Description: {{ .annotations.description | trunc 400 }}
-      {{- end }}
-      {{- if .generatorURL }}
-      Source: {{ .generatorURL }}
       {{- end }}
 
       {{ end }}

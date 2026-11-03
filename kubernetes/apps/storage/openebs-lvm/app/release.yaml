@@ -62,9 +62,9 @@ spec:
       snapshotController:
         enabled: false
     lvmNode:
-      # thin pool fill level etc., for the "never let the pool run full" alert
+      # Scraped through ../monitoring/servicemonitor.yaml, which waits for Prometheus.
       serviceMonitor:
-        enabled: true
+        enabled: false
     # lvmPlugin pulls from docker.io directly, not through Harbor: Harbor runs in
     # this cluster on openebs-lvm volumes, so a Harbor-proxied storage driver
     # cannot start on a fresh cluster (both wait for each other).

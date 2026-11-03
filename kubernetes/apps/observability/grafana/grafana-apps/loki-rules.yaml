@@ -32,7 +32,8 @@ data:
               severity: warning
             annotations:
               summary: '{{ $labels.user_username }} ran {{ $labels.objectRef_subresource }} on {{ $labels.objectRef_namespace }}/{{ $labels.objectRef_name }}'
-          # Flux, RKE2 and the operators that manage their own Roles are expected.
+          # Flux, RKE2 (supervisor and its helm-rke2-* install jobs) and the operators
+          # that manage their own Roles are expected.
           - alert: KubeAuditRbacChange
             expr: |
               sum by (user_username, verb, objectRef_resource, objectRef_namespace, objectRef_name) (
@@ -42,7 +43,7 @@ data:
                   | objectRef_apiGroup="rbac.authorization.k8s.io"
                   | verb=~"create|update|patch|delete|deletecollection"
                   | responseStatus_code=~"2.."
-                  | user_username!~"system:serviceaccount:flux-system:.*|system:rke2-supervisor|system:serviceaccount:storage:(cloudnative-pg-operator|plugin-barman-cloud|volsync)|system:serviceaccount:kube-system:kata-deploy-sa-cleanup"
+                  | user_username!~"system:serviceaccount:flux-system:.*|system:rke2-supervisor|system:serviceaccount:storage:(cloudnative-pg-operator|plugin-barman-cloud|volsync)|system:serviceaccount:kube-system:(kata-deploy-sa-cleanup|helm-rke2-.*)"
                 [5m])
               ) > 0
             labels:

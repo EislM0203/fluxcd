@@ -1,0 +1,19 @@
+---
+# Thin pool fill level for the LvmThinPool* alerts. Not the chart's own
+# ServiceMonitor: the chart renders it only if the CRD exists at install time, and on
+# a fresh cluster OpenEBS installs long before Prometheus. The selector leaves out the
+# chart and version labels so it survives chart bumps.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: openebs-lvm-node
+spec:
+  selector:
+    matchLabels:
+      name: openebs-lvm-node
+      release: openebs-lvm
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

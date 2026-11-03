@@ -353,17 +353,23 @@ spec:
 
             # Falco (falcosidekick) alerts have no alertname or namespace label: group them by
             # rule and namespace instead, so different events don't merge into one message.
+            # Falco events are one-off: no "resolved" message five minutes later.
             - matchers:
                 - source="falco"
               group_by: ['rule', 'k8s_ns_name']
               routes:
                 - matchers:
                     - severity="critical"
-                  receiver: ntfy-critical
+                  receiver: ntfy-critical-events
                   repeat_interval: 1h
                 - matchers:
                     - severity="warning"
-                  receiver: ntfy-warning
+                  receiver: ntfy-warning-events
+
+            # Audit log alerts (Loki ruler) are one-off events too.
+            - matchers:
+                - alertname=~"KubeAudit.*"
+              receiver: ntfy-warning-events
 
             # Critical -> dedicated topic, faster repeat
             - matchers:
@@ -412,6 +418,22 @@ spec:
             webhook_configs:
               - url: "http://ntfy.apps.svc.cluster.local/am-critical?template=alertmanager-plus"
                 send_resolved: true
+                max_alerts: 4
+                http_config:
+                  authorization:
+                    credentials_file: /etc/alertmanager/secrets/alertmanager-ntfy/token
+          - name: ntfy-warning-events
+            webhook_configs:
+              - url: "http://ntfy.apps.svc.cluster.local/am-warning?template=alertmanager-plus"
+                send_resolved: false
+                max_alerts: 4
+                http_config:
+                  authorization:
+                    credentials_file: /etc/alertmanager/secrets/alertmanager-ntfy/token
+          - name: ntfy-critical-events
+            webhook_configs:
+              - url: "http://ntfy.apps.svc.cluster.local/am-critical?template=alertmanager-plus"
+                send_resolved: false
                 max_alerts: 4
                 http_config:
                   authorization:

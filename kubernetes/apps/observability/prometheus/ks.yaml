@@ -46,3 +46,28 @@ spec:
   retryInterval: 15m
   timeout: 5m
   targetNamespace: observability
+---
+# Alertmanager's ntfy token from Vault, kept out of prometheus-app: that one has
+# to come up before cert-manager, which External Secrets and Vault depend on, so
+# an ExternalSecret inside it deadlocks a fresh cluster. Alertmanager's pod waits
+# for the secret on its own.
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: prometheus-secrets
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: prometheus-app
+    - name: hashicorp-vault-store
+  path: ./kubernetes/apps/observability/prometheus/secrets
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: observability

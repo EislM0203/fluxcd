@@ -312,7 +312,7 @@ spec:
     alertmanager:
       alertmanagerSpec:
         # ntfy publish token -> /etc/alertmanager/secrets/alertmanager-ntfy/token
-        # (externalsecret.yaml; used by the ntfy-* receivers below)
+        # (prometheus/secrets/externalsecret.yaml; used by the ntfy-* receivers below)
         secrets:
           - alertmanager-ntfy
         podMetadata:

@@ -1,0 +1,21 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationsource_v1alpha1.json
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: lvmtest-backup
+spec:
+  sourcePVC: lvmtest-data
+  trigger:
+    # bump to run another backup
+    manual: backup-1
+  restic:
+    pruneIntervalDays: 1
+    repository: restic-lvmtest
+    retain:
+      daily: 2
+    copyMethod: Snapshot
+    # snapshot and its temp PVC must come from the same driver as the source
+    volumeSnapshotClassName: openebs-lvm-snapclass
+    storageClassName: openebs-lvm
+    cacheStorageClassName: openebs-lvm

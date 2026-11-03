@@ -1,13 +1,14 @@
 variable "nodes" {
   description = "Map of node configurations. Each node defines target_node, storage, cores, memory, disk_size (GB), and template_id (numeric VM ID)."
   type = map(object({
-    target_node = string
-    storage     = string
-    cores       = number
-    memory      = number
-    disk_size   = number
-    template_id   = number
-    template_node = string
+    target_node    = string
+    storage        = string
+    cores          = number
+    memory         = number
+    disk_size      = number
+    template_id    = number
+    template_node  = string
+    data_disk_size = optional(number, 0)
   }))
 }
 

@@ -1,0 +1,61 @@
+---
+# Writes a known file set once, then keeps the volume mounted so the backup has
+# to snapshot a volume that is in use (the case that matters for real apps).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lvmtest
+  labels:
+    app: lvmtest
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: lvmtest
+  template:
+    metadata:
+      labels:
+        app: lvmtest
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: writer
+          image: harbor.cloud.traunseenet.com/docker.io/library/busybox:1.37.0@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec
+          command:
+            - sh
+            - -c
+            - |
+              if [ ! -f /data/SHA256SUMS ]; then
+                for i in 1 2 3 4 5; do head -c 10485760 /dev/urandom > /data/blob-$i; done
+                date -u > /data/written-at
+                cd /data && sha256sum blob-* written-at > SHA256SUMS
+              fi
+              cat /data/SHA256SUMS
+              exec sleep infinity
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: lvmtest-data

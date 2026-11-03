@@ -62,6 +62,19 @@ resource "proxmox_virtual_environment_vm" "vm" {
     iothread     = true
   }
 
+  # Raw disk for the in-guest LVM volume group behind OpenEBS LVM LocalPV;
+  # kept separate from scsi0 so a full thin pool can never take the OS down.
+  dynamic "disk" {
+    for_each = each.value.data_disk_size > 0 ? [each.value.data_disk_size] : []
+    content {
+      interface    = "scsi1"
+      datastore_id = each.value.storage
+      size         = disk.value
+      discard      = "on"
+      iothread     = true
+    }
+  }
+
   network_device {
     model  = "virtio"
     bridge = var.network_bridge
@@ -92,6 +105,9 @@ resource "proxmox_virtual_environment_vm" "vm" {
   lifecycle {
     ignore_changes = [
       network_device,
+      # Only used at clone time; bpg 0.117 reports a diff on every plan even though
+      # random_password is unchanged, and applying it rewrites cloud-init on all VMs.
+      initialization[0].user_account[0].password,
     ]
   }
 }

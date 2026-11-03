@@ -1,0 +1,45 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: openebs-lvm
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: snapshot-controller
+  path: ./kubernetes/apps/storage/openebs-lvm/app
+  suspend: false
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: storage
+---
+# Test of the Longhorn replacement: one PVC on rke2-node-3, backed up with VolSync
+# (copyMethod Snapshot). Delete this Kustomization once the test is done.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: openebs-lvm-test
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: openebs-lvm
+    - name: volsync
+  path: ./kubernetes/apps/storage/openebs-lvm/test
+  suspend: false
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: storage

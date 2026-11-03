@@ -21,7 +21,7 @@ description: Layout, commands and rules of the fluxcd homelab repo (RKE2 cluster
 - Images: through Harbor, pinned `tag@sha256`, never `:latest`. Upstream images: Renovate (`renovate.json`, `pinDigests`) opens bump PRs. Own images (fin, track, mdmem, under Harbor `library/`) the same way; the user bumps a pin by hand when impatient (their CI prints `tag@digest`).
 - Secrets: `secret.yaml` per app, SOPS encrypted by the user, or ExternalSecrets from Vault. Reference secrets by name only.
 ## Never
-- Read or decrypt `.env`, any `secret.yaml` or `*.sops.yaml`, `terraform.tfvars`, the age key, the OpenTofu state or `inventory.ini`. No `sops -d`, no Makefile target (all of them decrypt `.env`).
+- Read or decrypt `.env`, any `secret.yaml` or `*.sops.yaml`, the age key, the OpenTofu state or `inventory.ini`. (`cluster/tf/terraform.tfvars` is fine: node map only, no secrets.) No `sops -d`, no Makefile target (all of them decrypt `.env`).
 - `make destroy-tf`, `bootstrap-infra`, or `apply-tf` without a fresh reviewed `make plan-tf`: `apply-tf` re-plans and applies with `-auto-approve`, so nothing may change between the reviewed plan and the apply (`proxmox-vm-lifecycle`).
 - `kubectl apply`/`edit` against the cluster: Flux owns the state. Access is the read-only Kubernetes MCP.
 - Commit decrypted copies (`.decrypted~*` is ignored for that reason).

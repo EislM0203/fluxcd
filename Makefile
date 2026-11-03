@@ -10,7 +10,7 @@ SECRETS_FILE = secrets.yaml
 TFVARS_FILE = cluster/tf/terraform.tfvars
 
 .PHONY: bootstrap-infra plan-tf apply-tf destroy-tf wait-for-nodes configure-hosts-file update-packages configure-sysctl configure-dns \
-	install-longhorn-dependencies reboot-if-required install-rke2-server install-rke2-agent configure-containerd-dropins cluster-readiness-check \
+	install-longhorn-dependencies install-openebs-lvm reboot-if-required install-rke2-server install-rke2-agent configure-containerd-dropins cluster-readiness-check \
 	edge-infra-init edge-infra-plan edge-infra-apply edge-home-init edge-home-plan edge-home-apply edge-deploy edge-up
 
 bootstrap-infra: apply-tf \
@@ -55,6 +55,9 @@ configure-dns:
 
 install-longhorn-dependencies:
 	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/install-longhorn-dependencies.yml"
+
+install-openebs-lvm:
+	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/install-openebs-lvm.yml"
 
 reboot-if-required:
 	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/reboot-if-required.yml"

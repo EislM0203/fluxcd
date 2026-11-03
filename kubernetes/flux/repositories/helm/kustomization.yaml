@@ -19,3 +19,4 @@ resources:
   - ./hashicorp.yaml
   - ./crowdsec.yaml
   - ./falcosecurity.yaml
+  - ./openebs-lvm.yaml

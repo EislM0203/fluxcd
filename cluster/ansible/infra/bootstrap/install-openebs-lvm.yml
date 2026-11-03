@@ -1,0 +1,61 @@
+---
+# Volume group for OpenEBS LVM LocalPV on the dedicated data disk (scsi1, set via
+# data_disk_size in cluster/tf). Nodes without that disk are skipped, so this is
+# safe to run against the whole cluster. The thin pool itself is created by the
+# OpenEBS driver on first use of a StorageClass with thinProvision: "yes".
+- name: Prepare nodes for OpenEBS LVM LocalPV
+  hosts: rke2_server:rke2_agents
+  become: yes
+
+  vars:
+    openebs_lvm_vg: lvmvg
+    # Proxmox exposes the VM's scsi1 under a stable by-id name, unlike /dev/sdX
+    openebs_lvm_disk: /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1
+
+  tasks:
+    - name: Install LVM and thin provisioning tools
+      ansible.builtin.apt:
+        name:
+          - lvm2
+          - thin-provisioning-tools
+        state: present
+        update_cache: yes
+      tags: [bootstrap, openebs, packages]
+
+    - name: Load device-mapper snapshot and thin pool modules
+      community.general.modprobe:
+        name: "{{ item }}"
+        state: present
+      loop: [dm_snapshot, dm_thin_pool]
+      tags: [bootstrap, openebs, modules]
+
+    - name: Load device-mapper modules at boot
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/openebs-lvm.conf
+        content: |
+          dm_snapshot
+          dm_thin_pool
+        mode: "0644"
+      tags: [bootstrap, openebs, modules]
+
+    - name: Look for the data disk
+      ansible.builtin.stat:
+        path: "{{ openebs_lvm_disk }}"
+      register: data_disk
+      tags: [bootstrap, openebs, lvm]
+
+    # No force: if the disk already carries a filesystem or another VG, this fails
+    # instead of wiping it.
+    - name: Create the volume group on the data disk
+      community.general.lvg:
+        vg: "{{ openebs_lvm_vg }}"
+        pvs: "{{ openebs_lvm_disk }}"
+        state: present
+      when: data_disk.stat.exists
+      tags: [bootstrap, openebs, lvm]
+
+    - name: Report nodes without a data disk
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }}: no {{ openebs_lvm_disk }}, skipped the volume group"
+      when: not data_disk.stat.exists
+      tags: [bootstrap, openebs, lvm]

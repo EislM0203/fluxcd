@@ -2,6 +2,9 @@ cluster-init: true
 disable-cloud-controller: true
 disable:
   - rke2-ingress-nginx
+  # Default ingress since RKE2 1.36: a second Traefik DaemonSet with hostPort
+  # 80/443 on every node. Ingress runs on Flux's Traefik in ns networking.
+  - rke2-traefik
 tls-san:
 {% for ip in rke2_extra_tls_san | default([]) %}
   - "{{ ip }}"

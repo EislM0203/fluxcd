@@ -395,6 +395,8 @@ spec:
             webhook_configs:
               - url: "http://ntfy.apps.svc.cluster.local/am-default?template=alertmanager-plus"
                 send_resolved: true
+                # ntfy's 4096-byte limit; the rest arrive as truncatedAlerts.
+                max_alerts: 4
                 http_config:
                   authorization:
                     credentials_file: /etc/alertmanager/secrets/alertmanager-ntfy/token
@@ -402,6 +404,7 @@ spec:
             webhook_configs:
               - url: "http://ntfy.apps.svc.cluster.local/am-warning?template=alertmanager-plus"
                 send_resolved: true
+                max_alerts: 4
                 http_config:
                   authorization:
                     credentials_file: /etc/alertmanager/secrets/alertmanager-ntfy/token
@@ -409,6 +412,7 @@ spec:
             webhook_configs:
               - url: "http://ntfy.apps.svc.cluster.local/am-critical?template=alertmanager-plus"
                 send_resolved: true
+                max_alerts: 4
                 http_config:
                   authorization:
                     credentials_file: /etc/alertmanager/secrets/alertmanager-ntfy/token

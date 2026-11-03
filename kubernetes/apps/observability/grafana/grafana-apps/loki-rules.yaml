@@ -1,0 +1,68 @@
+---
+# Alerts on the Kubernetes API audit log (kube-apiserver stdout in Loki, policy in
+# cluster/ansible/infra/bootstrap/templates/rke2-audit-policy.yaml.j2). Loaded by the
+# Loki rules sidecar (label loki_rule); the ruler sends to Alertmanager -> ntfy.
+# Allow-lists come from a 6 h baseline after the 2026-11-03 rebuild. system:admin is
+# the RKE2 admin kubeconfig: its execs and secret reads alert on purpose.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-rules-kubernetes-audit
+  namespace: observability
+  labels:
+    loki_rule: "true"
+data:
+  kubernetes-audit.yaml: |
+    groups:
+      - name: kubernetes-audit
+        interval: 1m
+        rules:
+          # CNPG's operator execs into its instances (backups, status).
+          - alert: KubeAuditPodExec
+            expr: |
+              sum by (user_username, objectRef_namespace, objectRef_name, objectRef_subresource) (
+                count_over_time({k8s_namespace_name="kube-system", k8s_pod_name=~"kube-apiserver.*"}
+                  |= "audit.k8s.io/v1" | json
+                  | stage="ResponseComplete"
+                  | objectRef_subresource=~"exec|attach|portforward"
+                  | user_username!="system:serviceaccount:storage:cloudnative-pg-operator"
+                [5m])
+              ) > 0
+            labels:
+              severity: warning
+            annotations:
+              summary: '{{ $labels.user_username }} ran {{ $labels.objectRef_subresource }} on {{ $labels.objectRef_namespace }}/{{ $labels.objectRef_name }}'
+          # Flux, RKE2 and the operators that manage their own Roles are expected.
+          - alert: KubeAuditRbacChange
+            expr: |
+              sum by (user_username, verb, objectRef_resource, objectRef_namespace, objectRef_name) (
+                count_over_time({k8s_namespace_name="kube-system", k8s_pod_name=~"kube-apiserver.*"}
+                  |= "audit.k8s.io/v1" | json
+                  | stage="ResponseComplete"
+                  | objectRef_apiGroup="rbac.authorization.k8s.io"
+                  | verb=~"create|update|patch|delete|deletecollection"
+                  | responseStatus_code=~"2.."
+                  | user_username!~"system:serviceaccount:flux-system:.*|system:rke2-supervisor|system:serviceaccount:storage:(cloudnative-pg-operator|plugin-barman-cloud|volsync)|system:serviceaccount:kube-system:kata-deploy-sa-cleanup"
+                [5m])
+              ) > 0
+            labels:
+              severity: warning
+            annotations:
+              summary: '{{ $labels.user_username }} {{ $labels.verb }} {{ $labels.objectRef_resource }} {{ $labels.objectRef_namespace }}/{{ $labels.objectRef_name }} outside Flux'
+          # Service accounts read their own secrets all day; a person or a node
+          # credential reading one is the interesting case.
+          - alert: KubeAuditSecretReadByUser
+            expr: |
+              sum by (user_username, verb, objectRef_namespace, objectRef_name) (
+                count_over_time({k8s_namespace_name="kube-system", k8s_pod_name=~"kube-apiserver.*"}
+                  |= "audit.k8s.io/v1" | json
+                  | stage="ResponseComplete"
+                  | objectRef_resource="secrets"
+                  | verb=~"get|list|watch"
+                  | user_username!~"system:serviceaccount:.*|system:rke2-supervisor|system:kube-controller-manager|system:kube-scheduler|system:apiserver|system:node:.*"
+                [5m])
+              ) > 0
+            labels:
+              severity: warning
+            annotations:
+              summary: '{{ $labels.user_username }} {{ $labels.verb }} secret {{ $labels.objectRef_namespace }}/{{ $labels.objectRef_name }}'

@@ -2,6 +2,9 @@
 # Webhook templates, used as ?template=<name> (NTFY_TEMPLATE_DIR). alertmanager-plus is
 # ntfy's built-in alertmanager template with fallbacks for alerts that carry no alertname,
 # instance or namespace label: falcosidekick sends rule, k8s_ns_name and k8s_pod_name.
+# ntfy rejects a message over 4096 bytes after templating, which dropped every group of
+# ~10+ alerts. Alertmanager sends at most 4 alerts per webhook (max_alerts) and reports
+# the rest in truncatedAlerts; long annotations are cut here.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -35,13 +38,16 @@ data:
       Starts at: {{ .startsAt }}
       {{ if and .endsAt (ne .endsAt "0001-01-01T00:00:00Z") }}Ends at: {{ .endsAt }}{{ end }}
       {{- if .annotations.summary }}
-      Summary: {{ .annotations.summary }}
+      Summary: {{ .annotations.summary | trunc 300 }}
       {{- end }}
       {{- if .annotations.description }}
-      Description: {{ .annotations.description }}
+      Description: {{ .annotations.description | trunc 400 }}
       {{- end }}
       {{- if .generatorURL }}
       Source: {{ .generatorURL }}
       {{- end }}
 
       {{ end }}
+      {{- if .truncatedAlerts }}
+      … and {{ .truncatedAlerts }} more alerts in this group (see Alertmanager).
+      {{- end }}

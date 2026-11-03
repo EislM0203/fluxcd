@@ -60,6 +60,20 @@ spec:
         # (service.group index label, drop all log attributes but user.id) and dropped
         # log.iostream/log.file.path. Defaults index service.name/namespace and the k8s
         # workload attributes; other attributes become structured metadata.
+      # Log-based alerts (loki-rules.yaml) go to the same Alertmanager as Prometheus.
+      # The rules sidecar writes to /rules/fake: without auth every rule belongs to
+      # the tenant "fake", and the ruler only reads <directory>/<tenant>/.
+      rulerConfig:
+        storage:
+          type: local
+          local:
+            directory: /rules
+        rule_path: /var/loki/ruler-scratch
+        alertmanager_url: http://prometheus-stack-kube-prom-alertmanager.observability.svc.cluster.local:9093
+        enable_api: true
+    sidecar:
+      rules:
+        folder: /rules/fake
     # Scrape Loki itself so ingestion failures can alert.
     monitoring:
       serviceMonitor:

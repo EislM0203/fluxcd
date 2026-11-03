@@ -1,0 +1,69 @@
+---
+# Restore test: pull lvmtest-backup from restic into a new PVC on openebs-lvm, then
+# verify it against the SHA256SUMS the writer stored next to the data. SHA256SUMS is
+# written last, so a restore that has it but fails the check means real corruption.
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationdestination_v1alpha1.json
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: lvmtest-restore
+spec:
+  trigger:
+    manual: restore-1
+  restic:
+    repository: restic-lvmtest
+    copyMethod: Snapshot
+    volumeSnapshotClassName: openebs-lvm-snapclass
+    storageClassName: openebs-lvm
+    cacheStorageClassName: openebs-lvm
+    accessModes: ["ReadWriteOnce"]
+    capacity: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lvmtest-restored
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: openebs-lvm
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: lvmtest-restore
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: lvmtest-verify
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: verify
+          image: harbor.cloud.traunseenet.com/docker.io/library/busybox:1.37.0@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec
+          command: ["sh", "-c", "cd /restored && ls -la && sha256sum -c SHA256SUMS && echo RESTORE-OK"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: restored
+              mountPath: /restored
+              readOnly: true
+      volumes:
+        - name: restored
+          persistentVolumeClaim:
+            claimName: lvmtest-restored

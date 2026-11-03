@@ -1,0 +1,37 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: openebs-lvm
+spec:
+  groups:
+    # A full thin pool takes every volume in it read-only at once, and a full
+    # metadata area can corrupt the pool. Neither may ever happen, hence warning
+    # well before and critical close to the edge.
+    - name: openebs-lvm
+      rules:
+        - alert: LvmThinPoolFilling
+          expr: max by (vg, name, host) (lvm_lv_used_percent{segtype="thin-pool"}) > 80
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: LVM thin pool {{ $labels.vg }}/{{ $labels.name }} is {{ $value | humanize }}% full
+            description: Grow the data disk (cluster/tf data_disk_size, then pvresize and lvextend) or free volumes before it reaches 100%.
+        - alert: LvmThinPoolAlmostFull
+          expr: max by (vg, name, host) (lvm_lv_used_percent{segtype="thin-pool"}) > 90
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: LVM thin pool {{ $labels.vg }}/{{ $labels.name }} is {{ $value | humanize }}% full
+            description: At 100% every volume in the pool stops accepting writes. Act now.
+        - alert: LvmThinPoolMetadataFilling
+          expr: max by (vg, name, host) (lvm_lv_mda_used_percent{segtype="thin-pool"}) > 75
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: LVM thin pool {{ $labels.vg }}/{{ $labels.name }} metadata is {{ $value | humanize }}% full
+            description: Extend it with lvextend --poolmetadatasize while there is still room; full metadata can corrupt the pool.

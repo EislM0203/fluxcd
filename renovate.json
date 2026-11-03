@@ -7,5 +7,12 @@
   "registryAliases": {
     "harbor.cloud.traunseenet.com/docker.io": "index.docker.io",
     "harbor.cloud.traunseenet.com/ghcr.io": "ghcr.io"
-  }
+  },
+  "hostRules": [
+    {
+      "description": "Own images (library/*) are looked up in Harbor itself; split-horizon DNS resolves it to the LAN, which Renovate will block by default in a future major.",
+      "matchHost": "harbor.cloud.traunseenet.com",
+      "allowInternal": true
+    }
+  ]
 }

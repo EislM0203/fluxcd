@@ -39,7 +39,7 @@ spec:
           "printConfig": true,
           "dependencyDashboard": true,
           "gitAuthor": "Renovate Bot <markuseisl2000@gmail.com>",
-          "prConcurrentLimit": 20,
+          "prConcurrentLimit": 50,
           "prHourlyLimit": 0,
           "repositories": ["EislM0203/fluxcd"],
           "flux": {

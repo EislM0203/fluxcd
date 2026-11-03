@@ -11,6 +11,9 @@ parameters:
   volgroup: lvmvg
   thinProvision: "yes"
   fsType: ext4
+  # Several pods on one node may mount the volume (RWO, as with Longhorn);
+  # without it OpenEBS refuses a second mount ("device already mounted").
+  shared: "yes"
 reclaimPolicy: Delete
 allowVolumeExpansion: true
 # The volume lives on whichever node the first consumer lands on; the chart's
@@ -31,6 +34,9 @@ parameters:
   volgroup: lvmvg
   thinProvision: "yes"
   fsType: ext4
+  # Several pods on one node may mount the volume (RWO, as with Longhorn);
+  # without it OpenEBS refuses a second mount ("device already mounted").
+  shared: "yes"
 reclaimPolicy: Delete
 allowVolumeExpansion: true
 volumeBindingMode: WaitForFirstConsumer

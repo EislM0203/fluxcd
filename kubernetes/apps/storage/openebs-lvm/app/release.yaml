@@ -25,6 +25,31 @@ spec:
       retries: 3
   uninstall:
     keepHistory: false
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: DaemonSet
+              name: openebs-lvm-lvm-localpv-node
+            patch: |
+              apiVersion: apps/v1
+              kind: DaemonSet
+              metadata:
+                name: openebs-lvm-lvm-localpv-node
+              spec:
+                template:
+                  spec:
+                    containers:
+                      - name: openebs-lvm-plugin
+                        volumeMounts:
+                          - name: lvmlocal
+                            mountPath: /etc/lvm/lvmlocal.conf
+                            subPath: lvmlocal.conf
+                            readOnly: true
+                    volumes:
+                      - name: lvmlocal
+                        configMap:
+                          name: openebs-lvm-lvmlocal
   values:
     analytics:
       enabled: false

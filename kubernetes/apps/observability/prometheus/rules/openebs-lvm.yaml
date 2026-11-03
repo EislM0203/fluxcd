@@ -35,3 +35,13 @@ spec:
           annotations:
             summary: LVM thin pool {{ $labels.vg }}/{{ $labels.name }} metadata is {{ $value | humanize }}% full
             description: Extend it with lvextend --poolmetadatasize while there is still room; full metadata can corrupt the pool.
+        # The fill alerts above are silent when the series is missing, e.g. if the
+        # driver's LV collector breaks again (see openebs-lvm/app/lvmlocal.yaml).
+        - alert: LvmThinPoolMetricsMissing
+          expr: absent(lvm_lv_used_percent{segtype="thin-pool"})
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: No LVM thin pool fill metrics for 30 minutes
+            description: The thin pool alerts are blind. Check the openebs-lvm node plugin logs (lv_collector) and whether a snapshot LV is inactive.

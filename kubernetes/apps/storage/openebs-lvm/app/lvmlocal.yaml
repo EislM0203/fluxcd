@@ -1,0 +1,17 @@
+---
+# OpenEBS creates thin snapshots with a plain `lvcreate --snapshot`, so LVM marks them
+# activation-skip: inactive, no /dev node. The driver's LV metrics collector aborts on
+# the first LV without a /dev node (lvm_util.go decodeLvsJSON -> getLvDeviceName), which
+# blanks every lvm_lv_* series, the thin pool fill level included, for as long as any
+# snapshot exists, and restore destinations keep theirs permanently. Creating snapshots
+# active avoids that; they stay read-only (--permission r). Mounted by the postRenderer
+# in release.yaml, since the plugin container does not read the node's /etc/lvm.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openebs-lvm-lvmlocal
+data:
+  lvmlocal.conf: |
+    activation {
+      auto_set_activation_skip = 0
+    }

@@ -9,7 +9,7 @@ metadata:
   name: lvmtest-restore
 spec:
   trigger:
-    manual: restore-1
+    manual: restore-2
   restic:
     repository: restic-lvmtest
     copyMethod: Snapshot
@@ -22,7 +22,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: lvmtest-restored
+  name: lvmtest-restored-2
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: openebs-lvm
@@ -37,7 +37,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: lvmtest-verify
+  name: lvmtest-verify-2
 spec:
   backoffLimit: 2
   template:
@@ -66,4 +66,4 @@ spec:
       volumes:
         - name: restored
           persistentVolumeClaim:
-            claimName: lvmtest-restored
+            claimName: lvmtest-restored-2

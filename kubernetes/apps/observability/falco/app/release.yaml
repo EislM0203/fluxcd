@@ -102,7 +102,7 @@ spec:
                 - [flux-system, ghcr.io/fluxcd/notification-controller]
                 - [flux-system, ghcr.io/fluxcd/image-automation-controller]
                 - [flux-system, ghcr.io/fluxcd/image-reflector-controller]
-                - [storage, harbor.cloud.traunseenet.com/docker.io/openebs/lvm-driver]
+                - [storage, docker.io/openebs/lvm-driver]
                 - [storage, registry.k8s.io/sig-storage/csi-provisioner]
                 - [storage, registry.k8s.io/sig-storage/csi-resizer]
                 - [storage, registry.k8s.io/sig-storage/csi-snapshotter]

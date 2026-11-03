@@ -26,3 +26,15 @@ spec:
   sourceRef:
     kind: OCIRepository
     name: flux-manifests
+  # A fresh cluster has 70+ Kustomizations, many with wait: true; a health check
+  # holds a worker for up to its 15m timeout, and the default of 4 workers left
+  # traefik, harbor and vault queued behind apps waiting on images that only
+  # those three can serve.
+  patches:
+    - target:
+        kind: Deployment
+        name: (kustomize-controller|helm-controller)
+      patch: |
+        - op: add
+          path: /spec/template/spec/containers/0/args/-
+          value: --concurrent=12

@@ -16,3 +16,25 @@ allowVolumeExpansion: true
 # The volume lives on whichever node the first consumer lands on; the chart's
 # storage capacity tracking keeps the scheduler off nodes where it cannot fit.
 volumeBindingMode: WaitForFirstConsumer
+---
+# For apps pinned to rke2-node-2 (Harbor sits closest to the router there). A
+# local volume stays on the node it was created on, so the restore destination
+# and the app volume must both be provisioned on that node, wherever VolSync's
+# mover pod would otherwise land.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-lvm-rke2-node-2
+provisioner: local.csi.openebs.io
+parameters:
+  storage: lvm
+  volgroup: lvmvg
+  thinProvision: "yes"
+  fsType: ext4
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+allowedTopologies:
+  - matchLabelExpressions:
+      - key: kubernetes.io/hostname
+        values: ["rke2-node-2"]

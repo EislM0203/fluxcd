@@ -7,7 +7,8 @@ metadata:
   name: harbor-data
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: openebs-lvm
+  # Same node as the Harbor pods (nodeSelector rke2-node-2 in release.yaml)
+  storageClassName: openebs-lvm-rke2-node-2
   dataSourceRef:
     kind: ReplicationDestination
     apiGroup: volsync.backube
@@ -23,10 +24,10 @@ metadata:
   name: harbor-restore
 spec:
   trigger:
-    manual: restore-once
+    manual: restore-rke2-node-2
   restic:
     repository: restic-harbor
-    storageClassName: openebs-lvm
+    storageClassName: openebs-lvm-rke2-node-2
     accessModes: ["ReadWriteOnce"]
     copyMethod: Snapshot
     capacity: 1Gi

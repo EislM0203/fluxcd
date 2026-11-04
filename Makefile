@@ -10,7 +10,7 @@ SECRETS_FILE = secrets.yaml
 TFVARS_FILE = cluster/tf/terraform.tfvars
 
 .PHONY: bootstrap-infra plan-tf apply-tf destroy-tf wait-for-nodes configure-hosts-file update-packages configure-sysctl configure-dns configure-unattended-upgrades \
-	install-openebs-lvm reboot-if-required install-rke2-server install-rke2-agent configure-containerd-dropins cluster-readiness-check \
+	install-openebs-lvm reboot-if-required install-rke2-server install-rke2-agent configure-containerd-dropins cluster-readiness-check workstation-kubeconfig \
 	edge-infra-init edge-infra-plan edge-infra-apply edge-home-init edge-home-plan edge-home-apply edge-deploy edge-up
 
 bootstrap-infra: apply-tf \
@@ -25,7 +25,8 @@ bootstrap-infra: apply-tf \
 	install-rke2-server \
 	install-rke2-agent \
 	configure-containerd-dropins \
-	cluster-readiness-check
+	cluster-readiness-check \
+	workstation-kubeconfig
 
 init-tf:
 	@set -a && eval "$$(sops --decrypt .env)" && set +a && tofu -chdir="cluster/tf" init
@@ -75,6 +76,10 @@ configure-containerd-dropins:
 
 cluster-readiness-check:
 	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/cluster-readiness-check.yml"
+
+# kubelogin + OIDC ~/.kube/config on this PC; also the restore step for a new PC.
+workstation-kubeconfig:
+	ansible-playbook -i "${INVENTORY}" "${BOOTSTRAP_DIR}/workstation-kubeconfig.yml"
 
 # ==========================================
 # Edge (Hetzner VPS dumb pipe + home VM trust boundary)

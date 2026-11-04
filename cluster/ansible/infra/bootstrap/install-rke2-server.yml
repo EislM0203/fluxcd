@@ -117,6 +117,7 @@
     # Only for bootstrap.sh (sets RKE2_BOOTSTRAP=1 and deletes the file when done):
     # Flux has to be installed before Pocket ID runs. Otherwise no admin client
     # certificate on the PC; break-glass is /etc/rancher/rke2/rke2.yaml on the server.
+    # The daily OIDC kubeconfig is workstation-kubeconfig.yml.
     - name: Save admin kubeconfig locally for the Flux bootstrap
       when: lookup('env', 'RKE2_BOOTSTRAP') == '1'
       delegate_to: localhost
@@ -124,67 +125,6 @@
       ansible.builtin.copy:
         content: "{{ (kubeconfig_content.content | b64decode).replace('https://127.0.0.1:6443', 'https://' + ansible_host + ':6443') }}"
         dest: "{{ lookup('env', 'HOME') }}/.kube/rke2-admin.yaml"
-        owner: "{{ lookup('env', 'USER') }}"
-        group: "{{ lookup('env', 'USER') }}"
-        mode: '0600'
-      tags: [bootstrap, rke2, server, kubeconfig]
-
-    # Daily kubeconfig: no credentials in it, kubelogin fetches a Pocket ID token
-    # (browser + passkey) and caches it. Needs the kubectl plugin kubelogin.
-    - name: Save OIDC kubeconfig as the default kubeconfig
-      delegate_to: localhost
-      become: false
-      ansible.builtin.copy:
-        content: |
-          apiVersion: v1
-          kind: Config
-          clusters:
-            - name: rke2
-              cluster:
-                server: https://{{ ansible_host }}:6443
-                certificate-authority-data: {{ (kubeconfig_content.content | b64decode | from_yaml).clusters[0].cluster['certificate-authority-data'] }}
-          users:
-            - name: oidc
-              user:
-                exec:
-                  apiVersion: client.authentication.k8s.io/v1
-                  command: kubectl
-                  args:
-                    - oidc-login
-                    - get-token
-                    - --oidc-issuer-url={{ rke2_oidc_issuer_url }}
-                    - --oidc-client-id={{ rke2_oidc_client_id }}
-                    # preferred_username comes with profile, the group list with groups
-                    - --oidc-extra-scope=profile
-                    - --oidc-extra-scope=groups
-                  interactiveMode: IfAvailable
-            # For SSH sessions without a local browser (e.g. from the phone): prints a
-            # Pocket ID URL + code to confirm on any device.
-            - name: oidc-device
-              user:
-                exec:
-                  apiVersion: client.authentication.k8s.io/v1
-                  command: kubectl
-                  args:
-                    - oidc-login
-                    - get-token
-                    - --oidc-issuer-url={{ rke2_oidc_issuer_url }}
-                    - --oidc-client-id={{ rke2_oidc_client_id }}
-                    - --oidc-extra-scope=profile
-                    - --oidc-extra-scope=groups
-                    - --grant-type=device-code
-                  interactiveMode: IfAvailable
-          contexts:
-            - name: rke2
-              context:
-                cluster: rke2
-                user: oidc
-            - name: rke2-device
-              context:
-                cluster: rke2
-                user: oidc-device
-          current-context: rke2
-        dest: "{{ lookup('env', 'HOME') }}/.kube/config"
         owner: "{{ lookup('env', 'USER') }}"
         group: "{{ lookup('env', 'USER') }}"
         mode: '0600'

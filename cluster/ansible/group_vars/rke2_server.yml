@@ -3,3 +3,7 @@ rke2_extra_tls_san:
   - 10.0.0.59
   - 10.0.0.211
   - 10.0.0.67
+# Kubernetes SSO (templates/rke2-authentication-config.yaml.j2). The client is
+# public (PKCE, no secret), so its ID is not sensitive.
+rke2_oidc_issuer_url: https://pocketid.cloud.traunseenet.com
+rke2_oidc_client_id: 359a0c84-7e71-42d5-9d51-0e434b889083

@@ -1,0 +1,16 @@
+---
+# Pocket ID group k8s_admin = what the admin client certificate used to be, but
+# under the user's own name and with 1 h tokens. system:admin use is then a real
+# break-glass signal in the audit log.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oidc-k8s-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: oidc:k8s_admin

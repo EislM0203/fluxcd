@@ -2,6 +2,9 @@
 - name: Verify all Kubernetes nodes are ready
   hosts: localhost
   gather_facts: false
+  # Runs before Pocket ID exists: the admin client certificate, not OIDC.
+  environment:
+    KUBECONFIG: "{{ lookup('env', 'HOME') }}/.kube/rke2-admin.yaml"
 
   tasks:
     - name: Wait until all Kubernetes nodes are Ready

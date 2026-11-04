@@ -1,0 +1,20 @@
+---
+# RBAC for Kubernetes SSO (Pocket ID groups, prefixed oidc: by the apiserver's
+# AuthenticationConfiguration in cluster/ansible). Cluster-scoped: no targetNamespace.
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: oidc-rbac
+  namespace: flux-system
+spec:
+  path: ./kubernetes/apps/kube-system/oidc-rbac/app
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  interval: 15m
+  retryInterval: 15m
+  timeout: 5m

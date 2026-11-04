@@ -24,3 +24,9 @@ audit-policy-file: /etc/rancher/rke2/audit-policy.yaml
 kube-apiserver-arg:
   - "audit-log-path=-"
   - "audit-log-format=json"
+  # OIDC login through Pocket ID: templates/rke2-authentication-config.yaml.j2.
+  - "authentication-config=/etc/rancher/rke2/authentication-config.yaml"
+# RKE2 mounts only the files of its own flags (audit policy, PSS) into the
+# apiserver static pod; a file passed through kube-apiserver-arg needs this.
+kube-apiserver-extra-mount:
+  - "/etc/rancher/rke2/authentication-config.yaml:/etc/rancher/rke2/authentication-config.yaml:ro"

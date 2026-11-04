@@ -32,6 +32,14 @@
       tags: [bootstrap, rke2, server, config, audit]
       notify: Restart rke2-server
 
+    - name: Create Kubernetes API authentication config (OIDC through Pocket ID)
+      ansible.builtin.template:
+        src: rke2-authentication-config.yaml.j2
+        dest: /etc/rancher/rke2/authentication-config.yaml
+        mode: '0600'
+      tags: [bootstrap, rke2, server, config, oidc]
+      notify: Restart rke2-server
+
     - name: Install and start RKE2 server
       tags: [bootstrap, rke2, server]
       block:
@@ -106,11 +114,55 @@
       register: kubeconfig_content
       tags: [bootstrap, rke2, server, kubeconfig]
 
-    - name: Save kubeconfig locally with correct server address
+    # Break-glass and bootstrap only (bootstrap.sh, cluster-readiness-check): the
+    # client certificate is system:admin and works without Pocket ID. Never the
+    # default kubeconfig; daily use is the OIDC config below.
+    - name: Save admin kubeconfig locally with correct server address
       delegate_to: localhost
       become: false
       ansible.builtin.copy:
         content: "{{ (kubeconfig_content.content | b64decode).replace('https://127.0.0.1:6443', 'https://' + ansible_host + ':6443') }}"
+        dest: "{{ lookup('env', 'HOME') }}/.kube/rke2-admin.yaml"
+        owner: "{{ lookup('env', 'USER') }}"
+        group: "{{ lookup('env', 'USER') }}"
+        mode: '0600'
+      tags: [bootstrap, rke2, server, kubeconfig]
+
+    # Daily kubeconfig: no credentials in it, kubelogin fetches a Pocket ID token
+    # (browser + passkey) and caches it. Needs the kubectl plugin kubelogin.
+    - name: Save OIDC kubeconfig as the default kubeconfig
+      delegate_to: localhost
+      become: false
+      ansible.builtin.copy:
+        content: |
+          apiVersion: v1
+          kind: Config
+          clusters:
+            - name: rke2
+              cluster:
+                server: https://{{ ansible_host }}:6443
+                certificate-authority-data: {{ (kubeconfig_content.content | b64decode | from_yaml).clusters[0].cluster['certificate-authority-data'] }}
+          users:
+            - name: oidc
+              user:
+                exec:
+                  apiVersion: client.authentication.k8s.io/v1
+                  command: kubectl
+                  args:
+                    - oidc-login
+                    - get-token
+                    - --oidc-issuer-url={{ rke2_oidc_issuer_url }}
+                    - --oidc-client-id={{ rke2_oidc_client_id }}
+                    # preferred_username comes with profile, the group list with groups
+                    - --oidc-extra-scope=profile
+                    - --oidc-extra-scope=groups
+                  interactiveMode: IfAvailable
+          contexts:
+            - name: rke2
+              context:
+                cluster: rke2
+                user: oidc
+          current-context: rke2
         dest: "{{ lookup('env', 'HOME') }}/.kube/config"
         owner: "{{ lookup('env', 'USER') }}"
         group: "{{ lookup('env', 'USER') }}"

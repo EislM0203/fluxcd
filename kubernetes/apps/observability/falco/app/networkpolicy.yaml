@@ -1,0 +1,50 @@
+---
+# Ingress-only. The UI runs without its own auth (Pocket ID at Traefik is the gate),
+# so only Traefik and falcosidekick (which posts events to it) may reach it.
+# Kubelet probes come from the node and are not affected.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: falco-webui-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: falcosidekick
+      app.kubernetes.io/component: ui
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: networking
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: falcosidekick
+              app.kubernetes.io/component: core
+      ports:
+        - protocol: TCP
+          port: 2802
+---
+# The event store answers only the UI.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: falco-webui-redis-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: falcosidekick
+      app.kubernetes.io/component: ui-redis
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: falcosidekick
+              app.kubernetes.io/component: ui
+      ports:
+        - protocol: TCP
+          port: 6379

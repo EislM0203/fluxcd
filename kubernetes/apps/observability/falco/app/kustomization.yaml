@@ -4,3 +4,6 @@ kind: Kustomization
 resources:
   - release.yaml
   - secret.yaml
+  - httproute-webui.yaml
+  - middleware-oauth2.yaml
+  - networkpolicy.yaml

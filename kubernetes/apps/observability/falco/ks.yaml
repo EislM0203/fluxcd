@@ -7,6 +7,10 @@ metadata:
   namespace: flux-system
 spec:
   path: ./kubernetes/apps/observability/falco/app
+  # The UI's HTTPRoute and Middleware need the Gateway API and Traefik CRDs.
+  dependsOn:
+    - name: gateway-api-crds
+    - name: traefik-base
   prune: true
   wait: true
   sourceRef:

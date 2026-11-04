@@ -185,3 +185,26 @@ spec:
           hostport: http://prometheus-stack-kube-prom-alertmanager.observability.svc.cluster.local:9093
           endpoint: /api/v2/alerts
           minimumpriority: warning
+      # Event browser at falco.cloud (LAN/WG only). Pocket ID via oauth2-proxy is the
+      # gate (httproute-webui.yaml), so the UI's own basic auth (admin:admin unless
+      # replaced) is off; networkpolicy.yaml keeps other pods from skipping the gate.
+      # Loki keeps the long history; the UI only holds the last week, in memory.
+      webui:
+        enabled: true
+        replicaCount: 1
+        disableauth: true
+        ttl: 7d
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
+        redis:
+          storageEnabled: false
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 256Mi

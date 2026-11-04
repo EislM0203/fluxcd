@@ -1,19 +1,23 @@
 ---
 - name: Verify all Kubernetes nodes are ready
-  hosts: localhost
+  # On the server with its own admin kubeconfig: runs before Pocket ID exists,
+  # and the PC keeps no admin client certificate.
+  hosts: rke2_server
+  become: yes
   gather_facts: false
-  # Runs before Pocket ID exists: the admin client certificate, not OIDC.
-  environment:
-    KUBECONFIG: "{{ lookup('env', 'HOME') }}/.kube/rke2-admin.yaml"
 
   tasks:
     - name: Wait until all Kubernetes nodes are Ready
-      ansible.builtin.command: kubectl wait --for=condition=Ready nodes --all --timeout=300s
+      ansible.builtin.command: >
+        /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml
+        wait --for=condition=Ready nodes --all --timeout=300s
       changed_when: false
       tags: [bootstrap, readiness]
 
     - name: Get node status
-      ansible.builtin.command: kubectl get nodes
+      ansible.builtin.command: >
+        /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml
+        get nodes
       register: node_status
       changed_when: false
       tags: [bootstrap, readiness]

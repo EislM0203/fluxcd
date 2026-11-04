@@ -114,10 +114,11 @@
       register: kubeconfig_content
       tags: [bootstrap, rke2, server, kubeconfig]
 
-    # Break-glass and bootstrap only (bootstrap.sh, cluster-readiness-check): the
-    # client certificate is system:admin and works without Pocket ID. Never the
-    # default kubeconfig; daily use is the OIDC config below.
-    - name: Save admin kubeconfig locally with correct server address
+    # Only for bootstrap.sh (sets RKE2_BOOTSTRAP=1 and deletes the file when done):
+    # Flux has to be installed before Pocket ID runs. Otherwise no admin client
+    # certificate on the PC; break-glass is /etc/rancher/rke2/rke2.yaml on the server.
+    - name: Save admin kubeconfig locally for the Flux bootstrap
+      when: lookup('env', 'RKE2_BOOTSTRAP') == '1'
       delegate_to: localhost
       become: false
       ansible.builtin.copy:
@@ -157,11 +158,31 @@
                     - --oidc-extra-scope=profile
                     - --oidc-extra-scope=groups
                   interactiveMode: IfAvailable
+            # For SSH sessions without a local browser (e.g. from the phone): prints a
+            # Pocket ID URL + code to confirm on any device.
+            - name: oidc-device
+              user:
+                exec:
+                  apiVersion: client.authentication.k8s.io/v1
+                  command: kubectl
+                  args:
+                    - oidc-login
+                    - get-token
+                    - --oidc-issuer-url={{ rke2_oidc_issuer_url }}
+                    - --oidc-client-id={{ rke2_oidc_client_id }}
+                    - --oidc-extra-scope=profile
+                    - --oidc-extra-scope=groups
+                    - --grant-type=device-code
+                  interactiveMode: IfAvailable
           contexts:
             - name: rke2
               context:
                 cluster: rke2
                 user: oidc
+            - name: rke2-device
+              context:
+                cluster: rke2
+                user: oidc-device
           current-context: rke2
         dest: "{{ lookup('env', 'HOME') }}/.kube/config"
         owner: "{{ lookup('env', 'USER') }}"

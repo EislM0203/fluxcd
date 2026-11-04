@@ -25,8 +25,6 @@ kube-apiserver-arg:
   - "audit-log-path=-"
   - "audit-log-format=json"
   # OIDC login through Pocket ID: templates/rke2-authentication-config.yaml.j2.
+  # RKE2 mounts this file into the apiserver pod by itself. A kube-apiserver-extra-mount
+  # for it as well makes the mountPath duplicate and the kubelet rejects the pod.
   - "authentication-config=/etc/rancher/rke2/authentication-config.yaml"
-# RKE2 mounts only the files of its own flags (audit policy, PSS) into the
-# apiserver static pod; a file passed through kube-apiserver-arg needs this.
-kube-apiserver-extra-mount:
-  - "/etc/rancher/rke2/authentication-config.yaml:/etc/rancher/rke2/authentication-config.yaml:ro"

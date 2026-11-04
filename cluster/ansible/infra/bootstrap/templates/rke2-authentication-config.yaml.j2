@@ -1,8 +1,7 @@
 # Kubernetes SSO through Pocket ID: kubectl users log in with kubelogin and get
 # RBAC from their Pocket ID groups (ClusterRoleBinding in
-# kubernetes/apps/kube-system/oidc-rbac). The RKE2 client certificates
-# (/etc/rancher/rke2/rke2.yaml, ~/.kube/rke2-admin.yaml) keep working as
-# break-glass while Pocket ID or Traefik is down.
+# kubernetes/apps/kube-system/oidc-rbac). Break-glass while Pocket ID or Traefik
+# is down: the admin client certificate /etc/rancher/rke2/rke2.yaml on the server.
 apiVersion: apiserver.config.k8s.io/v1
 kind: AuthenticationConfiguration
 jwt:

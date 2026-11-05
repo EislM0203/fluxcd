@@ -14,7 +14,7 @@ Contexts:
 - `rke2-device` (the default): prints a Pocket ID URL and a code, to confirm with the passkey on any device. This also works in SSH sessions. Only confirm codes you have just requested yourself.
 - `rke2`: browser login on this machine.
 
-The ID token lasts 1 h. Pocket ID also issues a refresh token (even without `offline_access`), which kubelogin uses to renew silently; its lifetime is set on the Pocket ID client `kubernetes` (default 30 days). `kubectl oidc-login clean` deletes the local tokens. Access comes from the Pocket ID group `k8s_admin`, which is bound to cluster-admin in `kubernetes/apps/kube-system/oidc-rbac`.
+The ID token lasts 1 h. Pocket ID also issues a refresh token (even without `offline_access`), which kubelogin would use to renew silently. Its lifetime is set on the Pocket ID client `kubernetes` and is 1 min on purpose (Pocket ID's default is 30 days), so a new login is needed every hour. `kubectl oidc-login clean` deletes the local tokens. Access comes from the Pocket ID group `k8s_admin`, which is bound to cluster-admin in `kubernetes/apps/kube-system/oidc-rbac`.
 
 Break-glass, for when Pocket ID, Traefik or kube-vip is down: `ssh` to rke2-node-1, then `sudo /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml`.
 

@@ -313,8 +313,12 @@ spec:
       alertmanagerSpec:
         # ntfy publish token -> /etc/alertmanager/secrets/alertmanager-ntfy/token
         # (prometheus/secrets/externalsecret.yaml; used by the ntfy-* receivers below)
+        # Dead man's switch ping URL -> /etc/alertmanager/secrets/alertmanager-deadmans-switch/url
+        # (secrets/externalsecret-deadmans-switch.yaml). Both Secrets must exist or the
+        # Alertmanager pod cannot start.
         secrets:
           - alertmanager-ntfy
+          - alertmanager-deadmans-switch
         podMetadata:
           annotations:
             "resource.opentelemetry.io/service.name": "alertmanager"
@@ -341,6 +345,16 @@ spec:
           repeat_interval: 4h
 
           routes:
+            # Watchdog always fires. Pinging an external dead man's switch (healthchecks.io)
+            # every 5 minutes means silence from the whole chain (cluster, Alertmanager,
+            # network) reaches the phone by email from outside, where ntfy cannot.
+            - matchers:
+                - alertname="Watchdog"
+              receiver: deadmans-switch
+              group_wait: 0s
+              group_interval: 1m
+              repeat_interval: 5m
+
             # Drop InfoInhibitor alerts (severity=none, used for info suppression)
             - matchers:
                 - alertname="InfoInhibitor"
@@ -395,6 +409,11 @@ spec:
 
         receivers:
           - name: null-receiver
+
+          - name: deadmans-switch
+            webhook_configs:
+              - url_file: /etc/alertmanager/secrets/alertmanager-deadmans-switch/url
+                send_resolved: false
 
           # Default / fallback
           - name: ntfy-default

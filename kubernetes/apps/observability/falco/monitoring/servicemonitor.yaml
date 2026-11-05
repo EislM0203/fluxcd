@@ -1,0 +1,20 @@
+---
+# falcosidekick's delivery counters for the FalcosidekickOutputErrors alert. Not the
+# chart's own ServiceMonitor: the chart renders it only if the CRD exists at install
+# time, and on a fresh cluster Falco installs before Prometheus. The selector leaves
+# out the chart and version labels so it survives chart bumps.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: falco-falcosidekick
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: falcosidekick
+      app.kubernetes.io/instance: falco
+      app.kubernetes.io/component: core
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

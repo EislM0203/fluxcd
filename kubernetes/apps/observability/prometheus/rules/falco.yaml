@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: falco
+spec:
+  groups:
+    # Falco reports through falcosidekick; these fire when that path is broken, so a
+    # quiet am-critical topic really means "no events". Scrape: falco/monitoring.
+    - name: falco
+      rules:
+        - alert: FalcosidekickOutputErrors
+          # One series per destination (alertmanager, loki, webui) and status.
+          expr: sum by (destination) (rate(falcosecurity_falcosidekick_outputs_total{status="error"}[10m])) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: falcosidekick cannot deliver Falco events to {{ $labels.destination }}
+            description: >-
+              Events are lost for this destination (for alertmanager: no Falco pushes).
+              Check `kubectl -n observability logs deploy/falco-falcosidekick`.
+        - alert: FalcoNotRunningOnAllNodes
+          # A node without Falco has no runtime detection at all.
+          expr: kube_daemonset_status_number_unavailable{namespace="observability", daemonset="falco"} > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $value }} node(s) without a running Falco pod"
+            description: Check `kubectl -n observability get pods -l app.kubernetes.io/name=falco -o wide`.

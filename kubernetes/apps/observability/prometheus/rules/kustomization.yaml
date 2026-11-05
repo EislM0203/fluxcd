@@ -12,5 +12,6 @@ resources:
   - services.yaml
   - observability.yaml
   - crowdsec.yaml
+  - falco.yaml
   - external-secrets.yaml
   - openebs-lvm.yaml

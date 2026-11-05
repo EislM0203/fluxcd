@@ -70,3 +70,29 @@ spec:
             description: >-
               New bans are not enforced. Check the Traefik logs for the crowdsec plugin and
               the bouncer key (`cscli bouncers list` in the LAPI pod).
+        - alert: CrowdSecCapiPullStale
+          # LAPI pulls the community blocklist from CAPI every 2h; a stale pull means the
+          # ~15k community bans expire one by one and are not replaced.
+          expr: time() - max(cs_capi_last_pull_timestamp{namespace="crowdsec"}) > 6 * 3600
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: CrowdSec has not pulled the community blocklist for over 6h
+            description: >-
+              Check the LAPI logs for CAPI errors (login, network policy to api.crowdsec.net)
+              and `cscli capi status` in the LAPI pod.
+        - alert: CrowdSecCommunityBlocklistEmpty
+          # Normally about 15k CAPI decisions. A fresh LAPI (rebuild, lost PVC) fills it on
+          # its first pull within minutes, hence the long `for`.
+          expr: >-
+            sum(cs_active_decisions{namespace="crowdsec", origin="CAPI"}) < 1000
+            or absent(cs_active_decisions{namespace="crowdsec", origin="CAPI"})
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "CrowdSec community blocklist is (nearly) empty: {{ $value }} CAPI decisions"
+            description: >-
+              Only local detections are enforced. Check CAPI registration and pulls
+              (`cscli capi status` in the LAPI pod).

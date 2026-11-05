@@ -26,3 +26,25 @@ spec:
   retryInterval: 15m
   timeout: 15m
   targetNamespace: observability
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: falco-monitoring
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: falco-app
+    - name: prometheus-app
+  path: ./kubernetes/apps/observability/falco/monitoring
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: fluxcd-kubernetes
+    namespace: flux-system
+  interval: 15m
+  retryInterval: 15m
+  timeout: 15m
+  targetNamespace: observability

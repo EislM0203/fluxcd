@@ -1,0 +1,22 @@
+---
+# Internal only (websecure-cloud, LAN/WG). No forward-auth: Ghostfolio logs in
+# through Pocket ID itself (deployment.yaml).
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ghostfolio
+spec:
+  parentRefs:
+    - name: traefik
+      namespace: networking
+      sectionName: websecure-cloud
+  hostnames:
+    - ghostfolio.cloud.traunseenet.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: ghostfolio
+          port: 3333

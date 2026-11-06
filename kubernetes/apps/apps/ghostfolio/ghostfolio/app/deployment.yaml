@@ -1,0 +1,98 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ghostfolio
+  name: ghostfolio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ghostfolio
+  template:
+    metadata:
+      labels:
+        app: ghostfolio
+        app.kubernetes.io/part-of: ghostfolio
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000 # image user 'node'
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ghostfolio
+          # The entrypoint runs the Prisma migrations and seed before starting.
+          image: harbor.cloud.traunseenet.com/docker.io/ghostfolio/ghostfolio:3.98.0@sha256:899698d95d07c9665c082e5db4e54d8f81c0686ed2ffa9c24d8021e9b5b7c646
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3333
+              protocol: TCP
+          env:
+            - name: TZ
+              value: Europe/Vienna
+            - name: ROOT_URL
+              value: https://ghostfolio.cloud.traunseenet.com
+            - name: TRUST_PROXY
+              value: "1" # Traefik is the only proxy in front
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ghostfolio-pg-app # created by CNPG (pg.yaml)
+                  key: uri
+            - name: REDIS_HOST
+              value: ghostfolio-redis
+            - name: REDIS_PORT
+              value: "6379"
+            # Login through Pocket ID (client "ghostfolio", callback
+            # https://ghostfolio.cloud.traunseenet.com/api/auth/oidc/callback); the first
+            # user becomes ADMIN. AUTH_TOKEN=false only hides the token login in the UI
+            # (info.service.ts, 3.98.0): POST /api/v1/auth/anonymous and sign-up via
+            # /api/v1/user stay open until Admin Control -> "User Signup" is switched off.
+            - name: ENABLE_FEATURE_AUTH_OIDC
+              value: "true"
+            - name: ENABLE_FEATURE_AUTH_TOKEN
+              value: "false"
+            - name: OIDC_ISSUER
+              value: https://pocketid.cloud.traunseenet.com
+            - name: OIDC_SCOPE
+              value: '["openid","profile","email"]'
+          envFrom:
+            - secretRef:
+                name: ghostfolio-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          startupProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30 # migrations on first start
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi

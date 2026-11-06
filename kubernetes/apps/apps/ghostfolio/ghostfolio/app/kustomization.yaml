@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - externalsecret.yaml
+  # SOPS: Secret s3-ghostfolio-pg-backup (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) for barman
+  - secret.yaml
+  - pg.yaml
+  - redis.yaml
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml
+  - networkpolicy.yaml

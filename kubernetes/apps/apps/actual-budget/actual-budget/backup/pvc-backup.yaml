@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationsource_v1alpha1.json
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: actual-budget-backup
+spec:
+  sourcePVC: actual-budget-data
+  trigger:
+    schedule: "0 */6 * * *"
+  restic:
+    pruneIntervalDays: 1
+    # Same repository as the previous install (see app/pvc.yaml).
+    repository: restic-actual-budget
+    retain:
+      hourly: 5
+      daily: 4
+      weekly: 3
+      monthly: 2
+      yearly: 1
+    copyMethod: Snapshot
+    # Clone binds at once on the snapshot's node; the cache follows the mover there.
+    storageClassName: openebs-lvm-backup
+    cacheStorageClassName: openebs-lvm
+    unlock: "something"

@@ -1,0 +1,53 @@
+---
+# Cache and job queue only (no persistence needed); reachable only from Ghostfolio
+# (networkpolicy.yaml), hence no password (REDIS_PASSWORD defaults to empty).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ghostfolio-redis
+  name: ghostfolio-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ghostfolio-redis
+  template:
+    metadata:
+      labels:
+        app: ghostfolio-redis
+        app.kubernetes.io/part-of: ghostfolio
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        - image: harbor.cloud.traunseenet.com/docker.io/library/redis:8.10.3@sha256:de1068af6f552240dfab67bcc9bfef99bfc60f776bb4580ef077ea4c8c97e848
+          name: redis
+          ports:
+            - containerPort: 6379
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - mountPath: /data
+              name: redis-data
+      volumes:
+        - name: redis-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ghostfolio-redis
+spec:
+  type: ClusterIP
+  selector:
+    app: ghostfolio-redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+      protocol: TCP

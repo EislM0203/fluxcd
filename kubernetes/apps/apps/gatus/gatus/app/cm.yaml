@@ -290,6 +290,22 @@ data:
           - "[BODY].status == ok"
           - "[RESPONSE_TIME] < 500"
         alerts: *ntfy-alert
+      - name: Actual Budget
+        group: Finance
+        url: "http://actual-budget.apps.svc.cluster.local:5006/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
+      - name: Ghostfolio
+        group: Finance
+        url: "http://ghostfolio.apps.svc.cluster.local:3333/api/v1/health"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
       - name: Track
         group: Personal
         # Through the web frontend (nginx proxies /api to track-api); the
@@ -324,6 +340,16 @@ data:
           - "[BODY].status == ok"
           - "[BODY].components.db_pings == ok"
           - "[RESPONSE_TIME] < 500"
+        alerts: *ntfy-alert
+      - name: dsh
+        group: AI
+        # Direct to the pod's web UI (no health endpoint); the dsh NetworkPolicy lets
+        # only Traefik and Gatus in. Runs in a Kata VM, hence the looser time limit.
+        url: "http://dsh.ai.svc.cluster.local:3080/"
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 1000"
         alerts: *ntfy-alert
 
     alerting:

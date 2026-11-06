@@ -1,0 +1,19 @@
+---
+# Clean slate (2026-11): deliberately no dataSourceRef/ReplicationDestination, so the
+# PVC starts empty although restic-actual-budget still holds the previous install's
+# snapshots (they age out through the retention in backup/pvc-backup.yaml).
+# On a cluster rebuild this PVC would therefore come up EMPTY. Before rebuilding, add
+# a ReplicationDestination on restic-actual-budget and a dataSourceRef here (fin's
+# pvc.yaml is the template); dataSourceRef can't be added to an existing PVC.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: actual-budget
+  name: actual-budget-data
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: openebs-lvm
+  resources:
+    requests:
+      storage: 2Gi

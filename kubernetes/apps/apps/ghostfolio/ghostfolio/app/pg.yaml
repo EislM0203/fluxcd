@@ -1,0 +1,91 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: ghostfolio-pg
+  annotations:
+    # Needed once bootstrap is switched to recovery: the archive path is then not empty.
+    cnpg.io/skipEmptyWalArchiveCheck: "enabled"
+spec:
+  inheritedMetadata:
+    labels:
+      app.kubernetes.io/part-of: ghostfolio
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.6-system-trixie
+  enableSuperuserAccess: true
+  primaryUpdateStrategy: unsupervised
+  externalClusters:
+    - name: &name ghostfolio-pg
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: *name
+          serverName: *name
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: *name
+        serverName: *name
+  bootstrap:
+    # New database. Once the first base backup is in s3://cnpg-backups/ghostfolio,
+    # switch to recovery (as paperless-pg) so a rebuild restores instead of starting
+    # empty. bootstrap only runs at creation, so the switch is harmless while it runs.
+    initdb:
+      database: ghostfolio
+      owner: ghostfolio
+    # recovery:
+    #   source: *name
+    #   database: ghostfolio
+    #   owner: ghostfolio
+  storage:
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 2Gi
+      storageClassName: openebs-lvm
+      volumeMode: Filesystem
+  monitoring:
+    enablePodMonitor: true
+  managed:
+    services:
+      disabledDefaultServices: ["ro", "r"]
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: ghostfolio-pg
+spec:
+  retentionPolicy: 20d
+  configuration:
+    destinationPath: s3://cnpg-backups/ghostfolio
+    endpointURL: http://10.0.0.154:9000
+    s3Credentials:
+      accessKeyId:
+        name: s3-ghostfolio-pg-backup
+        key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        name: s3-ghostfolio-pg-backup
+        key: AWS_SECRET_ACCESS_KEY
+    data:
+      compression: bzip2
+    wal:
+      compression: bzip2
+      maxParallel: 8
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: ghostfolio-pg-backup
+spec:
+  schedule: "0 30 */6 * * *"
+  # A base backup right away, so recovery has something to restore from day one.
+  immediate: true
+  backupOwnerReference: self
+  cluster:
+    name: ghostfolio-pg
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io

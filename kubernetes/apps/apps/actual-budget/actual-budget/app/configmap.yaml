@@ -1,0 +1,19 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: actual-budget-config
+data:
+  TZ: "Europe/Vienna"
+  ACTUAL_PORT: "5006"
+  # Login only through Pocket ID (client "actual-budget", callback
+  # https://actual.cloud.traunseenet.com/openid/callback). On a fresh server the
+  # first successful OpenID login becomes the owner, and that can't be changed
+  # from the UI later. Client ID and secret come from the ExternalSecret.
+  ACTUAL_LOGIN_METHOD: "openid"
+  # The login method alone is only the default; password and header stay allowed
+  # unless restricted here (packages/sync-server/src/load-config.js, v26.11.0).
+  ACTUAL_ALLOWED_LOGIN_METHODS: "openid"
+  ACTUAL_OPENID_ENFORCE: "true"
+  ACTUAL_OPENID_DISCOVERY_URL: "https://pocketid.cloud.traunseenet.com"
+  ACTUAL_OPENID_SERVER_HOSTNAME: "https://actual.cloud.traunseenet.com"

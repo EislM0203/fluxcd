@@ -1,0 +1,18 @@
+---
+# Upstream OAuth credentials (auths/) and the usage spool (data/). New app, so no
+# dataSourceRef yet: restic-clirelay is empty and the PVC starts empty. Once the first
+# backup in backup/pvc-backup.yaml has run, add a ReplicationDestination and a
+# dataSourceRef (mdmem's pvc.yaml is the template) before any rebuild; dataSourceRef
+# can't be added to an existing PVC.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: clirelay
+  name: clirelay-data
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: openebs-lvm
+  resources:
+    requests:
+      storage: 1Gi

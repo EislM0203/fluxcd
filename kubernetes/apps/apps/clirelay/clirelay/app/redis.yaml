@@ -1,0 +1,53 @@
+---
+# Rebuildable state only (upstream: "Redis for rebuildable state"), so no persistence;
+# reachable only from CliRelay (networkpolicy.yaml), hence no password.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: clirelay-redis
+  name: clirelay-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clirelay-redis
+  template:
+    metadata:
+      labels:
+        app: clirelay-redis
+        app.kubernetes.io/part-of: clirelay
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        - image: harbor.cloud.traunseenet.com/docker.io/library/redis:8.10.3@sha256:de1068af6f552240dfab67bcc9bfef99bfc60f776bb4580ef077ea4c8c97e848
+          name: redis
+          ports:
+            - containerPort: 6379
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - mountPath: /data
+              name: redis-data
+      volumes:
+        - name: redis-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clirelay-redis
+spec:
+  type: ClusterIP
+  selector:
+    app: clirelay-redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+      protocol: TCP

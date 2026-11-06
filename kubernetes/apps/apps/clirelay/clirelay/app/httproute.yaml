@@ -1,0 +1,22 @@
+---
+# Internal only (websecure-cloud, LAN/WG): upstream asks to keep /manage and
+# /v0/management behind a VPN, and the client API carries subscription credentials.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: clirelay
+spec:
+  parentRefs:
+    - name: traefik
+      namespace: networking
+      sectionName: websecure-cloud
+  hostnames:
+    - clirelay.cloud.traunseenet.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: clirelay
+          port: 8317

@@ -1,0 +1,32 @@
+# Copied into a writable emptyDir on every start (deployment.yaml): CliRelay rewrites
+# config.yaml on panel saves and moves DB-owned sections out of it, so Git stays the
+# source of truth and edits made in the panel to file-backed keys reset on restart.
+# Settings the panel keeps in Postgres (API keys, routing, runtime settings) are not
+# affected. Secrets are not in here: the DSN comes from CLIRELAY_POSTGRES_DSN and the
+# admin login from CLIRELAY_ADMIN_PASSWORD.
+host: ""
+port: 8317
+postgres:
+  dsn: ""
+  max-open-conns: 16
+  max-idle-conns: 4
+redis:
+  enable: true
+  addr: "clirelay-redis:6379"
+auth-dir: "/CLIProxyAPI/auths"
+allow-unauthenticated: false
+# Traefik pods (10.42.0.0/16) relay every request, so nothing is ever "local": the panel
+# and /v0/management need allow-remote, and trusted-proxies gives the login throttle the
+# real client IP. Reachable only on the LAN/WG listener (httproute.yaml).
+trusted-proxies:
+  - 10.42.0.0/16
+remote-management:
+  allow-remote: true
+  secret-key: ""
+  disable-control-panel: false
+# The updater sidecar needs the Docker socket; Renovate bumps the image here instead.
+auto-update:
+  enabled: false
+logging-to-file: false
+request-log-storage:
+  store-content: false

@@ -1,0 +1,131 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: clirelay
+  name: clirelay
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # RWO PVC
+  selector:
+    matchLabels:
+      app: clirelay
+  template:
+    metadata:
+      labels:
+        app: clirelay
+        app.kubernetes.io/part-of: clirelay
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001 # image user 'clirelay'
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: config
+          image: harbor.cloud.traunseenet.com/ghcr.io/kittors/clirelay:v0.5.9@sha256:14c160480b8a945dcdf7eb246a6478e440123aab41873b399fdebbccbdfab678
+          command: ["sh", "-c", "cp /config-src/config.yaml /config/config.yaml && mkdir -p /state/auths /state/data"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: config-src
+              mountPath: /config-src
+            - name: config
+              mountPath: /config
+            - name: data
+              mountPath: /state
+      containers:
+        - name: clirelay
+          image: harbor.cloud.traunseenet.com/ghcr.io/kittors/clirelay:v0.5.9@sha256:14c160480b8a945dcdf7eb246a6478e440123aab41873b399fdebbccbdfab678
+          imagePullPolicy: IfNotPresent
+          # Skips docker-entrypoint.sh: it only chowns the mounts and drops root via
+          # su-exec, which fsGroup and runAsUser already cover.
+          command: ["/CLIProxyAPI/CLIProxyAPI"]
+          args: ["-config", "/CLIProxyAPI/config/config.yaml"]
+          ports:
+            - name: http
+              containerPort: 8317
+              protocol: TCP
+          env:
+            - name: TZ
+              value: Europe/Vienna
+            - name: CLIRELAY_LOCALE
+              value: en
+            - name: AUTH_PATH
+              value: /CLIProxyAPI/auths
+            - name: CLIRELAY_POSTGRES_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: clirelay-pg-app # created by CNPG (pg.yaml)
+                  key: uri
+            # Runtime migrations default to 30s; first start on a fresh DB can exceed it.
+            - name: CLIRELAY_MIGRATION_TIMEOUT
+              value: 5m
+          envFrom:
+            - secretRef:
+                name: clirelay-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30 # migrations on first start
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: config
+              mountPath: /CLIProxyAPI/config
+            - name: data
+              mountPath: /CLIProxyAPI/auths
+              subPath: auths
+            - name: data
+              mountPath: /CLIProxyAPI/data
+              subPath: data
+            - name: logs
+              mountPath: /CLIProxyAPI/logs
+            - name: tmp
+              mountPath: /tmp # request bodies above disk-threshold-mb spill here
+      volumes:
+        - name: config-src
+          configMap:
+            name: clirelay-config
+        - name: config
+          emptyDir: {}
+        - name: data
+          persistentVolumeClaim:
+            claimName: clirelay-data
+        - name: logs
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

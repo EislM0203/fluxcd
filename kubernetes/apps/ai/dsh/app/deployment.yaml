@@ -36,7 +36,7 @@ spec:
         - name: dsh
           # Built in traunseenet-lab/dsh (fj + bot git config). Pin tag AND digest;
           # Renovate opens PRs for new vX.Y.Z releases (library/* pulls anonymously).
-          image: harbor.cloud.traunseenet.com/library/dsh:0.1.0@sha256:cc975778289f1125ad39763207666e1f0fdcb3e45a9c05208c5e5688f0d52a51
+          image: harbor.cloud.traunseenet.com/library/dsh:0.1.1@sha256:c9a5e340fb2cb848c00f7a5eb12d3484d694e5906ca76f08bbfe75df4b9ee07b
           imagePullPolicy: IfNotPresent
           # Entrypoint is `dsh`. No auth of its own: oauth2-proxy (httproute.yaml) is the gate.
           args: ["--profile", "web", "--no-auth", "--host", "0.0.0.0", "--no-open"]

@@ -28,16 +28,16 @@ spec:
         barmanObjectName: *name
         serverName: *name
   bootstrap:
-    # New database. Once the first base backup is in s3://cnpg-backups/ghostfolio,
-    # switch to recovery (as paperless-pg) so a rebuild restores instead of starting
-    # empty. bootstrap only runs at creation, so the switch is harmless while it runs.
-    initdb:
-      database: ghostfolio
-      owner: ghostfolio
-    # recovery:
-    #   source: *name
+    # Created with initdb on 2026-11-06; switched to recovery after the first base
+    # backup (20261106T071530), so a rebuild restores from s3://cnpg-backups/ghostfolio.
+    # bootstrap only runs at creation, so the switch doesn't touch the running cluster.
+    # initdb:
     #   database: ghostfolio
     #   owner: ghostfolio
+    recovery:
+      source: *name
+      database: ghostfolio
+      owner: ghostfolio
   storage:
     pvcTemplate:
       accessModes:

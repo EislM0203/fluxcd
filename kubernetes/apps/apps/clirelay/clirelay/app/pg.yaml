@@ -3,6 +3,10 @@ apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: clirelay-pg
+  annotations:
+    # s3://cnpg-backups/clirelay still holds the first cluster's archive; without this a
+    # fresh initdb refuses to start against a non-empty WAL archive.
+    cnpg.io/skipEmptyWalArchiveCheck: "enabled"
 spec:
   inheritedMetadata:
     labels:

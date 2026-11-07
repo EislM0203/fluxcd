@@ -42,6 +42,26 @@
         "default_request_timeout_in_seconds": 300,
         "max_retries": 1
       }
+    },
+    "clirelay": {
+      "keys": [
+        {
+          "name": "clirelay",
+          "value": "env.CLIRELAY_API_KEY",
+          "models": ["*"],
+          "weight": 1
+        }
+      ],
+      "custom_provider_config": {
+        "base_provider_type": "openai"
+      },
+      "network_config": {
+        "base_url": "http://clirelay.apps.svc.cluster.local:8317",
+        "allow_private_network": true,
+        "default_request_timeout_in_seconds": 1800,
+        "stream_idle_timeout_in_seconds": 300,
+        "max_retries": 1
+      }
     }
   },
   "vector_store": {

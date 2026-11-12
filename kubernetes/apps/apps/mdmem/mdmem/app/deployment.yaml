@@ -31,7 +31,7 @@ spec:
         - name: mdmem
           # Pin tag AND digest. Renovate opens PRs for new vX.Y.Z releases
           # (library/* pulls anonymously).
-          image: harbor.cloud.traunseenet.com/library/mdmem:0.8.3@sha256:9dcfa00abe2792940677aeaeff0e2dadeb19b477f34a92d51d9d40680531bd29
+          image: harbor.cloud.traunseenet.com/library/mdmem:0.8.4@sha256:423d84c7691f5215dde9fc97c90c1e44252a533f2fb9ef62ad4b22d87404896f
           imagePullPolicy: IfNotPresent
           args: ["serve"]
           securityContext:

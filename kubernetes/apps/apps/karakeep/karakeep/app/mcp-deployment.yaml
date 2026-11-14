@@ -5,7 +5,7 @@ metadata:
   labels:
     app: karakeep-mcp
 spec:
-  replicas: 1
+  replicas: 0   # parked: unused, scaled down 2026-11-14
   selector:
     matchLabels:
       app: karakeep-mcp

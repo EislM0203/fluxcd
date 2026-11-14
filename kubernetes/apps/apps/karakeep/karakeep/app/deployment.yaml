@@ -5,7 +5,7 @@ metadata:
   labels:
     app: karakeep
 spec:
-  replicas: 1
+  replicas: 0   # parked: unused, scaled down 2026-11-14
   selector:
     matchLabels:
       app: karakeep
@@ -91,7 +91,7 @@ metadata:
   labels:
     app: karakeep-chrome
 spec:
-  replicas: 1
+  replicas: 0   # parked: unused, scaled down 2026-11-14
   selector:
     matchLabels:
       app: karakeep-chrome
@@ -127,7 +127,7 @@ metadata:
   labels:
     app: karakeep-meilisearch
 spec:
-  replicas: 1
+  replicas: 0   # parked: unused, scaled down 2026-11-14
   selector:
     matchLabels:
       app: karakeep-meilisearch

@@ -255,15 +255,16 @@ data:
           - "[BODY].status == ok"
           - "[RESPONSE_TIME] < 500"
         alerts: *ntfy-alert
-      - name: Karakeep
-        group: Notes & Knowledge
-        url: "http://karakeep.apps.svc.cluster.local:3000/api/health"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[BODY].status == ok"
-          - "[RESPONSE_TIME] < 500"
-        alerts: *ntfy-alert
+      # Parked 2026-11-14 (deployment scaled to 0); uncomment with the app.
+      # - name: Karakeep
+      #   group: Notes & Knowledge
+      #   url: "http://karakeep.apps.svc.cluster.local:3000/api/health"
+      #   interval: 1m
+      #   conditions:
+      #     - "[STATUS] == 200"
+      #     - "[BODY].status == ok"
+      #     - "[RESPONSE_TIME] < 500"
+      #   alerts: *ntfy-alert
       - name: mdmem
         group: Notes & Knowledge
         # /readyz on the UI port checks the index too (503 when not ready);
@@ -279,17 +280,18 @@ data:
       ###########################
       # Finance
       ###########################
-      - name: Fin
-        group: Finance
-        # Through the web frontend, which proxies /api to fin-api: one check
-        # covers both.
-        url: "http://fin-web.apps.svc.cluster.local/api/health"
-        interval: 1m
-        conditions:
-          - "[STATUS] == 200"
-          - "[BODY].status == ok"
-          - "[RESPONSE_TIME] < 500"
-        alerts: *ntfy-alert
+      # Parked 2026-11-14 (deployment scaled to 0); uncomment with the app.
+      # - name: Fin
+      #   group: Finance
+      #   # Through the web frontend, which proxies /api to fin-api: one check
+      #   # covers both.
+      #   url: "http://fin-web.apps.svc.cluster.local/api/health"
+      #   interval: 1m
+      #   conditions:
+      #     - "[STATUS] == 200"
+      #     - "[BODY].status == ok"
+      #     - "[RESPONSE_TIME] < 500"
+      #   alerts: *ntfy-alert
       - name: Actual Budget
         group: Finance
         url: "http://actual-budget.apps.svc.cluster.local:5006/health"

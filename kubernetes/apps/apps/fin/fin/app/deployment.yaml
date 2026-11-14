@@ -7,7 +7,7 @@ metadata:
     app: fin
     component: api
 spec:
-  replicas: 1
+  replicas: 0   # parked: unused, scaled down 2026-11-14
   strategy:
     type: Recreate
   selector:
@@ -75,7 +75,7 @@ metadata:
     app: fin
     component: web
 spec:
-  replicas: 1
+  replicas: 0   # parked: unused, scaled down 2026-11-14
   selector:
     matchLabels:
       app: fin
@@ -129,7 +129,7 @@ metadata:
     app: fin
     component: mcp
 spec:
-  replicas: 1
+  replicas: 0   # parked: unused, scaled down 2026-11-14
   selector:
     matchLabels:
       app: fin

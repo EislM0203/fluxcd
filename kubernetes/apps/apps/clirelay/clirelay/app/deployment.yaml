@@ -29,7 +29,7 @@ spec:
           type: RuntimeDefault
       initContainers:
         - name: config
-          image: harbor.cloud.traunseenet.com/ghcr.io/kittors/clirelay:v0.6.2@sha256:ab7895636e5847ae8063f92acd208ad9b1386e8f2f01afc4ee935f1ad6766e6e
+          image: harbor.cloud.traunseenet.com/ghcr.io/kittors/clirelay:v0.6.3@sha256:702fb43640e00de41edcdd433c7aeb863ec8a42aea08ebb5c3a102dc8540c74e
           command: ["sh", "-c", "cp /config-src/config.yaml /config/config.yaml && mkdir -p /state/auths /state/data"]
           securityContext:
             allowPrivilegeEscalation: false
@@ -44,7 +44,7 @@ spec:
               mountPath: /state
       containers:
         - name: clirelay
-          image: harbor.cloud.traunseenet.com/ghcr.io/kittors/clirelay:v0.6.2@sha256:ab7895636e5847ae8063f92acd208ad9b1386e8f2f01afc4ee935f1ad6766e6e
+          image: harbor.cloud.traunseenet.com/ghcr.io/kittors/clirelay:v0.6.3@sha256:702fb43640e00de41edcdd433c7aeb863ec8a42aea08ebb5c3a102dc8540c74e
           imagePullPolicy: IfNotPresent
           # Skips docker-entrypoint.sh: it only chowns the mounts and drops root via
           # su-exec, which fsGroup and runAsUser already cover.

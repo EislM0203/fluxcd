@@ -25,6 +25,10 @@ spec:
             - "gotenberg"
             - "--chromium-disable-javascript=true"
             - "--chromium-allow-list=file:///tmp/.*"
+          env:
+            # Java4Shell (CVE-2026-114938): pdftk-java runs here; drop once the image ships a fixed JDK.
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:-UseBASE64Intrinsics"
           ports:
             - containerPort: 3000
               protocol: TCP

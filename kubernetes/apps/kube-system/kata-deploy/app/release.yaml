@@ -10,8 +10,8 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 4.3.1
-    digest: sha256:8eab352a59b42dc7b3aebe87d4114b936a8576967d4800047ce708fcebb61d2e
+    tag: 4.4.0
+    digest: sha256:5c186201390f72178614062166b7d72d6c6527a05d581730fdfbb6dc68d087b9
   url: oci://ghcr.io/kata-containers/kata-deploy-charts/kata-deploy
 ---
 # Kata Containers: pods with runtimeClassName "kata" run in their own lightweight

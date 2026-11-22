@@ -26,7 +26,7 @@ spec:
         - name: forgejo-mcp
           # b4mad forgejo-mcp (Forgejo-native, incl. Forgejo 16 Actions jobs/logs). Not
           # proxied by Harbor: pulled directly, pinned by digest (cosign-signed upstream).
-          image: git.b4mad.industries/agentic-forges/forgejo-mcp:v3.4.1@sha256:b12aff861d2ca5dec5f9553d89c3bb08294cb3251eaa964c15b916b348c195d8
+          image: git.b4mad.industries/agentic-forges/forgejo-mcp:v3.5.0@sha256:0eaf0971730a15020644110437b0f1934c0c81cd0fe1d9bc95c2e850ec214db5
           # Passthrough auth and no token here: every request must carry its own
           # Authorization header (Bifrost sends the read-only bot token, FORGEJO_AUTH_HEADER),
           # anything else gets 401. Do NOT enable --allow-operator-token-fallback.

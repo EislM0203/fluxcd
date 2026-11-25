@@ -19,7 +19,7 @@ spec:
         app: nextcloud
     spec:
       containers:
-        - image: harbor.cloud.traunseenet.com/docker.io/library/nextcloud:35.0.3-apache@sha256:8a7a65b8bae82a79568fec2ed9cf3e374a1944eda2a22ebe130d79463336fee3
+        - image: harbor.cloud.traunseenet.com/docker.io/library/nextcloud:35.0.3-apache@sha256:f44180601f18e7664557232b4c5edb0eb4a82d649c05b93313f4e15909553d42
           name: nextcloud
           ports:
             - containerPort: 80
@@ -112,7 +112,7 @@ spec:
             - mountPath: /docker-entrypoint-hooks.d/before-starting
               name: nextcloud-hooks
         # crond needs root; cron.sh runs cron.php as www-data
-        - image: harbor.cloud.traunseenet.com/docker.io/library/nextcloud:35.0.3-apache@sha256:8a7a65b8bae82a79568fec2ed9cf3e374a1944eda2a22ebe130d79463336fee3
+        - image: harbor.cloud.traunseenet.com/docker.io/library/nextcloud:35.0.3-apache@sha256:f44180601f18e7664557232b4c5edb0eb4a82d649c05b93313f4e15909553d42
           name: nextcloud-cron
           command:
             - /cron.sh
